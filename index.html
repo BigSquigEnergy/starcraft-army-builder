@@ -135,9 +135,9 @@
 
     // Faction SVG Icons
     const Icons = {
-      Terran: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 Z M50 25 L70 40 L70 60 L50 75 L30 60 L30 40 Z" /></svg>,
-      Zerg: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 5 C75 5 95 25 95 50 C95 75 75 95 50 95 C25 95 5 75 5 50 C5 25 25 5 50 5 Z M50 20 C33 20 20 33 20 50 C20 67 33 80 50 80 C67 80 80 67 80 50 C80 33 67 20 50 20 Z M50 35 C42 35 35 42 35 50 C35 58 42 65 50 65 C58 65 65 58 65 50 C65 42 58 35 50 35 Z" /></svg>,
-      Protoss: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 10 L90 50 L50 90 L10 50 Z M50 25 L75 50 L50 75 L25 50 Z" /></svg>
+      Terran: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 5 L10 85 h20 l5 -10 h30 l5 10 h20 Z M50 25 c10 0 20 10 20 20 h-40 c0 -10 10 -20 20 -20 z M45 50 h10 v20 h-10 z" /></svg>,
+      Zerg: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 15 C30 15 15 30 15 50 C15 70 30 85 50 85 C65 85 80 75 85 60 L75 65 C70 75 60 80 50 80 C35 80 20 65 20 50 C20 35 35 20 50 20 C65 20 75 30 75 45 C75 55 65 65 55 65 C45 65 40 60 40 50 C40 40 50 35 55 40 L50 45 C45 45 45 55 50 55 C55 55 65 50 65 45 C65 25 50 15 50 15 Z" /></svg>,
+      Protoss: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 5 C80 5 95 30 90 60 C85 80 70 95 50 80 C30 95 15 80 10 60 C5 30 20 5 50 5 Z M50 25 L65 50 L50 75 L35 50 Z M25 45 C30 30 40 20 50 20 C60 20 70 30 75 45 C70 35 60 30 50 30 C40 30 30 35 25 45 Z" /></svg>
     };
 
     // Components
@@ -271,10 +271,29 @@
       };
 
       const totalSupply = roster.reduce((sum, unit) => sum + getUnitSupply(unit), 0);
+      const activeSupply = roster.filter(u => u.deployed).reduce((sum, unit) => sum + getUnitSupply(unit), 0);
       
       const activeMission = MISSIONS_DATABASE[matchData.mission];
       const supplyPool = matchData.round === 5 ? Infinity : (activeMission.start + (matchData.round - 1) * activeMission.esc);
-      const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - totalSupply);
+      const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
+
+      // Apply sorting logic: Hero -> Core -> Elite -> Support
+      const SLOT_ORDER = { "Hero": 1, "Core": 2, "Elite": 3, "Support": 4 };
+      const sortedRoster = useMemo(() => {
+        return [...roster].sort((a, b) => {
+          const orderA = SLOT_ORDER[a.slot] || 99;
+          const orderB = SLOT_ORDER[b.slot] || 99;
+          if (orderA !== orderB) return orderA - orderB;
+          return a.name.localeCompare(b.name);
+        });
+      }, [roster]);
+
+      const toggleDeploy = (id) => {
+        setRoster(prev => prev.map(unit => {
+          if (unit.rosterId === id) return { ...unit, deployed: !unit.deployed };
+          return unit;
+        }));
+      };
 
       const openRule = (key) => {
         const cleaned = key.trim();
@@ -298,7 +317,8 @@
           minerals: comp.minerals + upgradeMinerals,
           appliedUpgrades,
           hpDamage: 0,
-          shieldDamage: 0
+          shieldDamage: 0,
+          deployed: false
         }]);
       };
 
@@ -492,7 +512,7 @@
                     <span className={`font-orbitron text-xl font-black ${totalVespene > limits.vespene ? 'text-rose-400' : 'text-green-400'}`}>{totalVespene} <span className="text-sm font-normal text-slate-400">/ {limits.vespene}</span></span>
                   </div>
                   <div className="p-3 rounded flex justify-between items-center bg-black/50 border border-white/10">
-                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Supply</span>
+                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Drafted Supply</span>
                     <span className="font-orbitron text-xl font-black text-amber-300">{totalSupply}</span>
                   </div>
                 </div>
@@ -522,7 +542,7 @@
                         <span className="text-[10px] uppercase text-slate-500 font-bold">Available</span>
                       </div>
                       <div className="text-center">
-                        <span className="block text-2xl font-orbitron font-black text-amber-300">{totalSupply}</span>
+                        <span className="block text-2xl font-orbitron font-black text-amber-300">{activeSupply}</span>
                         <span className="text-[10px] uppercase text-slate-500 font-bold">Active</span>
                       </div>
                     </div>
@@ -574,7 +594,7 @@
                       Roster Empty
                     </div>
                   )}
-                  {roster.map(unit => {
+                  {sortedRoster.map(unit => {
                     const modelsAlive = getModelsAlive(unit);
                     const currentSupply = getUnitSupply(unit);
                     const isDead = modelsAlive <= 0;
@@ -611,9 +631,20 @@
                               </h4>
                               <span className={`text-sm font-orbitron font-bold tracking-wider ${isDead ? 'text-rose-500' : 'text-slate-400'}`}>{modelsAlive} / {unit.models} Models</span>
                             </div>
-                            <div className="text-right">
-                              <span className={`block text-3xl font-orbitron font-black leading-none ${isDead ? 'text-rose-600' : 'text-amber-300'}`}>{currentSupply}</span>
-                              <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">Supply</span>
+                            <div className="text-right flex flex-col items-end">
+                              <span className={`block text-3xl font-orbitron font-black leading-none ${isDead ? 'text-rose-600' : (isPlayMode && !unit.deployed ? 'text-slate-500' : 'text-amber-300')}`}>{currentSupply}</span>
+                              <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-2">Supply</span>
+                              {isPlayMode && !isDead && (
+                                <button 
+                                  onClick={() => toggleDeploy(unit.rosterId)}
+                                  className={`px-2 py-1 text-[10px] uppercase font-bold rounded border transition-colors ${unit.deployed ? 'bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700' : theme.accent}`}
+                                >
+                                  {unit.deployed ? 'Recall' : 'Deploy'}
+                                </button>
+                              )}
+                              {isPlayMode && isDead && (
+                                <span className="px-2 py-1 text-[10px] uppercase font-bold rounded border bg-rose-950/50 text-rose-500 border-rose-900">Destroyed</span>
+                              )}
                             </div>
                           </div>
 
