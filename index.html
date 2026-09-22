@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StarCraft Tabletop Army Builder</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Rajdhani', sans-serif; }
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+  </style>
+</head>
+<body class="bg-black text-slate-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- DATA DEFINITIONS ---
+    const MISSIONS_DATABASE = {
+      "Frontlines": { start: 6, esc: 2 },
+      "Hold Position": { start: 6, esc: 2 },
+      "Artefact Hunt": { start: 5, esc: 2 },
+      "Gauntlet": { start: 6, esc: 2 },
+      "Typhoon": { start: 6, esc: 2 },
+      "Acropolis": { start: 6, esc: 2 },
+      "Proving Grounds": { start: 6, esc: 2 }
+    };
+
+    const THEMES = {
+      Protoss: { bg: "bg-[#180829]", panelBg: "bg-[#25123d]", cardBg: "bg-[#30184e]", border: "border-amber-400/50", textPrimary: "text-amber-300", accent: "bg-amber-500 text-stone-950", accentSecondary: "bg-amber-400/20 text-amber-300 border-amber-400/40", iconColor: "text-amber-400" },
+      Terran: { bg: "bg-[#081226]", panelBg: "bg-[#0f2147]", cardBg: "bg-[#162e60]", border: "border-amber-500/40", textPrimary: "text-amber-400", accent: "bg-blue-500 text-stone-950", accentSecondary: "bg-blue-900/50 text-slate-200 border-blue-500/50", iconColor: "text-blue-400" },
+      Zerg: { bg: "bg-[#210913]", panelBg: "bg-[#33111f]", cardBg: "bg-[#421629]", border: "border-fuchsia-500/40", textPrimary: "text-fuchsia-300", accent: "bg-fuchsia-600 text-white", accentSecondary: "bg-fuchsia-950/60 text-fuchsia-200 border-fuchsia-600/40", iconColor: "text-fuchsia-400" }
+    };
+
+    const ENGAGEMENT_SCALES = {
+      "Free Build": { minerals: Infinity, vespene: Infinity },
+      "Skirmish": { minerals: 1000, vespene: 100 },
+      "Standard": { minerals: 2000, vespene: 200 }
+    };
+
+    const RULES_DICTIONARY = {
+      "Armoured": "Weapon deals enhanced damage against targets with the ARMOURED tag.",
+      "Light": "Weapon deals enhanced damage against targets with the LIGHT tag.",
+      "ANTI-EVADE": "Targets cannot make Evade Rolls against attacks made with this weapon.",
+      "PRECISION": "Adds a bonus modifier to the Hit Target Roll or improves dice results.",
+      "PIERCE": "Treat the weapon's Damage characteristic as X against specific targets.",
+      "INDIRECT FIRE": "Ranged attacks ignore Line of Sight, but target may roll Evade.",
+      "SIDEARM": "Can be fired in addition to a standard weapon during the same activation.",
+      "LONG RANGE": "Extends max range. Attacks beyond base range suffer -1 to Hit.",
+      
+      "AGG-12": "LONG RANGE (18”), SPECIALIST. Replaces one C-14 Rifle.",
+      "Combat Shield": "PASSIVE: Always eligible to make an Evade Roll against Close Combat Attacks.",
+      "Rocket Launcher": "INDIRECT FIRE, LONG RANGE (18”), SIDEARM, SPECIALIST.",
+      "Grenades - Frag": "PASSIVE: When attacking with C-14 Rifle Within 8”, replace S Dice with D6.",
+      "Kinetic Foam": "PASSIVE: Increases Unit Hit Points characteristic by 1.",
+      "Laser Targeting Systems": "PASSIVE: Quad K12 gains LONG RANGE (16”).",
+      "My Life for Aiur": "PASSIVE: When resolving IMPACT, each eligible model generates 1 additional die.",
+      "Leg Enhancements": "ACTIVE (1 PE): Perform a 2” Move action not counting towards the limit.",
+      "We Stand as One": "PASSIVE: Close Combat attacks against targets Engaged with another Friendly Unit gain PRECISION (2).",
+      "Burrow Ambush": "PASSIVE: Deploy from Reserves using the PLACE (18) effect from Entry Edge.",
+      "Adrenal Glands": "PASSIVE: Claws and Shredding Claws gain PRECISION (2).",
+      "Shredding Claws": "REPLACEMENT: Replaces standard Claws weapon profile.",
+      
+      "Stimpack": "ACTIVE (1 CP): Suffers NON-LETHAL DAMAGE (2). Gains BUFF Speed (3) and PRECISION.",
+      "Devastating Charge": "PASSIVE: Immediately after a successful Charge, resolve IMPACT hits.",
+      "Life Support": "REACTION (1 CP): Use when Friendly Biological suffers Damage Within 4\". Reduce Damage.",
+      "Path of Shadows": "ACTIVE (1 PE): Resolve the PLACE (8) effect on this unit.",
+      "Guardian Shield": "PASSIVE: Friendly units within 4\" count as having Cover.",
+      "Spawn Creep Tumor": "ACTIVE (1 BM): Set a Creep Tumor token in base-to-base contact.",
+      "Transfusion": "REACTION (1 BM): Reduce Damage to a Friendly Biological unit by 2.",
+      "Psionic Transfer": "ACTIVE (1 PE): Set a Shade Wholly Within 12\". Teleport to it at End of Round.",
+      "Psionic Presence": "PASSIVE: Friendly units firing near Shade gain PRECISION (1).",
+      "Heroic Resolve": "PASSIVE: Inspires nearby forces, granting combat bonuses."
+    };
+
+    const TACTICAL_CARDS = [
+      { faction: "Terran", name: "Barracks", vespene: 25 },
+      { faction: "Terran", name: "Academy", vespene: 35 },
+      { faction: "Terran", name: "Factory", vespene: 35 },
+      { faction: "Protoss", name: "Gateway", vespene: 35 },
+      { faction: "Protoss", name: "Warp Gate", vespene: 40 },
+      { faction: "Protoss", name: "Forge", vespene: 30 },
+      { faction: "Zerg", name: "Spawning Pool", vespene: 25 },
+      { faction: "Zerg", name: "Roach Warren", vespene: 45 },
+      { faction: "Zerg", name: "Evolution Chamber", vespene: 30 }
+    ];
+
+    const ABILITY_MAP = {
+      "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
+      "Devastating Charge": { type: "PASSIVE", cost: "", phase: "ASSAULT PHASE" },
+      "Life Support": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
+      "Path of Shadows": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Guardian Shield": { type: "PASSIVE", cost: "", phase: "ANY PHASE" },
+      "Spawn Creep Tumor": { type: "ACTIVE", cost: "1 BM", phase: "ANY PHASE" },
+      "Transfusion": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
+      "Psionic Transfer": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Psionic Presence": { type: "PASSIVE", cost: "", phase: "ANY PHASE" },
+      "Heroic Resolve": { type: "PASSIVE", cost: "", phase: "ANY PHASE" }
+    };
+
+    const WEAPON_MAP = {
+      "AGG-12": { name: "AGG-12", range: "12", target: "Ground", roa: 2, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "LONG RANGE (18”), SPECIALIST", phase: "ASSAULT PHASE" },
+      "Rocket Launcher": { name: "Rocket Launcher", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "INDIRECT FIRE, LONG RANGE (18”), SIDEARM, SPECIALIST", phase: "ASSAULT PHASE" }
+    };
+
+    const UNITS_DATABASE = [
+      // TERRAN
+      { faction: "Terran", name: "Marine", role: "Damage Dealer", slot: "Core", compositions: [{ models: 6, minerals: 160, supply: 1 }, { models: 9, minerals: 210, supply: 2 }], supplyProfile: [{ max: 3, supply: 0 }, { max: 6, supply: 1 }, { max: 9, supply: 2 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "C-14 Rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "AGG-12", type: "Specialist", costs: [10, 10] }, { name: "Combat Shield", type: "Standard", costs: [20, 30] }, { name: "Rocket Launcher", type: "Specialist", costs: [40, 40] }] },
+      { faction: "Terran", name: "Marauder", role: "Tank", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 1 }, { models: 4, minerals: 280, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 4, supply: 2 }], stats: { speed: "4/7", armour: "4+", evade: "6+", hitPoints: 5, size: 1 }, weapons: [{ name: "Quad K12", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "Kinetic Foam", type: "Standard", costs: [20, 40] }, { name: "Laser Targeting Systems", type: "Standard", costs: [20, 40] }] },
+      { faction: "Terran", name: "Medic", role: "Support", slot: "Support", compositions: [{ models: 3, minerals: 110, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Life Support"], upgrades: [] },
+      { faction: "Terran", name: "Goliath", role: "Damage Dealer", slot: "Elite", compositions: [{ models: 1, minerals: 190, supply: 2 }], supplyProfile: [{ max: 1, supply: 2 }], stats: { speed: "4", armour: "4+", evade: "6+", hitPoints: 6, size: 3 }, weapons: [{ name: "Twin Autocannons", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Hellfire Missiles", range: "16", target: "Flying", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }], abilities: [], upgrades: [] },
+      { faction: "Terran", name: "Jim Raynor", role: "Hero", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "5", armour: "3+", evade: "4+", hitPoints: 8, size: 1 }, weapons: [{ name: "Commando Rifle", range: "12", target: "All", roa: 4, hit: "2+", surge: "Light", sDice: "D6", dmg: 1, keyword: "PRECISION (2)", phase: "ASSAULT PHASE" }, { name: "Heroic Strike", range: "E", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve"], upgrades: [] },
+      // ZERG
+      { faction: "Zerg", name: "Zergling", role: "Damage Dealer", slot: "Core", compositions: [{ models: 12, minerals: 180, supply: 1 }, { models: 18, minerals: 220, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Adrenal Glands", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10] }] },
+      { faction: "Zerg", name: "Roach", role: "Tank", slot: "Core", compositions: [{ models: 3, minerals: 170, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { speed: "4", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [] },
+      { faction: "Zerg", name: "Hydralisk", role: "Damage Dealer", slot: "Elite", compositions: [{ models: 2, minerals: 140, supply: 2 }, { models: 4, minerals: 260, supply: 3 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 2, supply: 2 }, { max: 4, supply: 3 }], stats: { speed: "4/8", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }], abilities: [], upgrades: [] },
+      { faction: "Zerg", name: "Queen", role: "Support", slot: "Support", compositions: [{ models: 1, minerals: 150, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "4", armour: "4+", evade: "5+", hitPoints: 9, size: 3 }, weapons: [{ name: "Acid Spines", range: "12", target: "Flying", roa: 4, hit: "4+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Talons", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Spawn Creep Tumor", "Transfusion", "Devastating Charge"], upgrades: [] },
+      { faction: "Zerg", name: "Kerrigan", role: "Hero", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "6", armour: "3+", evade: "3+", hitPoints: 10, size: 2 }, weapons: [{ name: "Psionic Blast", range: "12", target: "All", roa: 4, hit: "2+", surge: "Armoured", sDice: "D6", dmg: 2, keyword: "PIERCE (3)", phase: "ASSAULT PHASE" }, { name: "Winged Blades", range: "E", target: "Ground", roa: 5, hit: "2+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve", "Devastating Charge"], upgrades: [] },
+      // PROTOSS
+      { faction: "Protoss", name: "Zealot", role: "Damage Dealer", slot: "Core", compositions: [{ models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [20] }, { name: "Leg Enhancements", type: "Standard", costs: [20] }, { name: "We Stand as One", type: "Standard", costs: [10] }] },
+      { faction: "Protoss", name: "Stalker", role: "Damage Dealer", slot: "Elite", compositions: [{ models: 1, minerals: 170, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: 3, speed: "4/8", armour: "4+", evade: "6+", hitPoints: 6, size: 2 }, weapons: [{ name: "Particle Disruptors", range: "12", target: "All", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }], abilities: ["Path of Shadows"], upgrades: [] },
+      { faction: "Protoss", name: "Adept", role: "Damage Dealer", slot: "Core", compositions: [{ models: 4, minerals: 150, supply: 1 }], supplyProfile: [{ max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [] },
+      { faction: "Protoss", name: "Sentry", role: "Support", slot: "Support", compositions: [{ models: 2, minerals: 130, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }], stats: { shield: 2, speed: "4/8", armour: "5+", evade: "6+", hitPoints: 3, size: 2 }, weapons: [{ name: "Disruption Beam", range: "12", target: "All", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }], abilities: ["Guardian Shield"], upgrades: [] },
+      { faction: "Protoss", name: "Artanis", role: "Hero", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: 5, speed: "5", armour: "3+", evade: "4+", hitPoints: 8, size: 2 }, weapons: [{ name: "Psi Storm", range: "12", target: "All", roa: 4, hit: "2+", surge: "Armoured", sDice: "D6", dmg: 2, keyword: "INDIRECT FIRE", phase: "ASSAULT PHASE" }, { name: "Master Psi Blades", range: "E", target: "Ground", roa: 5, hit: "2+", surge: "Light", sDice: "D3", dmg: 2, keyword: "PIERCE (2)", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve", "Devastating Charge"], upgrades: [] }
+    ];
+
+    // Faction SVG Icons
+    const Icons = {
+      Terran: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 Z M50 25 L70 40 L70 60 L50 75 L30 60 L30 40 Z" /></svg>,
+      Zerg: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 5 C75 5 95 25 95 50 C95 75 75 95 50 95 C25 95 5 75 5 50 C5 25 25 5 50 5 Z M50 20 C33 20 20 33 20 50 C20 67 33 80 50 80 C67 80 80 67 80 50 C80 33 67 20 50 20 Z M50 35 C42 35 35 42 35 50 C35 58 42 65 50 65 C58 65 65 58 65 50 C65 42 58 35 50 35 Z" /></svg>,
+      Protoss: () => <svg viewBox="0 0 100 100" className="w-5 h-5 fill-current"><path d="M50 10 L90 50 L50 90 L10 50 Z M50 25 L75 50 L50 75 L25 50 Z" /></svg>
+    };
+
+    // Components
+    const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      const phaseWeapons = unitWeapons.filter(w => w.phase === phase);
+      const phaseAbilities = unitAbilities.filter(a => a.phase === phase);
+
+      if (phaseWeapons.length === 0 && phaseAbilities.length === 0) return null;
+
+      return (
+        <div className="border border-white/10 rounded overflow-hidden mb-2 bg-black/40">
+          <button onClick={() => setIsOpen(!isOpen)} className="w-full px-3 py-1.5 bg-white/5 hover:bg-white/10 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-300">
+            <span>{title}</span><span>{isOpen ? '▼' : '▶'}</span>
+          </button>
+          
+          {isOpen && (
+            <div className="p-3 space-y-3">
+              {phaseAbilities.map((ab, idx) => {
+                let badgeColor = "bg-rose-600"; 
+                if (ab.type === "ACTIVE") badgeColor = "bg-sky-500";
+                if (ab.type === "REACTION") badgeColor = "bg-amber-500 text-black";
+                return (
+                  <div key={idx} className="text-xs leading-tight">
+                    <span className="font-orbitron font-bold uppercase mr-2 text-white cursor-pointer hover:text-amber-300" onClick={() => openRule && openRule(ab.name)}>{ab.name} {openRule && 'ℹ'}</span>
+                    <span className={`inline-block px-1 rounded font-bold uppercase text-[9px] mr-2 ${badgeColor}`}>{ab.type}</span>
+                    {ab.cost && <span className="inline-block px-1 rounded font-bold bg-emerald-600 text-white text-[9px] mr-2">{ab.cost}</span>}
+                    <span className="text-slate-300">{ab.desc || RULES_DICTIONARY[ab.name]}</span>
+                  </div>
+                );
+              })}
+
+              {phaseWeapons.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[10px] whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-white/20 text-slate-400 uppercase font-orbitron">
+                        <th className="pb-1 pr-2">Name</th><th className="pb-1 pr-2">Rng</th><th className="pb-1 pr-2">Target</th><th className="pb-1 pr-2">RoA</th><th className="pb-1 pr-2">Hit</th><th className="pb-1 pr-2">Surge</th><th className="pb-1 pr-2">SDice</th><th className="pb-1 pr-2">Dmg</th><th className="pb-1">Keyword</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {phaseWeapons.map((w, idx) => (
+                        <tr key={idx} className="border-b border-white/5 last:border-0 text-slate-200">
+                          <td className="py-1.5 pr-2 font-bold uppercase font-orbitron text-white">{w.name}</td>
+                          <td className="pr-2">{w.range}</td><td className="pr-2">{w.target}</td><td className="pr-2 text-center">{w.roa}</td><td className="pr-2">{w.hit}</td><td className="pr-2">{w.surge}</td><td className="pr-2">{w.sDice}</td><td className="pr-2 font-black text-amber-300">{w.dmg}</td><td className="text-slate-400">{w.keyword}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const ArmoryGroup = ({ title, units, onConfigure, theme }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      if (units.length === 0) return null;
+      return (
+        <div className="mb-3">
+          <button onClick={() => setIsOpen(!isOpen)} className={`w-full p-3 ${theme.cardBg} border border-white/10 rounded font-orbitron font-bold uppercase flex justify-between items-center hover:bg-white/5`}>
+            <span>{title} <span className="text-slate-400 text-xs ml-2">({units.length})</span></span>
+            <span>{isOpen ? '▼' : '▶'}</span>
+          </button>
+          {isOpen && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-3 pl-2">
+              {units.map(unit => (
+                <div key={unit.name} className={`${theme.cardBg} border ${theme.border} rounded-lg p-4 flex flex-col justify-between shadow-lg`}>
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className={`font-orbitron font-black text-xl uppercase ${theme.textPrimary}`}>{unit.name}</h3>
+                    <button onClick={() => onConfigure(unit)} className={`px-4 py-1.5 rounded font-bold text-sm ${theme.accent}`}>Configure</button>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
+                    {unit.stats.shield !== undefined && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
+                    <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats.speed}</span></div>
+                    <div><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats.armour}</span></div>
+                    <div><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats.evade}</span></div>
+                    <div><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats.hitPoints}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    function App() {
+      // Local Storage Hooks
+      const [isPlayMode, setIsPlayMode] = useState(() => JSON.parse(localStorage.getItem('sc_playMode')) || false);
+      const [selectedFaction, setSelectedFaction] = useState(() => localStorage.getItem('sc_faction') || "Protoss");
+      const [scale, setScale] = useState(() => localStorage.getItem('sc_scale') || "Free Build");
+      const [roster, setRoster] = useState(() => JSON.parse(localStorage.getItem('sc_roster')) || []);
+      const [tacticalCards, setTacticalCards] = useState(() => JSON.parse(localStorage.getItem('sc_tacCards')) || []);
+      const [matchData, setMatchData] = useState(() => JSON.parse(localStorage.getItem('sc_matchData')) || { round: 1, yourVP: 0, enemyVP: 0, mission: "Frontlines", enemyFaction: "Terran" });
+      
+      // Army Manager Hooks
+      const [savedRosters, setSavedRosters] = useState(() => JSON.parse(localStorage.getItem('sc_savedRosters')) || []);
+      const [showSaveModal, setShowSaveModal] = useState(false);
+      const [showLoadModal, setShowLoadModal] = useState(false);
+      const [rosterName, setRosterName] = useState("");
+
+      const [activeModal, setActiveModal] = useState(null);
+      const [configUnit, setConfigUnit] = useState(null);
+
+      // Save States
+      useEffect(() => localStorage.setItem('sc_playMode', JSON.stringify(isPlayMode)), [isPlayMode]);
+      useEffect(() => localStorage.setItem('sc_faction', selectedFaction), [selectedFaction]);
+      useEffect(() => localStorage.setItem('sc_scale', scale), [scale]);
+      useEffect(() => localStorage.setItem('sc_roster', JSON.stringify(roster)), [roster]);
+      useEffect(() => localStorage.setItem('sc_tacCards', JSON.stringify(tacticalCards)), [tacticalCards]);
+      useEffect(() => localStorage.setItem('sc_matchData', JSON.stringify(matchData)), [matchData]);
+      useEffect(() => localStorage.setItem('sc_savedRosters', JSON.stringify(savedRosters)), [savedRosters]);
+
+      const theme = THEMES[selectedFaction];
+      const limits = ENGAGEMENT_SCALES[scale];
+
+      const factionUnits = UNITS_DATABASE.filter(u => u.faction === selectedFaction);
+      const factionCards = TACTICAL_CARDS.filter(c => c.faction === selectedFaction);
+
+      const totalMinerals = roster.reduce((sum, item) => sum + item.minerals, 0);
+      const totalVespene = tacticalCards.reduce((sum, card) => sum + card.vespene, 0);
+      
+      const getModelsAlive = (unit) => Math.max(0, unit.models - Math.floor(unit.hpDamage / unit.stats.hitPoints));
+      const getUnitSupply = (unit) => {
+        const alive = getModelsAlive(unit);
+        const tier = unit.supplyProfile.find(p => alive <= p.max);
+        return tier ? tier.supply : 0;
+      };
+
+      const totalSupply = roster.reduce((sum, unit) => sum + getUnitSupply(unit), 0);
+      
+      const activeMission = MISSIONS_DATABASE[matchData.mission];
+      const supplyPool = matchData.round === 5 ? Infinity : (activeMission.start + (matchData.round - 1) * activeMission.esc);
+      const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - totalSupply);
+
+      const openRule = (key) => {
+        const cleaned = key.trim();
+        const ruleText = RULES_DICTIONARY[cleaned] || "Rule text available in full rulebook.";
+        setActiveModal({ title: cleaned, text: ruleText });
+      };
+
+      const addToRoster = (unit, compIndex, selectedUpgrades) => {
+        const comp = unit.compositions[compIndex];
+        let upgradeMinerals = 0;
+        const appliedUpgrades = selectedUpgrades.map(u => {
+          upgradeMinerals += u.costs[compIndex];
+          return u.name;
+        });
+
+        setRoster(prev => [...prev, { 
+          ...unit, 
+          rosterId: Date.now() + Math.random(),
+          models: comp.models,
+          supply: comp.supply,
+          minerals: comp.minerals + upgradeMinerals,
+          appliedUpgrades,
+          hpDamage: 0,
+          shieldDamage: 0
+        }]);
+      };
+
+      const updateDamage = (id, type, amount) => {
+        setRoster(prev => prev.map(unit => {
+          if (unit.rosterId !== id) return unit;
+          const maxAmount = type === 'shieldDamage' ? unit.stats.shield : (unit.stats.hitPoints * unit.models);
+          const newDamage = Math.max(0, Math.min(maxAmount, unit[type] + amount));
+          return { ...unit, [type]: newDamage };
+        }));
+      };
+
+      const updateMatch = (key, val) => setMatchData(prev => ({ ...prev, [key]: val }));
+
+      // ARMY MANAGER FUNCTIONS
+      const handleSaveRoster = () => {
+        if (!rosterName.trim() || roster.length === 0) return;
+        const newSavedRoster = {
+          id: Date.now(),
+          name: rosterName,
+          faction: selectedFaction,
+          scale: scale,
+          roster: roster.map(u => ({...u, hpDamage: 0, shieldDamage: 0})), // Reset damage when saving
+          tacticalCards: tacticalCards,
+          totalMinerals,
+          totalVespene
+        };
+        setSavedRosters(prev => [...prev, newSavedRoster]);
+        setShowSaveModal(false);
+        setRosterName("");
+      };
+
+      const handleLoadRoster = (saved) => {
+        setSelectedFaction(saved.faction);
+        setScale(saved.scale);
+        setRoster(saved.roster);
+        setTacticalCards(saved.tacticalCards);
+        setShowLoadModal(false);
+      };
+
+      const handleDeleteRoster = (id) => {
+        setSavedRosters(prev => prev.filter(r => r.id !== id));
+      };
+
+      // --- CONFIGURATION MODAL ---
+      const UnitConfigModal = ({ unit, onClose }) => {
+        const [compIndex, setCompIndex] = useState(0);
+        const [selectedUpgrades, setSelectedUpgrades] = useState([]);
+
+        const handleUpgradeToggle = (upgrade) => {
+          if (selectedUpgrades.includes(upgrade)) {
+            setSelectedUpgrades(prev => prev.filter(u => u !== upgrade));
+          } else {
+            setSelectedUpgrades(prev => [...prev, upgrade]);
+          }
+        };
+
+        const currentMinerals = unit.compositions[compIndex].minerals + selectedUpgrades.reduce((sum, u) => sum + u.costs[compIndex], 0);
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+            <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`}>
+              <h3 className={`text-xl font-orbitron font-black uppercase mb-4 ${theme.textPrimary}`}>Configure {unit.name}</h3>
+              
+              <div className="mb-4">
+                <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Select Composition</label>
+                <div className="flex flex-col gap-2 mt-2">
+                  {unit.compositions.map((comp, idx) => (
+                    <button key={idx} onClick={() => { setCompIndex(idx); setSelectedUpgrades([]); }}
+                      className={`p-2 rounded border text-left flex justify-between ${compIndex === idx ? theme.accent : 'bg-black/40 border-white/10'}`}>
+                      <span>{comp.models} Models (Supply: {comp.supply})</span>
+                      <span className="font-mono font-bold">{comp.minerals} Min</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {unit.upgrades.length > 0 && (
+                <div className="mb-6">
+                  <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Available Upgrades</label>
+                  <div className="flex flex-col gap-2 mt-2">
+                    {unit.upgrades.map(upg => (
+                      <div key={upg.name} className="flex items-center justify-between p-2 rounded bg-black/40 border border-white/10">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={selectedUpgrades.includes(upg)} onChange={() => handleUpgradeToggle(upg)} className="w-4 h-4" />
+                          <div>
+                            <span className="text-sm font-bold flex items-center gap-1">
+                              {upg.name} 
+                              <button onClick={(e) => { e.preventDefault(); openRule(upg.name); }} className="text-xs opacity-70 hover:opacity-100 hover:text-amber-300">ℹ️</button>
+                            </span>
+                            <span className="text-[10px] text-slate-400 block">{upg.type}</span>
+                          </div>
+                        </label>
+                        <span className="font-mono text-sm text-amber-200">+{upg.costs[compIndex]} Min</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                <span className="font-orbitron text-xl font-black">Total: {currentMinerals}</span>
+                <div className="flex gap-2">
+                  <button onClick={onClose} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
+                  <button onClick={() => { addToRoster(unit, compIndex, selectedUpgrades); onClose(); }} className={`px-4 py-2 rounded font-bold ${theme.accent}`}>Add Unit</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div className={`min-h-screen ${theme.bg} transition-colors duration-300 flex flex-col`}>
+          {/* HEADER */}
+          <header className="border-b border-white/10 px-6 py-4 flex flex-wrap items-center justify-between gap-4 bg-black/40 sticky top-0 z-30">
+            <div className="flex items-center gap-6">
+              <h1 className="text-3xl font-black uppercase font-orbitron"><span className={theme.textPrimary}>StarCraft</span> Army Builder</h1>
+              {!isPlayMode && (
+                <div className="flex gap-1 bg-black/50 rounded-lg border border-white/15 p-1 ml-4">
+                  {Object.keys(THEMES).map(f => {
+                    const isSelected = selectedFaction === f;
+                    const Icon = Icons[f];
+                    return (
+                      <button key={f} onClick={() => { setSelectedFaction(f); setRoster([]); setTacticalCards([]); }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md font-orbitron text-sm font-bold uppercase transition-all ${isSelected ? THEMES[f].accent : `bg-transparent hover:bg-white/5 text-slate-400 ${THEMES[f].iconColor}`}`}>
+                        <Icon />
+                        <span className={isSelected ? 'text-inherit' : 'text-slate-400'}>{f}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-6">
+              {!isPlayMode && (
+                <select value={scale} onChange={e => setScale(e.target.value)} className="bg-black/50 border border-white/20 rounded p-2 font-bold text-sm outline-none text-slate-200 uppercase tracking-wider">
+                  {Object.keys(ENGAGEMENT_SCALES).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              )}
+              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-6 py-3 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
+                {isPlayMode ? 'EXIT PLAY MODE' : 'ENTER PLAY MODE'}
+              </button>
+            </div>
+          </header>
+
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1800px] w-full mx-auto pb-24">
+            
+            {/* BUILD MODE ARMORY */}
+            {!isPlayMode && (
+              <div className={`lg:col-span-8 flex flex-col gap-4 ${theme.panelBg} p-5 rounded-xl border ${theme.border}`}>
+                <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2">Unit Catalog</h2>
+                
+                <div className="overflow-y-auto max-h-[70vh] pr-2">
+                  <ArmoryGroup title="Hero" units={factionUnits.filter(u => u.slot === "Hero")} onConfigure={setConfigUnit} theme={theme} />
+                  <ArmoryGroup title="Core" units={factionUnits.filter(u => u.slot === "Core")} onConfigure={setConfigUnit} theme={theme} />
+                  <ArmoryGroup title="Elite" units={factionUnits.filter(u => u.slot === "Elite")} onConfigure={setConfigUnit} theme={theme} />
+                  <ArmoryGroup title="Support" units={factionUnits.filter(u => u.slot === "Support")} onConfigure={setConfigUnit} theme={theme} />
+                </div>
+
+                <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 mt-4">Tactical Cards (Vespene Gas)</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {factionCards.map(card => {
+                    const isAdded = tacticalCards.find(c => c.name === card.name);
+                    return (
+                      <button key={card.name} onClick={() => isAdded ? setTacticalCards(prev => prev.filter(c => c.name !== card.name)) : setTacticalCards(prev => [...prev, card])}
+                        className={`p-3 rounded border text-left flex justify-between items-center transition-all ${isAdded ? theme.accent : 'bg-black/40 border-white/10 hover:bg-white/5'}`}>
+                        <span className="font-bold">{card.name}</span>
+                        <span className="font-mono text-sm">{card.vespene} Gas {isAdded && '✓'}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ROSTER / PLAY MODE */}
+            <div className={`${isPlayMode ? 'lg:col-span-12' : 'lg:col-span-4'} flex flex-col gap-6`}>
+              
+              {/* Build Mode Stats */}
+              {!isPlayMode && (
+                <div className={`flex flex-col gap-3 ${theme.panelBg} p-5 rounded-xl border ${theme.border}`}>
+                  <h2 className="text-lg font-orbitron font-bold uppercase border-b border-white/10 pb-2">Army Stats</h2>
+                  <div className={`p-3 rounded flex justify-between items-center ${totalMinerals > limits.minerals ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
+                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Minerals</span>
+                    <span className={`font-orbitron text-xl font-black ${totalMinerals > limits.minerals ? 'text-rose-400' : 'text-white'}`}>{totalMinerals} <span className="text-sm font-normal text-slate-400">/ {limits.minerals}</span></span>
+                  </div>
+                  <div className={`p-3 rounded flex justify-between items-center ${totalVespene > limits.vespene ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
+                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Vespene</span>
+                    <span className={`font-orbitron text-xl font-black ${totalVespene > limits.vespene ? 'text-rose-400' : 'text-green-400'}`}>{totalVespene} <span className="text-sm font-normal text-slate-400">/ {limits.vespene}</span></span>
+                  </div>
+                  <div className="p-3 rounded flex justify-between items-center bg-black/50 border border-white/10">
+                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Supply</span>
+                    <span className="font-orbitron text-xl font-black text-amber-300">{totalSupply}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Play Mode Dashboard */}
+              {isPlayMode && (
+                <div className={`p-5 rounded-xl border ${theme.border} ${theme.panelBg} grid grid-cols-1 lg:grid-cols-3 gap-6 shadow-xl`}>
+                  
+                  <div className="flex flex-col gap-3 bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs uppercase font-bold tracking-widest text-slate-400">Round</span>
+                        <span className="text-2xl font-orbitron font-black text-white">{matchData.round}<span className="text-slate-500 text-sm">/5</span></span>
+                     </div>
+                     <button onClick={() => updateMatch('round', Math.min(5, matchData.round + 1))} className={`w-full py-2 rounded font-bold text-sm uppercase tracking-wider shadow-md ${theme.accent}`}>Advance Round ➔</button>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
+                    <h3 className="text-xs uppercase font-bold tracking-widest text-slate-400 mb-2">Supply Pool HUD</h3>
+                    <div className="flex items-center justify-around w-full">
+                      <div className="text-center">
+                        <span className="block text-2xl font-orbitron font-black text-white">{supplyPool === Infinity ? '∞' : supplyPool}</span>
+                        <span className="text-[10px] uppercase text-slate-500 font-bold">Total Pool</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-2xl font-orbitron font-black text-emerald-400">{availableSupply === Infinity ? '∞' : availableSupply}</span>
+                        <span className="text-[10px] uppercase text-slate-500 font-bold">Available</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-2xl font-orbitron font-black text-amber-300">{totalSupply}</span>
+                        <span className="text-[10px] uppercase text-slate-500 font-bold">Active</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col justify-center bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
+                     <h3 className="text-xs uppercase font-bold tracking-widest text-slate-400 mb-2 text-center">Scoreboard</h3>
+                     <div className="flex items-center justify-between">
+                        <div className="text-center">
+                           <div className="flex items-center gap-2">
+                              <button onClick={() => updateMatch('yourVP', Math.max(0, matchData.yourVP - 1))} className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs">-</button>
+                              <span className={`text-3xl font-orbitron font-black ${theme.textPrimary}`}>{matchData.yourVP}</span>
+                              <button onClick={() => updateMatch('yourVP', matchData.yourVP + 1)} className={`w-6 h-6 rounded ${theme.accentSecondary} flex items-center justify-center font-bold text-xs`}>+</button>
+                           </div>
+                           <span className="text-[10px] uppercase text-slate-400 font-bold mt-1 block">Your VP</span>
+                        </div>
+                        <span className="text-2xl font-black text-slate-600 font-orbitron">-</span>
+                        <div className="text-center">
+                           <div className="flex items-center gap-2">
+                              <button onClick={() => updateMatch('enemyVP', Math.max(0, matchData.enemyVP - 1))} className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs">-</button>
+                              <span className="text-3xl font-orbitron font-black text-rose-500">{matchData.enemyVP}</span>
+                              <button onClick={() => updateMatch('enemyVP', matchData.enemyVP + 1)} className="w-6 h-6 rounded bg-rose-900/60 text-rose-200 border border-rose-900 flex items-center justify-center font-bold text-xs">+</button>
+                           </div>
+                           <span className="text-[10px] uppercase text-slate-400 font-bold mt-1 block">Enemy VP</span>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ACTIVE ROSTER LIST */}
+              <div className={`flex flex-col ${theme.panelBg} p-5 rounded-xl border ${theme.border} shadow-xl`}>
+                <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
+                  <h2 className="text-xl font-orbitron font-bold uppercase">Active Roster</h2>
+                  {!isPlayMode ? (
+                     <div className="flex gap-2">
+                        <button onClick={() => setShowSaveModal(true)} disabled={roster.length === 0} className={`px-3 py-1 rounded text-xs uppercase font-bold ${roster.length === 0 ? 'bg-white/10 text-slate-500 cursor-not-allowed' : theme.accent}`}>Save</button>
+                        <button onClick={() => setShowLoadModal(true)} className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-xs uppercase font-bold text-white">Load</button>
+                        <button onClick={() => { setRoster([]); setTacticalCards([]); }} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50 ml-2">Clear</button>
+                     </div>
+                  ) : (
+                    <button onClick={() => setRoster([])} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50">Clear Army</button>
+                  )}
+                </div>
+                
+                <div className={`grid gap-4 ${isPlayMode ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                  {roster.length === 0 && (
+                    <div className="p-8 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-sm font-bold uppercase tracking-widest">
+                      Roster Empty
+                    </div>
+                  )}
+                  {roster.map(unit => {
+                    const modelsAlive = getModelsAlive(unit);
+                    const currentSupply = getUnitSupply(unit);
+                    const isDead = modelsAlive <= 0;
+                    const hasShield = unit.stats.shield !== undefined;
+                    const shieldBroken = hasShield && unit.shieldDamage >= unit.stats.shield;
+
+                    let currentWeapons = [...unit.weapons];
+                    let currentAbilities = unit.abilities.map(a => ({ name: a, ...(ABILITY_MAP[a] || {type:"PASSIVE", phase:"ANY PHASE", desc: RULES_DICTIONARY[a]}) }));
+
+                    unit.appliedUpgrades.forEach(upgName => {
+                      if (WEAPON_MAP[upgName]) currentWeapons.push(WEAPON_MAP[upgName]);
+                      if (ABILITY_MAP[upgName]) currentAbilities.push({ name: upgName, ...ABILITY_MAP[upgName] });
+                    });
+
+                    return (
+                      <div key={unit.rosterId} className={`${theme.cardBg} border ${isDead ? 'border-rose-600/50 opacity-50' : theme.border} rounded-lg flex flex-col overflow-hidden shadow-lg`}>
+                        
+                        {isPlayMode && (
+                          <div className="flex bg-black/80 text-white font-orbitron shadow-md">
+                            {hasShield && <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-blue-300 uppercase tracking-widest">Shield</span><span className="font-bold text-blue-300">{unit.stats.shield}</span></div>}
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Speed</span><span className="font-bold">{unit.stats.speed}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Armour</span><span className="font-bold">{unit.stats.armour}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Evade</span><span className="font-bold">{unit.stats.evade}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-rose-300 uppercase tracking-widest">HP</span><span className="font-bold text-rose-300">{unit.stats.hitPoints}</span></div>
+                          </div>
+                        )}
+
+                        <div className="p-4 flex flex-col flex-1">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h4 className="font-orbitron font-black text-xl uppercase tracking-wide text-white flex items-center gap-2">
+                                {unit.name}
+                                {!isPlayMode && <button onClick={() => setRoster(prev => prev.filter(r => r.rosterId !== unit.rosterId))} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
+                              </h4>
+                              <span className={`text-sm font-orbitron font-bold tracking-wider ${isDead ? 'text-rose-500' : 'text-slate-400'}`}>{modelsAlive} / {unit.models} Models</span>
+                            </div>
+                            <div className="text-right">
+                              <span className={`block text-3xl font-orbitron font-black leading-none ${isDead ? 'text-rose-600' : 'text-amber-300'}`}>{currentSupply}</span>
+                              <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">Supply</span>
+                            </div>
+                          </div>
+
+                          {!isPlayMode && unit.appliedUpgrades.length > 0 && (
+                             <div className="text-xs text-slate-300 mb-4 border-l-2 border-white/20 pl-2">
+                                + {unit.appliedUpgrades.join(", ")}
+                             </div>
+                          )}
+
+                          {isPlayMode && (
+                            <div className="mb-4">
+                              <PhaseSection phase="ANY PHASE" title="Any Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                              <PhaseSection phase="MOVEMENT PHASE" title="Movement Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                              <PhaseSection phase="ASSAULT PHASE" title="Assault Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                              <PhaseSection phase="COMBAT PHASE" title="Combat Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                            </div>
+                          )}
+
+                          {isPlayMode && (
+                            <div className="mt-auto space-y-2 p-3 bg-black/60 rounded-lg border border-white/10 shadow-inner">
+                              {hasShield && (
+                                <div className={`flex items-center justify-between ${shieldBroken ? 'opacity-50' : ''}`}>
+                                  <span className={`text-sm font-bold uppercase tracking-widest ${shieldBroken ? 'text-slate-500 line-through' : 'text-blue-400'}`}>Shields</span>
+                                  <div className="flex items-center gap-3">
+                                    <button onClick={() => updateDamage(unit.rosterId, 'shieldDamage', -1)} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold text-lg flex items-center justify-center">-</button>
+                                    <span className="font-orbitron text-xl font-black w-6 text-center">{unit.shieldDamage}</span>
+                                    <button onClick={() => updateDamage(unit.rosterId, 'shieldDamage', 1)} className="w-8 h-8 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-200 font-bold text-lg flex items-center justify-center">+</button>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between">
+                                <span className={`text-sm font-bold uppercase tracking-widest ${isDead ? 'text-rose-500' : 'text-rose-300'}`}>Hit Points</span>
+                                <div className="flex items-center gap-3">
+                                  <button onClick={() => updateDamage(unit.rosterId, 'hpDamage', -1)} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold text-lg flex items-center justify-center">-</button>
+                                  <span className={`font-orbitron text-xl font-black w-6 text-center ${isDead ? 'text-rose-500' : 'text-white'}`}>{unit.hpDamage}</span>
+                                  <button onClick={() => updateDamage(unit.rosterId, 'hpDamage', 1)} className="w-8 h-8 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 font-bold text-lg flex items-center justify-center">+</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* MODALS */}
+          {activeModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
+              <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg}`} onClick={e => e.stopPropagation()}>
+                <h3 className={`text-lg font-orbitron font-black uppercase mb-3 ${theme.textPrimary}`}>{activeModal.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-200">{activeModal.text}</p>
+                <button onClick={() => setActiveModal(null)} className={`mt-6 w-full py-2 rounded text-xs font-bold uppercase tracking-widest ${theme.accent}`}>Close</button>
+              </div>
+            </div>
+          )}
+
+          {configUnit && <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} />}
+
+          {/* SAVE MODAL */}
+          {showSaveModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+              <div className={`max-w-sm w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg}`}>
+                <h3 className="text-lg font-orbitron font-black uppercase mb-4 text-white">Save Roster</h3>
+                <label className="block text-xs uppercase font-bold text-slate-400 mb-2">Roster Name</label>
+                <input 
+                  type="text" 
+                  value={rosterName} 
+                  onChange={e => setRosterName(e.target.value)} 
+                  placeholder="e.g. Zerg Rush 2000pt" 
+                  className="w-full bg-black/50 border border-white/20 rounded p-3 text-white mb-6 focus:outline-none focus:border-amber-400"
+                  autoFocus
+                />
+                <div className="flex gap-3 justify-end">
+                  <button onClick={() => setShowSaveModal(false)} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20 text-sm font-bold">Cancel</button>
+                  <button onClick={handleSaveRoster} disabled={!rosterName.trim()} className={`px-4 py-2 rounded font-bold text-sm ${!rosterName.trim() ? 'bg-slate-600 cursor-not-allowed text-slate-400' : theme.accent}`}>Save Roster</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* LOAD MODAL */}
+          {showLoadModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+              <div className={`max-w-lg w-full max-h-[80vh] flex flex-col p-6 rounded-xl border ${theme.border} ${theme.panelBg}`}>
+                <div className="flex justify-between items-center mb-4">
+                   <h3 className="text-lg font-orbitron font-black uppercase text-white">Saved Rosters</h3>
+                   <button onClick={() => setShowLoadModal(false)} className="text-slate-400 hover:text-white">✖</button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                  {savedRosters.length === 0 && <p className="text-slate-500 text-center italic py-6">No saved rosters found.</p>}
+                  {savedRosters.map(saved => (
+                    <div key={saved.id} className="p-4 bg-black/40 border border-white/10 rounded-lg flex justify-between items-center hover:border-white/30 transition-colors">
+                      <div>
+                        <h4 className="font-bold text-white text-lg flex items-center gap-2">
+                           {saved.name}
+                           <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded border font-bold tracking-widest ${saved.faction === 'Terran' ? 'text-blue-300 border-blue-900 bg-blue-950/50' : saved.faction === 'Zerg' ? 'text-fuchsia-300 border-fuchsia-900 bg-fuchsia-950/50' : 'text-amber-300 border-amber-900 bg-amber-950/50'}`}>
+                              {saved.faction}
+                           </span>
+                        </h4>
+                        <div className="text-xs text-slate-400 mt-1 flex gap-3">
+                           <span>{saved.roster.length} Units</span>
+                           <span>{saved.totalMinerals} Min</span>
+                           <span>{saved.totalVespene} Gas</span>
+                           <span className="opacity-50">({new Date(saved.id).toLocaleDateString()})</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleLoadRoster(saved)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-sm">Load</button>
+                        <button onClick={() => handleDeleteRoster(saved.id)} className="px-3 py-2 bg-rose-900/50 hover:bg-rose-600 border border-rose-900 text-white rounded font-bold text-sm">✖</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
