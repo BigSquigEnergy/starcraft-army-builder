@@ -39,17 +39,17 @@
       Protoss: { 
         bg: "bg-[#180829]", panelBg: "bg-[#25123d]", cardBg: "bg-[#30184e]", border: "border-amber-400/50", textPrimary: "text-amber-300", 
         accent: "bg-amber-500 text-stone-950", accentSecondary: "bg-amber-400/20 text-amber-300 border-amber-400/40",
-        commanderImg: "image_6cb3c8.jpg", bgPosition: "bg-left"
+        commanderImg: "protoss.jpg"
       },
       Terran: { 
         bg: "bg-[#081226]", panelBg: "bg-[#0f2147]", cardBg: "bg-[#162e60]", border: "border-amber-500/40", textPrimary: "text-amber-400", 
         accent: "bg-blue-500 text-stone-950", accentSecondary: "bg-blue-900/50 text-slate-200 border-blue-500/50",
-        commanderImg: "image_6cb3c8.jpg", bgPosition: "bg-right"
+        commanderImg: "terran.jpg"
       },
       Zerg: { 
         bg: "bg-[#210913]", panelBg: "bg-[#33111f]", cardBg: "bg-[#421629]", border: "border-fuchsia-500/40", textPrimary: "text-fuchsia-300", 
         accent: "bg-fuchsia-600 text-white", accentSecondary: "bg-fuchsia-950/60 text-fuchsia-200 border-fuchsia-600/40",
-        commanderImg: "image_6cb3c8.jpg", bgPosition: "bg-center"
+        commanderImg: "zerg.jpg"
       }
     };
 
@@ -98,38 +98,38 @@
 
     const TACTICAL_CARDS = [
       // Terran
-      { faction: "Terran", name: "Barracks", vespene: 25 },
-      { faction: "Terran", name: "Barracks (Tech Lab)", vespene: 40 },
-      { faction: "Terran", name: "Armory", vespene: 30 },
-      { faction: "Terran", name: "Factory", vespene: 35 },
-      { faction: "Terran", name: "Orbital Command", vespene: 25 },
-      { faction: "Terran", name: "Barracks (Proxy)", vespene: 40 },
-      { faction: "Terran", name: "Engineering Bay", vespene: 25 },
-      { faction: "Terran", name: "Academy", vespene: 35 },
-      { faction: "Terran", name: "Supply Depot", vespene: 40 },
-      { faction: "Terran", name: "Dropship", vespene: 40 },
+      { faction: "Terran", name: "Barracks", vespene: 25, desc: "Deploy Biological Core units directly to the battlefield." },
+      { faction: "Terran", name: "Barracks (Tech Lab)", vespene: 40, desc: "Deploy Advanced Biological units with Tech upgrades." },
+      { faction: "Terran", name: "Armory", vespene: 30, desc: "Unlocks advanced Mechanical units and Vehicle/Ship upgrades." },
+      { faction: "Terran", name: "Factory", vespene: 35, desc: "Deploy heavy Mechanical ground units." },
+      { faction: "Terran", name: "Orbital Command", vespene: 25, desc: "Grants access to Calldowns like Scanner Sweep and MULEs." },
+      { faction: "Terran", name: "Barracks (Proxy)", vespene: 40, desc: "Allows forward deployment of Biological units outside your deployment zone." },
+      { faction: "Terran", name: "Engineering Bay", vespene: 25, desc: "Unlocks Infantry weapon/armor upgrades and defensive turrets." },
+      { faction: "Terran", name: "Academy", vespene: 35, desc: "Provides access to specialist Infantry training and Stimpack research." },
+      { faction: "Terran", name: "Supply Depot", vespene: 40, desc: "Increases maximum Army Supply threshold." },
+      { faction: "Terran", name: "Dropship", vespene: 40, desc: "Allows aerial transport and rapid redeployment of Ground units." },
       // Protoss
-      { faction: "Protoss", name: "Gate Chronoboosted", vespene: 35 },
-      { faction: "Protoss", name: "Nexus", vespene: 35 },
-      { faction: "Protoss", name: "Warp Prism", vespene: 35 },
-      { faction: "Protoss", name: "Gateway", vespene: 35 },
-      { faction: "Protoss", name: "Power Field", vespene: 40 },
-      { faction: "Protoss", name: "Warp Gate", vespene: 40 },
-      { faction: "Protoss", name: "Forge", vespene: 30 },
-      { faction: "Protoss", name: "Overcharged Nexus", vespene: 35 },
-      { faction: "Protoss", name: "Twilight Council", vespene: 45 },
-      { faction: "Protoss", name: "Observer", vespene: 25 },
+      { faction: "Protoss", name: "Gate Chronoboosted", vespene: 35, desc: "Accelerates unit deployment, allowing rapid reinforcements." },
+      { faction: "Protoss", name: "Nexus", vespene: 35, desc: "Primary command structure for resource collection and Chrono Boost." },
+      { faction: "Protoss", name: "Warp Prism", vespene: 35, desc: "Mobile transport that generates a temporary Power Field for remote Warp-ins." },
+      { faction: "Protoss", name: "Gateway", vespene: 35, desc: "Standard deployment structure for Protoss infantry." },
+      { faction: "Protoss", name: "Power Field", vespene: 40, desc: "Establishes a stationary energy grid to power nearby structures and Warp-ins." },
+      { faction: "Protoss", name: "Warp Gate", vespene: 40, desc: "Transforms Gateways to allow near-instant unit deployment within Power Fields." },
+      { faction: "Protoss", name: "Forge", vespene: 30, desc: "Unlocks Protoss Ground upgrades and Photon Cannons." },
+      { faction: "Protoss", name: "Overcharged Nexus", vespene: 35, desc: "Temporarily arms the Nexus with a powerful defensive energy attack." },
+      { faction: "Protoss", name: "Twilight Council", vespene: 45, desc: "Unlocks advanced infantry technologies like Charge and Blink." },
+      { faction: "Protoss", name: "Observer", vespene: 25, desc: "Provides cloaked aerial reconnaissance and hidden unit detection." },
       // Zerg
-      { faction: "Zerg", name: "Spawning Pool", vespene: 25 },
-      { faction: "Zerg", name: "Roach Warren", vespene: 45 },
-      { faction: "Zerg", name: "Lair", vespene: 35 },
-      { faction: "Zerg", name: "Evolution Chamber", vespene: 30 },
-      { faction: "Zerg", name: "Hatchery", vespene: 30 },
-      { faction: "Zerg", name: "Hydralisk Den", vespene: 35 },
-      { faction: "Zerg", name: "Overseer", vespene: 25 },
-      { faction: "Zerg", name: "Malignant Creep", vespene: 10 },
-      { faction: "Zerg", name: "Accelerating Creep", vespene: 0 },
-      { faction: "Zerg", name: "Spawning Pool (Six Pool)", vespene: 40 }
+      { faction: "Zerg", name: "Spawning Pool", vespene: 25, desc: "Allows the morphing of basic combat units like Zerglings." },
+      { faction: "Zerg", name: "Roach Warren", vespene: 45, desc: "Unlocks the deployment of armored Roach units." },
+      { faction: "Zerg", name: "Lair", vespene: 35, desc: "Tier 2 Hive Mind structure unlocking advanced unit morphs and overlord upgrades." },
+      { faction: "Zerg", name: "Evolution Chamber", vespene: 30, desc: "Researches Melee, Missile, and Armor upgrades for Zerg ground forces." },
+      { faction: "Zerg", name: "Hatchery", vespene: 30, desc: "Primary structure for larvae generation and resource collection." },
+      { faction: "Zerg", name: "Hydralisk Den", vespene: 35, desc: "Unlocks the deployment of ranged Hydralisk units." },
+      { faction: "Zerg", name: "Overseer", vespene: 25, desc: "Advanced aerial unit providing detection and disruptive abilities." },
+      { faction: "Zerg", name: "Malignant Creep", vespene: 10, desc: "Passively enhances Zerg health regeneration and movement speed on Creep." },
+      { faction: "Zerg", name: "Accelerating Creep", vespene: 0, desc: "Further amplifies Zerg unit swiftness while traversing Creep." },
+      { faction: "Zerg", name: "Spawning Pool (Six Pool)", vespene: 40, desc: "Tactical gambit allowing extremely aggressive, rapid early-game Zergling deployment." }
     ];
 
     const ABILITY_MAP = {
@@ -163,28 +163,27 @@
 
     const UNITS_DATABASE = [
       // TERRAN
-      { faction: "Terran", name: "Marine", role: "Damage Dealer", slot: "Core", compositions: [{ models: 6, minerals: 160, supply: 1 }, { models: 9, minerals: 210, supply: 2 }], supplyProfile: [{ max: 3, supply: 0 }, { max: 6, supply: 1 }, { max: 9, supply: 2 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "C-14 Rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "AGG-12", type: "Specialist", costs: [10, 10] }, { name: "Combat Shield", type: "Standard", costs: [20, 30] }, { name: "Rocket Launcher", type: "Specialist", costs: [40, 40] }] },
-      { faction: "Terran", name: "Marauder", role: "Tank", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 1 }, { models: 4, minerals: 280, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 4, supply: 2 }], stats: { speed: "4/7", armour: "4+", evade: "6+", hitPoints: 5, size: 1 }, weapons: [{ name: "Quad K12", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "Kinetic Foam", type: "Standard", costs: [20, 40] }, { name: "Laser Targeting Systems", type: "Standard", costs: [20, 40] }] },
-      { faction: "Terran", name: "Medic", role: "Support", slot: "Support", compositions: [{ models: 3, minerals: 110, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Life Support"], upgrades: [] },
-      { faction: "Terran", name: "Goliath", role: "Damage Dealer", slot: "Elite", compositions: [{ models: 1, minerals: 190, supply: 2 }], supplyProfile: [{ max: 1, supply: 2 }], stats: { speed: "4", armour: "4+", evade: "6+", hitPoints: 6, size: 3 }, weapons: [{ name: "Twin Autocannons", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Hellfire Missiles", range: "16", target: "Flying", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }], abilities: [], upgrades: [] },
-      { faction: "Terran", name: "Jim Raynor", role: "Hero", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "5", armour: "3+", evade: "4+", hitPoints: 8, size: 1 }, weapons: [{ name: "Commando Rifle", range: "12", target: "All", roa: 4, hit: "2+", surge: "Light", sDice: "D6", dmg: 1, keyword: "PRECISION (2)", phase: "ASSAULT PHASE" }, { name: "Heroic Strike", range: "E", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve"], upgrades: [] },
+      { faction: "Terran", name: "Marine", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 6, minerals: 160, supply: 1 }, { models: 9, minerals: 210, supply: 2 }], supplyProfile: [{ max: 3, supply: 0 }, { max: 6, supply: 1 }, { max: 9, supply: 2 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "C-14 Rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "AGG-12", type: "Specialist", costs: [10, 10] }, { name: "Combat Shield", type: "Standard", costs: [20, 30] }, { name: "Rocket Launcher", type: "Specialist", costs: [40, 40] }] },
+      { faction: "Terran", name: "Marauder", tags: "Biological, Armoured, Ground", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 1 }, { models: 4, minerals: 280, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 4, supply: 2 }], stats: { speed: "4/7", armour: "4+", evade: "6+", hitPoints: 5, size: 1 }, weapons: [{ name: "Quad K12", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "Kinetic Foam", type: "Standard", costs: [20, 40] }, { name: "Laser Targeting Systems", type: "Standard", costs: [20, 40] }] },
+      { faction: "Terran", name: "Medic", tags: "Biological, Light, Ground", slot: "Support", compositions: [{ models: 3, minerals: 110, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Life Support"], upgrades: [] },
+      { faction: "Terran", name: "Goliath", tags: "Mechanical, Armoured, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 190, supply: 2 }], supplyProfile: [{ max: 1, supply: 2 }], stats: { speed: "4", armour: "4+", evade: "6+", hitPoints: 6, size: 3 }, weapons: [{ name: "Twin Autocannons", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Hellfire Missiles", range: "16", target: "Flying", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }], abilities: [], upgrades: [] },
+      { faction: "Terran", name: "Jim Raynor", tags: "Biological, Light, Ground, Heroic", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "5", armour: "3+", evade: "4+", hitPoints: 8, size: 1 }, weapons: [{ name: "Commando Rifle", range: "12", target: "All", roa: 4, hit: "2+", surge: "Light", sDice: "D6", dmg: 1, keyword: "PRECISION (2)", phase: "ASSAULT PHASE" }, { name: "Heroic Strike", range: "E", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve"], upgrades: [] },
       // ZERG
-      { faction: "Zerg", name: "Zergling", role: "Damage Dealer", slot: "Core", compositions: [{ models: 12, minerals: 180, supply: 1 }, { models: 18, minerals: 220, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Adrenal Glands", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10] }] },
-      { faction: "Zerg", name: "Roach", role: "Tank", slot: "Core", compositions: [{ models: 3, minerals: 170, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { speed: "4", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [] },
-      { faction: "Zerg", name: "Hydralisk", role: "Damage Dealer", slot: "Elite", compositions: [{ models: 2, minerals: 140, supply: 2 }, { models: 4, minerals: 260, supply: 3 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 2, supply: 2 }, { max: 4, supply: 3 }], stats: { speed: "4/8", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }], abilities: [], upgrades: [] },
-      { faction: "Zerg", name: "Queen", role: "Support", slot: "Support", compositions: [{ models: 1, minerals: 150, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "4", armour: "4+", evade: "5+", hitPoints: 9, size: 3 }, weapons: [{ name: "Acid Spines", range: "12", target: "Flying", roa: 4, hit: "4+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Talons", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Spawn Creep Tumor", "Transfusion", "Devastating Charge"], upgrades: [] },
-      { faction: "Zerg", name: "Kerrigan", role: "Hero", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "6", armour: "3+", evade: "3+", hitPoints: 10, size: 2 }, weapons: [{ name: "Psionic Blast", range: "12", target: "All", roa: 4, hit: "2+", surge: "Armoured", sDice: "D6", dmg: 2, keyword: "PIERCE (3)", phase: "ASSAULT PHASE" }, { name: "Winged Blades", range: "E", target: "Ground", roa: 5, hit: "2+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve", "Devastating Charge"], upgrades: [] },
+      { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 180, supply: 1 }, { models: 18, minerals: 220, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Adrenal Glands", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10] }] },
+      { faction: "Zerg", name: "Roach", tags: "Biological, Armoured, Ground", slot: "Core", compositions: [{ models: 3, minerals: 170, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { speed: "4", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [] },
+      { faction: "Zerg", name: "Hydralisk", tags: "Biological, Light, Ground", slot: "Elite", compositions: [{ models: 2, minerals: 140, supply: 2 }, { models: 4, minerals: 260, supply: 3 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 2, supply: 2 }, { max: 4, supply: 3 }], stats: { speed: "4/8", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }], abilities: [], upgrades: [] },
+      { faction: "Zerg", name: "Queen", tags: "Biological, Armoured, Ground, Psionic", slot: "Support", compositions: [{ models: 1, minerals: 150, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "4", armour: "4+", evade: "5+", hitPoints: 9, size: 3 }, weapons: [{ name: "Acid Spines", range: "12", target: "Flying", roa: 4, hit: "4+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Talons", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Spawn Creep Tumor", "Transfusion", "Devastating Charge"], upgrades: [] },
+      { faction: "Zerg", name: "Kerrigan", tags: "Biological, Armoured, Ground, Heroic, Psionic", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { speed: "6", armour: "3+", evade: "3+", hitPoints: 10, size: 2 }, weapons: [{ name: "Psionic Blast", range: "12", target: "All", roa: 4, hit: "2+", surge: "Armoured", sDice: "D6", dmg: 2, keyword: "PIERCE (3)", phase: "ASSAULT PHASE" }, { name: "Winged Blades", range: "E", target: "Ground", roa: 5, hit: "2+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve", "Devastating Charge"], upgrades: [] },
       // PROTOSS
-      { faction: "Protoss", name: "Zealot", role: "Damage Dealer", slot: "Core", compositions: [{ models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [20] }, { name: "Leg Enhancements", type: "Standard", costs: [20] }, { name: "We Stand as One", type: "Standard", costs: [10] }] },
-      { faction: "Protoss", name: "Stalker", role: "Damage Dealer", slot: "Elite", compositions: [{ models: 1, minerals: 170, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: 3, speed: "4/8", armour: "4+", evade: "6+", hitPoints: 6, size: 2 }, weapons: [{ name: "Particle Disruptors", range: "12", target: "All", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }], abilities: ["Path of Shadows"], upgrades: [] },
-      { faction: "Protoss", name: "Adept", role: "Damage Dealer", slot: "Core", compositions: [{ models: 4, minerals: 150, supply: 1 }], supplyProfile: [{ max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [] },
-      { faction: "Protoss", name: "Sentry", role: "Support", slot: "Support", compositions: [{ models: 2, minerals: 130, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }], stats: { shield: 2, speed: "4/8", armour: "5+", evade: "6+", hitPoints: 3, size: 2 }, weapons: [{ name: "Disruption Beam", range: "12", target: "All", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }], abilities: ["Guardian Shield"], upgrades: [] },
-      { faction: "Protoss", name: "Artanis", role: "Hero", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: 5, speed: "5", armour: "3+", evade: "4+", hitPoints: 8, size: 2 }, weapons: [{ name: "Psi Storm", range: "12", target: "All", roa: 4, hit: "2+", surge: "Armoured", sDice: "D6", dmg: 2, keyword: "INDIRECT FIRE", phase: "ASSAULT PHASE" }, { name: "Master Psi Blades", range: "E", target: "Ground", roa: 5, hit: "2+", surge: "Light", sDice: "D3", dmg: 2, keyword: "PIERCE (2)", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve", "Devastating Charge"], upgrades: [] },
-      
-      // SUMMONED UNITS (0 Minerals)
-      { faction: "Protoss", name: "Pylon", role: "Structure", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: 3, speed: "-", armour: "4+", evade: "-", hitPoints: 5, size: 3 }, weapons: [], abilities: ["Power Field"], upgrades: [] },
-      { faction: "Terran", name: "Point Defence Drone", role: "Drone", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { speed: "-", armour: "5+", evade: "4+", hitPoints: 2, size: 1 }, weapons: [], abilities: ["Point Defence"], upgrades: [] },
-      { faction: "Zerg", name: "Roachling", role: "Summon", slot: "Summoned", compositions: [{ models: 2, minerals: 0, supply: 0 }], supplyProfile: [{ max: 2, supply: 0 }], stats: { speed: "5", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: [], upgrades: [] }
+      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Devastating Charge"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [20] }, { name: "Leg Enhancements", type: "Standard", costs: [20] }, { name: "We Stand as One", type: "Standard", costs: [10] }] },
+      { faction: "Protoss", name: "Stalker", tags: "Mechanical, Armoured, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 170, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: 3, speed: "4/8", armour: "4+", evade: "6+", hitPoints: 6, size: 2 }, weapons: [{ name: "Particle Disruptors", range: "12", target: "All", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }], abilities: ["Path of Shadows"], upgrades: [] },
+      { faction: "Protoss", name: "Adept", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 4, minerals: 150, supply: 1 }], supplyProfile: [{ max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [] },
+      { faction: "Protoss", name: "Sentry", tags: "Mechanical, Light, Ground, Psionic", slot: "Support", compositions: [{ models: 2, minerals: 130, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }], stats: { shield: 2, speed: "4/8", armour: "5+", evade: "6+", hitPoints: 3, size: 2 }, weapons: [{ name: "Disruption Beam", range: "12", target: "All", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }], abilities: ["Guardian Shield"], upgrades: [] },
+      { faction: "Protoss", name: "Artanis", tags: "Biological, Armoured, Ground, Heroic, Psionic", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: 5, speed: "5", armour: "3+", evade: "4+", hitPoints: 8, size: 2 }, weapons: [{ name: "Psi Storm", range: "12", target: "All", roa: 4, hit: "2+", surge: "Armoured", sDice: "D6", dmg: 2, keyword: "INDIRECT FIRE", phase: "ASSAULT PHASE" }, { name: "Master Psi Blades", range: "E", target: "Ground", roa: 5, hit: "2+", surge: "Light", sDice: "D3", dmg: 2, keyword: "PIERCE (2)", phase: "COMBAT PHASE" }], abilities: ["Heroic Resolve", "Devastating Charge"], upgrades: [] },
+      // SUMMONED UNITS
+      { faction: "Protoss", name: "Pylon", tags: "Mechanical, Armoured, Structure", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: 3, speed: "-", armour: "4+", evade: "-", hitPoints: 5, size: 3 }, weapons: [], abilities: ["Power Field"], upgrades: [] },
+      { faction: "Terran", name: "Point Defence Drone", tags: "Mechanical, Light, Flying, Drone", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { speed: "-", armour: "5+", evade: "4+", hitPoints: 2, size: 1 }, weapons: [], abilities: ["Point Defence"], upgrades: [] },
+      { faction: "Zerg", name: "Roachling", tags: "Biological, Light, Ground", slot: "Summoned", compositions: [{ models: 2, minerals: 0, supply: 0 }], supplyProfile: [{ max: 2, supply: 0 }], stats: { speed: "5", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: [], upgrades: [] }
     ];
 
     // Components
@@ -256,34 +255,41 @@
               {units.map(unit => {
                 const minModels = Math.min(...unit.compositions.map(c => c.models));
                 const maxModels = Math.max(...unit.compositions.map(c => c.models));
-                const modelDisplay = minModels === maxModels ? minModels : `${minModels}-${maxModels}`;
+                const modelsDisplay = minModels === maxModels ? minModels : `${minModels}-${maxModels}`;
                 
                 const minSupply = Math.min(...unit.compositions.map(c => c.supply));
                 const maxSupply = Math.max(...unit.compositions.map(c => c.supply));
                 const supplyDisplay = minSupply === maxSupply ? minSupply : `${minSupply}-${maxSupply}`;
 
-                return (
-                <div key={unit.name} className={`${theme.cardBg} border ${theme.border} rounded-lg p-4 flex flex-col justify-between shadow-lg`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className={`font-orbitron font-black text-xl uppercase ${theme.textPrimary}`}>{unit.name}</h3>
-                    <button onClick={() => onConfigure(unit)} className={`px-4 py-1.5 rounded font-bold text-sm ${theme.accent}`}>Configure</button>
-                  </div>
-                  
-                  <div className="flex gap-4 mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    <span>Models: <span className="text-slate-200 text-xs">{modelDisplay}</span></span>
-                    <span>Supply: <span className="text-amber-300 text-xs">{supplyDisplay}</span></span>
-                  </div>
+                const minMinerals = Math.min(...unit.compositions.map(c => c.minerals));
+                const maxMinerals = Math.max(...unit.compositions.map(c => c.minerals));
+                const costDisplay = minMinerals === maxMinerals ? `${minMinerals} Min` : `${minMinerals}-${maxMinerals} Min`;
 
-                  <div className="flex justify-between gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
-                    {unit.stats.shield !== undefined && <div className="flex-1"><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
-                    <div className="flex-1"><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats.speed}</span></div>
-                    <div className="flex-1"><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats.armour}</span></div>
-                    <div className="flex-1"><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats.evade}</span></div>
-                    <div className="flex-1"><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats.hitPoints}</span></div>
-                    <div className="flex-1"><span className="block text-[9px] text-emerald-400">SIZ</span><span className="font-bold text-white">{unit.stats.size}</span></div>
+                return (
+                  <div key={unit.name} className={`${theme.cardBg} border ${theme.border} rounded-lg p-4 flex flex-col justify-between shadow-lg`}>
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <h3 className={`font-orbitron font-black text-xl uppercase ${theme.textPrimary}`}>{unit.name}</h3>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">{unit.tags}</span>
+                      </div>
+                      <button onClick={() => onConfigure(unit)} className={`px-4 py-1.5 rounded font-bold text-sm ${theme.accent}`}>Configure</button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase font-bold text-slate-400 mb-3 mt-2">
+                      <span>Models: <span className="text-white">{modelsDisplay}</span></span>
+                      <span>Supply: <span className="text-amber-300">{supplyDisplay}</span></span>
+                      <span>Cost: <span className="text-sky-400">{costDisplay}</span></span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
+                      {unit.stats.shield !== undefined && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
+                      <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats.speed}</span></div>
+                      <div><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats.armour}</span></div>
+                      <div><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats.evade}</span></div>
+                      <div><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats.hitPoints}</span></div>
+                    </div>
                   </div>
-                </div>
-                )
+                );
               })}
             </div>
           )}
@@ -292,7 +298,6 @@
     };
 
     function App() {
-      // Local Storage Hooks
       const [isPlayMode, setIsPlayMode] = useState(() => JSON.parse(localStorage.getItem('sc_playMode')) || false);
       const [selectedFaction, setSelectedFaction] = useState(() => localStorage.getItem('sc_faction') || "Protoss");
       const [scale, setScale] = useState(() => localStorage.getItem('sc_scale') || "Free Build");
@@ -339,7 +344,6 @@
       const supplyPool = matchData.round === 5 ? Infinity : (activeMission.start + (matchData.round - 1) * activeMission.esc);
       const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
 
-      // Hierarchical Sorting
       const SLOT_ORDER = { "Hero": 1, "Core": 2, "Elite": 3, "Support": 4, "Summoned": 5 };
       const sortedRoster = useMemo(() => {
         return [...roster].sort((a, b) => {
@@ -395,7 +399,6 @@
 
       const updateMatch = (key, val) => setMatchData(prev => ({ ...prev, [key]: val }));
 
-      // Save/Load Handlers
       const handleSaveRoster = () => {
         if (!rosterName.trim() || roster.length === 0) return;
         const newSavedRoster = {
@@ -425,7 +428,6 @@
         setSavedRosters(prev => prev.filter(r => r.id !== id));
       };
 
-      // Config Modal Component
       const UnitConfigModal = ({ unit, onClose }) => {
         const [compIndex, setCompIndex] = useState(0);
         const [selectedUpgrades, setSelectedUpgrades] = useState([]);
@@ -499,23 +501,27 @@
             <div className="flex items-center gap-6">
               <h1 className="text-3xl font-black uppercase font-orbitron drop-shadow-md"><span className={theme.textPrimary}>StarCraft</span> Army Builder</h1>
               {!isPlayMode && (
-                <div className="flex gap-2 ml-4">
+                <div className="flex gap-3 ml-4">
                   {Object.keys(THEMES).map(f => {
                     const isSelected = selectedFaction === f;
+                    const fTheme = THEMES[f];
                     return (
                       <button key={f} onClick={() => { setSelectedFaction(f); setRoster([]); setTacticalCards([]); }}
-                        className={`relative overflow-hidden flex items-center justify-center px-8 py-3 rounded-md font-orbitron text-sm font-black uppercase tracking-widest transition-all border ${isSelected ? THEMES[f].border : 'border-white/10 hover:border-white/30'}`}
+                        className={`relative overflow-hidden flex items-center justify-center w-36 h-12 rounded-md font-orbitron text-sm font-black uppercase tracking-widest transition-all border ${isSelected ? fTheme.border + ' shadow-lg scale-105' : 'border-white/20 opacity-70 hover:opacity-100 hover:border-white/40'}`}
                       >
-                        {/* Commander Image Layer using single image sprite */}
+                        {/* Static Image Layer */}
                         <div 
-                          className={`absolute inset-0 bg-no-repeat bg-[length:300%_100%] ${THEMES[f].bgPosition} transition-opacity duration-300 ${isSelected ? 'opacity-40' : 'opacity-10 grayscale'}`}
-                          style={{ backgroundImage: `url('image_6cb3c8.jpg')` }}
+                          className="absolute inset-0 bg-no-repeat bg-cover bg-center transition-opacity duration-300"
+                          style={{ 
+                            backgroundImage: `url('${fTheme.commanderImg}')`,
+                            opacity: isSelected ? 0.45 : 0.15
+                          }}
                         />
-                        {/* Gradient/Tint Layer */}
-                        <div className={`absolute inset-0 ${isSelected ? THEMES[f].accentSecondary : 'bg-black/80'}`} />
+                        {/* Tint Layer */}
+                        <div className={`absolute inset-0 ${isSelected ? fTheme.accentSecondary : 'bg-black/75'}`} />
                         
                         {/* Text Layer */}
-                        <span className={`relative z-10 ${isSelected ? 'text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]' : 'text-slate-400'}`}>
+                        <span className={`relative z-10 ${isSelected ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]' : 'text-slate-300'}`}>
                           {f}
                         </span>
                       </button>
@@ -552,14 +558,17 @@
                 </div>
 
                 <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 mt-4">Tactical Cards (Vespene Gas)</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[30vh] overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto pr-2">
                   {factionCards.map(card => {
                     const isAdded = tacticalCards.find(c => c.name === card.name);
                     return (
                       <button key={card.name} onClick={() => isAdded ? setTacticalCards(prev => prev.filter(c => c.name !== card.name)) : setTacticalCards(prev => [...prev, card])}
-                        className={`p-3 rounded border text-left flex justify-between items-center transition-all ${isAdded ? theme.accent : 'bg-black/40 border-white/10 hover:bg-white/5'}`}>
-                        <span className="font-bold text-sm">{card.name}</span>
-                        <span className="font-mono text-xs">{card.vespene} Gas {isAdded && '✓'}</span>
+                        className={`p-3.5 rounded-lg border text-left flex flex-col gap-1.5 transition-all ${isAdded ? theme.accentSecondary : 'bg-black/40 border-white/10 hover:border-white/30'}`}>
+                        <div className="flex justify-between items-start w-full">
+                          <span className={`font-bold text-base font-orbitron ${isAdded ? 'text-white' : 'text-slate-200'}`}>{card.name}</span>
+                          <span className="font-mono text-sm font-bold text-emerald-400">{card.vespene} Gas {isAdded && <span className="text-white ml-1">✓</span>}</span>
+                        </div>
+                        <span className={`text-xs leading-relaxed ${isAdded ? 'text-slate-200' : 'text-slate-400'}`}>{card.desc}</span>
                       </button>
                     )
                   })}
@@ -574,11 +583,11 @@
                   <h2 className="text-lg font-orbitron font-bold uppercase border-b border-white/10 pb-2">Army Stats</h2>
                   <div className={`p-3 rounded flex justify-between items-center ${totalMinerals > limits.minerals ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Minerals</span>
-                    <span className={`font-orbitron text-xl font-black ${totalMinerals > limits.minerals ? 'text-rose-400' : 'text-white'}`}>{totalMinerals} <span className="text-sm font-normal text-slate-400">/ {limits.minerals}</span></span>
+                    <span className={`font-orbitron text-xl font-black ${totalMinerals > limits.minerals ? 'text-rose-400' : 'text-sky-400'}`}>{totalMinerals} <span className="text-sm font-normal text-slate-400">/ {limits.minerals}</span></span>
                   </div>
                   <div className={`p-3 rounded flex justify-between items-center ${totalVespene > limits.vespene ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Vespene</span>
-                    <span className={`font-orbitron text-xl font-black ${totalVespene > limits.vespene ? 'text-rose-400' : 'text-green-400'}`}>{totalVespene} <span className="text-sm font-normal text-slate-400">/ {limits.vespene}</span></span>
+                    <span className={`font-orbitron text-xl font-black ${totalVespene > limits.vespene ? 'text-rose-400' : 'text-emerald-400'}`}>{totalVespene} <span className="text-sm font-normal text-slate-400">/ {limits.vespene}</span></span>
                   </div>
                   <div className="p-3 rounded flex justify-between items-center bg-black/50 border border-white/10">
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Drafted Supply</span>
