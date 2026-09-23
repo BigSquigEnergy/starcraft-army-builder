@@ -3,87 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StarCraft Tabletop - Command Center</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <title>StarCraft Tabletop Army Builder</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Rajdhani', sans-serif;
-      background-color: #0B0E14;
-      color: #E2E8F0;
-      background-image: 
-        radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 50%),
-        linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-      background-attachment: fixed;
-    }
+    body { font-family: 'Rajdhani', sans-serif; }
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
-    
-    .hex-bg {
-      background-color: rgba(15, 23, 42, 0.7);
-      background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 34.641l10-5.773v-11.547l-10-5.774-10 5.774v11.547l10 5.773zM20 36.95l-12-6.928v-13.856l12-6.928 12 6.928v13.856l-12 6.928z' fill='%231e293b' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
-    }
-
-    .stat-box {
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    }
-    
-    .glass-panel {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .tech-border {
-      position: relative;
-    }
-    .tech-border::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.5), transparent);
-    }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0f172a; 
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155; 
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569; 
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
   </style>
 </head>
-<body>
+<body class="bg-black text-slate-100">
   <div id="root"></div>
-  
+
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
-    // --- DICTIONARIES & LOGIC MAPS ---
+    const loadLocal = (key, defaultValue) => {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+      } catch (e) {
+        console.warn(`Could not parse local storage for ${key}. Resetting to default.`);
+        return defaultValue;
+      }
+    };
+
+    const MISSIONS_DATABASE = {
+      "Frontlines": { start: 6, esc: 2 },
+      "Hold Position": { start: 6, esc: 2 },
+      "Artefact Hunt": { start: 5, esc: 2 },
+      "Gauntlet": { start: 6, esc: 2 },
+      "Typhoon": { start: 6, esc: 2 },
+      "Acropolis": { start: 6, esc: 2 },
+      "Proving Grounds": { start: 6, esc: 2 }
+    };
+
+    const THEMES = {
+      Protoss: { 
+        bg: "bg-[#180829]", panelBg: "bg-[#25123d]", cardBg: "bg-[#30184e]", border: "border-amber-400/50", textPrimary: "text-amber-300", 
+        accent: "bg-amber-500 text-stone-950", accentSecondary: "bg-amber-400/20 text-amber-300 border-amber-400/40"
+      },
+      Terran: { 
+        bg: "bg-[#081226]", panelBg: "bg-[#0f2147]", cardBg: "bg-[#162e60]", border: "border-amber-500/40", textPrimary: "text-amber-400", 
+        accent: "bg-blue-500 text-stone-950", accentSecondary: "bg-blue-900/50 text-slate-200 border-blue-500/50"
+      },
+      Zerg: { 
+        bg: "bg-[#210913]", panelBg: "bg-[#33111f]", cardBg: "bg-[#421629]", border: "border-fuchsia-500/40", textPrimary: "text-fuchsia-300", 
+        accent: "bg-fuchsia-600 text-white", accentSecondary: "bg-fuchsia-950/60 text-fuchsia-200 border-fuchsia-600/40"
+      }
+    };
+
+    const ENGAGEMENT_SCALES = {
+      "Free Build": { minerals: Infinity, vespene: Infinity },
+      "Skirmish": { minerals: 1000, vespene: 100 },
+      "Standard": { minerals: 2000, vespene: 200 }
+    };
+
+    const SUB_FACTIONS = {
+      Terran: ["Generic", "Raynor's Raiders"],
+      Protoss: ["Daelaam", "Khalai", "Nerazim"],
+      Zerg: ["Generic", "Kerrigan's Swarm"]
+    };
+
     const RULES_DICTIONARY = {
-      "Indomitable": "While Engaged, this Unit may target and be targeted by Unengaged Enemy Units. In both cases, the defending Unit gains an Evade Roll against those attacks.",
+      "Armoured": "Weapon deals enhanced damage against targets with the ARMOURED tag.",
+      "Light": "Weapon deals enhanced damage against targets with the LIGHT tag.",
+      "ANTI-EVADE": "Targets cannot make Evade Rolls against attacks made with this weapon.",
+      "PRECISION": "Adds a bonus modifier to the Hit Target Roll or improves dice results.",
+      "PIERCE": "Treat the weapon's Damage characteristic as X against specific targets.",
+      "INDIRECT FIRE": "Ranged attacks ignore Line of Sight, but target may roll Evade.",
+      "SIDEARM": "Can be fired in addition to a standard weapon during the same activation.",
+      "LONG RANGE": "Extends max range. Attacks beyond base range suffer -1 to Hit.",
+      
+      "Stimpack": "ACTIVE (1 CP): Suffers NON-LETHAL DAMAGE (2). Gains BUFF Speed (3) and PRECISION.",
       "Devastating Charge": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (6) 4+ effect.",
       
-      "Devastating Charge (Zealot)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (3) 4+ effect.",
+      "Commander": "Treat this Unit's Supply characteristic as increased by 1 for Controlling and Contesting Mission Markers, completing objectives, and resolving Disengage checks.",
+      "Phase Prism": "When Artanis is nominated to deploy from Reserves, it may resolve the PLACE (0) effect from another Friendly Unit. That Friendly Unit is removed from the battlefield and returned to Reserves. Artanis' Activation ends.",
+      "Hierarch's Stand": "When another Friendly Unit Within 8\" is declared as the target of a Ranged Attack and this Unit is a valid target, redirect the attack to this Unit. This Unit is eligible to make an Evade Roll against the redirected attack. This Special Ability remains active until the End of the current Activation.",
+      "Lightning Dash": "After this Unit resolves a successful Charge action, it may declare a second Charge action against a different Enemy Unit, ignoring the restriction on Charging while Engaged. The Devastating Charge ability does not trigger a second time.",
+      
       "Charge": "When determining Charge Distance for this Unit, roll 2D6 instead of D6 and use the higher result to add to the Unit's Speed characteristic.",
+      "Devastating Charge (Zealot)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (3) 4+ effect.",
       "My Life for Aiur": "When this Unit resolves IMPACT, each eligible model generates 1 additional IMPACT die.",
-      "Leg Enhancements (Zealot)": "This Unit performs a 2\" Move action. This does not count towards its action limit.",
+      "Leg Enhancements (Zealot)": "This Unit performs a 2” Move action. This does not count towards its action limit.",
       "Zealous Round": "When this Unit is not Activated and receives Damage, the controlling player may count this Unit as Activated in this Phase (flip its Activation Marker) to reduce the Total Damage by 2.",
       "We Stand as One": "When this Unit makes a Close Combat Attack, if the target is Engaged with at least 1 other Friendly Unit, this Unit's Close Combat Weapon gains PRECISION (2).",
-
+      
       "One With the Shadows": "After this Unit fully resolves an Action, it gains the HIDDEN Status.",
       "Prophetic Vision": "REPEATABLE. Use when this Unit is selected as the target of an attack. This Unit's Evade characteristic is treated as 4+ against this attack and cannot be modified.",
       "Sentenced to Death": "Target Enemy Unit on the battlefield. Whenever Zeratul makes a Close Combat Attack targeting the selected Unit, its weapon gains CRITICAL HIT (2).",
@@ -92,31 +104,23 @@
       "Devastating Charge (Zeratul)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 4+ effect.",
       "Shadow Strike": "All Enemy Units Engaged with this Unit suffer HITS 4 (1).",
 
-      "Psionic Presence": "All Weapons of Friendly Units targeting an Enemy Unit Within 4\" of this Unit's Shade token gain PRECISION (1).",
-      "Psionic Transfer": "Set a Shade token Wholly Within 12\" of any model in this Unit. At the End of the Round, the controlling player may set all models of this Unit in Coherency, treating the Shade token as the Leading Model. The Shade token has DISPLACEMENT.",
-      "Resonating Glaives": "This Unit's Glaive Cannon gains BUFF RoA (1).",
-      "Guidance": "This Unit's Glaive Cannon Ranged weapon gains ANTI-EVADE (2).",
-      
-      "Path of Shadows (Watchers)": "This Unit gains HIDDEN Status until it performs another action.",
-      "Nerazim Farsight": "While Enemy Units are Within 6\" of this Unit's Shade token, they lose HIDDEN Status.",
-
-      "Commander": "Treat this Unit's Supply characteristic as increased by 1 for Controlling and Contesting Mission Markers, completing objectives, and resolving Disengage checks.",
-      "Phase Prism": "When Artanis is nominated to deploy from Reserves, it may resolve the PLACE (0) effect from another Friendly Unit. That Friendly Unit is removed from the battlefield and returned to Reserves. Artanis' Activation ends.",
-      "Hierarch's Stand": "When another Friendly Unit Within 8\" is declared as the target of a Ranged Attack and this Unit is a valid target, redirect the attack to this Unit. This Unit is eligible to make an Evade Roll against the redirected attack. This Special Ability remains active until the End of the current Activation.",
-      "Lightning Dash": "After this Unit resolves a successful Charge action, it may declare a second Charge action against a different Enemy Unit, ignoring the restriction on Charging while Engaged. The Devastating Charge ability does not trigger a second time.",
-
       "Improved Barrier": "Use when this Unit is selected as the target of an attack. If this Unit has the Shielded Status, the Damage characteristic of the attacking weapon is treated as a maximum of 1 for this attack.",
+      "Indomitable": "While Engaged, this Unit may target and be targeted by Unengaged Enemy Units. In both cases, the defending Unit gains an Evade Roll against those attacks.",
       "Shield Overcharge": "Use before this Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (2) for this roll.",
       "Fury Unyielding": "While this Unit is Within 3\" of a Mission Marker, its Ranged Weapons gain CRITICAL HIT (1) when targeting an Enemy Unit that is also Within 3\" of that same Mission Marker.",
       "For the Ancients": "When this Unit makes a Ranged Attack, if the target Unit is more than 8\" away, the attacking weapons gain PRECISION (1).",
 
-      "Leg Enhancements (Praetor)": "This Unit performs a 2\" Move action. This does not count towards its action limit.",
-      "Titan Killers": "When this Unit makes a Close Combat Attack, and the target is Size 3 or larger, the weapon's Damage characteristic is treated as 2.",
-      "Precognition": "This Unit is eligible to make an Evade roll against all attacks targeting it.",
+      "Psionic Presence": "All Weapons of Friendly Units targeting an Enemy Unit Within 4\" of this Unit's Shade token gain PRECISION (1).",
+      "Psionic Transfer": "Set a Shade token Wholly Within 12\" of any model in this Unit. At the End of the Round, the controlling player may set all models of this Unit in Coherency, treating the Shade token as the Leading Model. The Shade token has DISPLACEMENT.",
+      "Resonating Glaives": "This Unit's Glaive Cannon gains BUFF RoA (1).",
+      "Guidance": "This Unit's Glaive Cannon Ranged weapon gains ANTI-EVADE (2).",
 
+      "Path of Shadows (Watchers)": "This Unit gains HIDDEN Status until it performs another action.",
+      "Nerazim Farsight": "While Enemy Units are Within 6\" of this Unit's Shade token, they lose HIDDEN Status.",
+      
       "Structure": "This Unit cannot be Activated in any Phase and cannot perform actions. Additionally, its Current Supply Value is treated as 0, and it can never Control or Contest Mission Markers, ignoring the standard Zero Supply Exception. This Unit cannot be a target of an ability, unless stated otherwise.",
       "Khalai Ingenuity": "Once per Round, when a Friendly Unit Within 4\" of this Pylon uses a Special Ability that costs Psionic Energy, that ability's PE cost is reduced by 1.",
-      "Warp Conduit (Pylon)": "Once per Round, the controlling player may deploy a Ground Unit from Reserves using this Pylon base as the Entry Edge. This Unit's Activation ends.",
+      "Warp Conduit": "Once per Round, the controlling player may deploy a Ground Unit from Reserves using this Pylon base as the Entry Edge. This Unit's Activation ends.",
       
       "Restoration": "Use when a Friendly Unit Within 4\" receives a DEBUFF. Remove all DEBUFFS from it.",
       "Force Field": "Set a Force Field token Within 8\" in an unoccupied space. Units of Size 2 or lower cannot move across Force Fields. Models of Size 3 or more can move over it, and it's then removed.",
@@ -130,93 +134,28 @@
       "Fury of the Nerazim": "When this Unit attacks an Enemy Unit that has already been Activated during this Phase, its Particle Disruptors gain INSTANT for that attack.",
 
       "Shield Overcharge (Praetor)": "This Unit gains TOUGH (2) on the first Armour Roll each Round.",
-      
-      // Protoss Faction Cards
-      "Dae'Uhl": "Whenever a Friendly Unit suffers Damage, the controlling player may select another Friendly Unit Within 4\". That selected Unit suffers the Damage instead.",
-      "Mass Recall": "Select up to 2 Friendly Units that are not Engaged. Remove them from the battlefield and set them up anywhere on the battlefield Wholly Within 8\" of a Friendly Nexus, completely within your Deployment Zone, or in Reserves.",
-      "Pylon Warp-In": "Set a Pylon token anywhere on the battlefield Wholly Within 12\" of a Friendly Unit.",
-      "Bound by the Khala": "All Friendly Units gain BUFF Speed (1) for this Phase.",
-      "Might Of The Nerazim": "Select one Friendly Unit. That Unit gains the HIDDEN Status until the End of the Round.",
-      "Darkness Descends": "All Friendly Units gain PRECISION (1) on their first attack this Round.",
-
-      // Protoss Tactical Cards
-      "Ground Armor": "Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll.",
-      "Ground Weapons": "The active Ground Unit's first Ranged Weapon used gains CRITICAL HIT (1).",
-      "Zealous Charge": "The active Unit gains BUFF Speed (2).",
-      "Quick Strikes": "The active Unit's first Close Combat Weapon used gains PRECISION (2).",
-      "Ancient Pride": "The active Unit's first Weapon used gains INSTANT.",
-      "Strategic Recall": "The active, Unengaged Ground Unit is returned to Reserves instead of performing an action.",
-      "Surveillance": "Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status.",
-      "Gravitic Boosters": "Use after a Friendly Unit rolls a D6 for Charge Distance. Add 1 to the Charge Distance for this Unit.",
-      "Photon Overcharge": "Use when an Enemy Unit enters the battlefield from Reserves via a location other than its own Entry Edge. That Unit immediately suffers HITS 3 (1).",
-      "Guardian Shell": "Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains DODGE (2) for this roll.",
-      "Plasma Shields": "Use before a Friendly Mechanical Ground Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (1) and DODGE (1) for this roll.",
-      "Veil of Shadows": "Use after a Friendly Unit resolves a PLACE effect. That Unit immediately resolves the HEAL (2) effect.",
-      "Weapons of the Firstborn": "The active Ground Unit's first Ranged Weapon used gains BUFF Range (4).",
-      "Personal Transport": "Instead of performing an action, the active, Unengaged Ground Unit is returned to Reserves. Then, it performs a Deploy action.",
-      "Anakh Su'n": "This Unit gains the HIDDEN Status until it performs another action.",
-      "Warp In": "The active Ground Unit Deploys from any table edge that is not a player's Entry Edge. This deployment must end more than 10\" away from any Enemy model. The controlling player cannot use this ability if another Friendly Ground Unit has already Deployed this Round.",
-      "Phase": "The active Unit resolves the PLACE (3) effect.",
-      "Warp Conduit": "Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator.",
-
-      // Terran Faction Cards
-      "Rapid Ingress": "Set a Friendly Point Defence Drone Unit anywhere on the battlefield, more than 1\" away from any Enemy model. Remove this Unit at the End of the Round.",
-      "Ready for Pickup?": "Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy Unit. This resolves instead of performing a standard action.",
-      "Tactical Retreat": "The active Unit ignores the Disengage penalty for the remainder of the Round.",
-      "Terran Tenacity": "Once per Game. Immediately claim the First Player Marker. No other player may claim the First Player Marker for the remainder of this Phase.",
-
-      // Terran Units
-      "Target Lock": "Select one Enemy Unit Within 12\". Whenever a Friendly Goliath Unit targets that enemy with an Autocannon, that weapon gains Surge Type: Light, Armoured, and S Dice: D3+1.",
-      "Devastating Charge (Goliath)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 3+ effect.",
-      "Ares-Class Targeting System": "This Unit's Autocannon and Underbelly Machine Gun weapons gain PRECISION (1).",
-      "Freedom Fighters": "The Supply Value of all Friendly Units Within 8\" of this Unit cannot be reduced below 1 for Contesting Mission Markers and completing objectives.",
-      "Orders": "REPEATABLE. Select another Friendly Biological Unit Within 8\", spend CP and apply one of the following effects: 1 CP: That Unit's first used weapon gains the CRITICAL HIT (2). 1 CP: That Unit ignores the Disengage penalty for the remainder of the Round. 2 CP: Remove the Activation Marker from that Unit.",
-      "Stimpack": "This Unit suffers NON-LETHAL DAMAGE (2). This Unit gains BUFF Speed (3). Additionally, its Quad K12 and all Close Combat Weapons gain PRECISION (2).",
-      "Concussive Shells": "When an Enemy declares a Charge against a Friendly Unit Within 8\", that Enemy gains DEBUFF Speed (2).",
-      "Veteran of Tarsonis": "While this Unit is Within 3\" of a Mission Marker, its Armour characteristic is increased by 1.",
-      "Kinetic Foam": "Increase this Unit's Hit Points characteristic by 1.",
-      "Laser Targeting Systems": "This Unit's Quad K12 weapon gains LONG RANGE (16\").",
-
-      "Stimpack (Marine)": "This Unit suffers NON-LETHAL DAMAGE (2). This Unit gains BUFF Speed (3). Additionally, its C-14 Rifle and all Close Combat Weapons gain PRECISION (3).",
-      "Combat Shield": "This Unit is always eligible to make an Evade Roll against any Close Combat Attack targeting it and any Damage from an Enemy Special Ability.",
-      "Slugthrower": "When this Unit makes a Ranged Attack with a C-14 Rifle and the target is Within 8\", that weapon gains ANTI-EVADE (1).",
-      "Grenades - Frag": "When this Unit makes a Ranged Attack with a C-14 Rifle and the target is Within 8\", that weapon's S Dice is replaced by D6.",
-      
-      "Life Support": "Use when another Friendly Biological Unit suffers Damage Within 4\". Reduce the Total Damage before allocation by 1 for each model in this Unit that is Within 4\" of the damaged Unit.",
-      "Restoration (Medic)": "Use when a Friendly Unit Within 4\" receives a DEBUFF. Remove all DEBUFFS from it.",
-      "Medpack": "Select another Friendly Biological Unit Within 4\". Resolve the HEAL (X) effect for the targeted Unit, where X is the number of models in this Unit that are Within 4\" of the target Unit.",
-      "Optical Flare": "Select one Enemy Unit Within 12\". Until the End of the Round, apply DEBUFF Range (4) to that Unit's Ranged Weapons. That Unit cannot benefit from LONG RANGE.",
-      "Advanced Medic Facilities": "This Unit's Supply Value counts as 0 when calculating the Supply Pool.",
-      "A-13 Flash Grenade Launcher": "Increase the Optical Flare special ability's Range to 16\".",
-      "Stabilizer Medpacks": "When this Unit resolves a Life Support or Medpack ability, treat it as having 1 additional model Within Range for calculating that ability's effects.",
-      
-      "Point Defense Laser": "When another Friendly Unit Within 4\" is targeted by a Ranged Attack without the INSTANT keyword, remove up to 2 dice from the Attack Pool. Then remove this Unit from the battlefield.",
-      "Gliding": "This model has DISPLACEMENT.",
-
-      "Raiders Roll!": "When this Unit is nominated to deploy from Reserves, it may resolve its Stimpack ability with the CP cost reduced by 1 (to a minimum of 0).",
-      "Rapid Reinforcements": "When this Unit is nominated to deploy from Reserves, it may resolve the PLACE (10) effect from another Friendly Unit. No model may be set Within 8\" of any Enemy model. This Unit's Activation ends.",
-      
-      "Large": "When this Unit's Leading Model moves, it cannot pass through physical gaps smaller than 3\" wide, regardless of its size. If the Leading Model's path of travel passes through, or any model in this Unit ends its movement on a Size 0 or Size 1 Impassible Terrain piece (excluding Tokens) during any movement action, that terrain piece is immediately removed from the game.",
-      "Heavy Plating": "When this Unit resolves an Armour Roll, it gains TOUGH (1), provided it does not currently have the SIEGE MODE Status.",
-      "Point Blank": "While this Unit has the SIEGE MODE Status, it cannot target Enemy Units it is Engaged with.",
-      "Aftershock Rounds": "When this Unit has the SIEGE MODE Status, its Damage characteristic is treated as equal to the Size characteristic of the current target Unit (to a minimum of 1).",
-      "Mode Transformation": "The active Unit gains or loses the SIEGE MODE Status. While this Unit has the SIEGE MODE Status, its Size characteristic is treated as if it was 3.",
-      "Coordinated Strike": "Target a Friendly Non-Engaged Unit on the battlefield (Line of Sight is not required). When this Unit resolves a Ranged Attack using the Shock Cannon weapon profile this Round, it may choose to ignore the weapon's standard Range characteristic. If it does, it may target an Enemy Unit that is Within 8\" of, and Visible to, a model of the selected Friendly Unit, treating that model as the acting model.",
-      "Shaped Blast": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains PINPOINT and LOCKED IN (4).",
-      "Smart Shells": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains INDIRECT FIRE and LONG RANGE (24)."
+      "Leg Enhancements (Praetor)": "This Unit performs a 2\" Move action. This does not count towards its action limit.",
+      "Devastating Charge (Praetor)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (3) 4+ effect.",
+      "Titan Killers": "When this Unit makes a Close Combat Attack, and the target is Size 3 or larger, the weapon's Damage characteristic is treated as 2.",
+      "Precognition": "This Unit is eligible to make an Evade roll against all attacks targeting it."
     };
 
     const ABILITY_MAP = {
-      "Indomitable": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
       "Devastating Charge": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
       
-      "Devastating Charge (Zealot)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Commander": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Phase Prism": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Hierarch's Stand": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Lightning Dash": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
+
       "Charge": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Zealot)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
       "My Life for Aiur": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Leg Enhancements (Zealot)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
       "Zealous Round": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
       "We Stand as One": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-
+      
       "One With the Shadows": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Prophetic Vision": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
       "Sentenced to Death": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
@@ -225,31 +164,23 @@
       "Devastating Charge (Zeratul)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
       "Shadow Strike": { type: "ACTIVE", cost: "1 PE", phase: "COMBAT PHASE" },
 
+      "Improved Barrier": { type: "REACTION", cost: "0 PE", phase: "ANY PHASE" },
+      "Indomitable": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Shield Overcharge": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
+      "Fury Unyielding": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "For the Ancients": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
       "Psionic Presence": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Psionic Transfer": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
       "Resonating Glaives": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
       "Guidance": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
 
-      "Commander": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Phase Prism": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Hierarch's Stand": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Lightning Dash": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
-
-      "Improved Barrier": { type: "REACTION", cost: "0 PE", phase: "ANY PHASE" },
-      "Shield Overcharge": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Fury Unyielding": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "For the Ancients": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Leg Enhancements (Praetor)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Titan Killers": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Precognition": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-      
       "Path of Shadows (Watchers)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
       "Nerazim Farsight": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       
       "Structure": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Khalai Ingenuity": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Warp Conduit (Pylon)": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Warp Conduit": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
       
       "Restoration": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
       "Force Field": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
@@ -263,117 +194,132 @@
       "Fury of the Nerazim": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
 
       "Shield Overcharge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      
-      "Dae'Uhl": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Mass Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Pylon Warp-In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Bound by the Khala": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Might Of The Nerazim": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Darkness Descends": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Ground Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Ground Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Zealous Charge": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Quick Strikes": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Ancient Pride": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
-      "Strategic Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Surveillance": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Gravitic Boosters": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
-      "Photon Overcharge": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Guardian Shell": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Plasma Shields": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Veil of Shadows": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Weapons of the Firstborn": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Personal Transport": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Anakh Su'n": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Warp In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Phase": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Warp Conduit": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-
-      "Rapid Ingress": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Ready for Pickup?": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Tactical Retreat": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Terran Tenacity": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-
-      "Target Lock": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Devastating Charge (Goliath)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Ares-Class Targeting System": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Freedom Fighters": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Orders": { type: "ACTIVE", cost: "X CP", phase: "MOVEMENT PHASE" },
-      "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Concussive Shells": { type: "REACTION", cost: "1 CP", phase: "ASSAULT PHASE" },
-      "Veteran of Tarsonis": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Kinetic Foam": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Laser Targeting Systems": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Stimpack (Marine)": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Combat Shield": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Slugthrower": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Grenades - Frag": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      
-      "Life Support": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
-      "Restoration (Medic)": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
-      "Medpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Optical Flare": { type: "ACTIVE", cost: "2 CP", phase: "MOVEMENT PHASE" },
-      "Advanced Medic Facilities": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "A-13 Flash Grenade Launcher": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Stabilizer Medpacks": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      
-      "Point Defense Laser": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Gliding": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-
-      "Raiders Roll!": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Rapid Reinforcements": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      
-      "Large": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Heavy Plating": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Point Blank": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Aftershock Rounds": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Mode Transformation": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Coordinated Strike": { type: "ACTIVE", cost: "0 CP", phase: "MOVEMENT PHASE" },
-      "Shaped Blast": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
-      "Smart Shells": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" }
+      "Leg Enhancements (Praetor)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Devastating Charge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Titan Killers": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
+      "Precognition": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" }
     };
 
     const WEAPON_MAP = {
-      "Glaive Strike": { range: "E", target: "Ground", roa: 1, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PIERCE Light (2)", phase: "COMBAT PHASE" },
-      "Left Phase Disruptor": { range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3)", phase: "ASSAULT PHASE" },
-      "Right Phase Disruptor": { range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
-      "C-14 rifle": { range: "12", target: "All", roa: 6, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "BURST FIRE 8\" (3)", phase: "ASSAULT PHASE" },
-      "Scatter Missiles": { range: "18", target: "Ground", roa: 6, hit: "5+", surge: "Light", sDice: "D3", dmg: 1, keyword: "INDIRECT FIRE, LOCKED IN (6), LONG RANGE (24\"), SIDEARM", phase: "ASSAULT PHASE" },
-      "Haywire Missiles": { range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
-      "AGG-12": { range: "12", target: "Ground", roa: 2, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "LONG RANGE (18\"), SPECIALIST", phase: "ASSAULT PHASE" },
-      "Rocket Launcher": { range: "12", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "INDIRECT FIRE, LONG RANGE (18\"), SIDEARM, SPECIALIST", phase: "ASSAULT PHASE" },
-      "Bayonet": { range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }
+      "Glaive Strike": { name: "Glaive Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PIERCE Light (2)", phase: "COMBAT PHASE" },
+      "Left Phase Disruptor": { name: "Left Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3)", phase: "ASSAULT PHASE" },
+      "Right Phase Disruptor": { name: "Right Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" }
     };
 
-    // --- DATABASES ---
-    const FACTION_CARDS = [
-      { faction: "Protoss", subFaction: "Daelaam", name: "Daelaam", type: "Faction Card", tags: "Unique", provides: "+1 EN | 1x Elite, 3x Core, 1x Support", abilities: ["Dae'Uhl", "Mass Recall"] },
-      { faction: "Protoss", subFaction: "Khalai", name: "Khalai", type: "Faction Card", tags: "Unique", provides: "+1 EN | 1x Hero, 2x Elite, 3x Core", abilities: ["Pylon Warp-In", "Bound by the Khala"] },
-      { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim", type: "Faction Card", tags: "Unique", provides: "+1 EN | 1x Hero, 3x Elite, 2x Core", abilities: ["Might Of The Nerazim", "Darkness Descends"] },
-      
-      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Raynor's Raiders", type: "Faction Card", tags: "Unique", provides: "+1 CP | 1x Hero, 3x Core, 1x Support", abilities: ["Rapid Ingress", "Ready for Pickup?"] },
-      { faction: "Terran", subFaction: "Generic", name: "Terran Armed Forces", type: "Faction Card", tags: "Unique", provides: "+1 CP | 1x Elite, 3x Core, 1x Support", abilities: ["Tactical Retreat", "Terran Tenacity"] }
-    ];
-
     const TACTICAL_CARDS = [
-      { faction: "Protoss", name: "Forge", type: "Tactical Card", tags: "30 Gas", provides: "+1 EN | 1x Elite Slot", abilities: ["Ground Armor", "Ground Weapons"] },
-      { faction: "Protoss", name: "Gate Chronoboosted", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: ["Zealous Charge", "Quick Strikes"] },
-      { faction: "Protoss", name: "Gateway", type: "Tactical Card", tags: "25 Gas", provides: "+1 EN | 1x Core Slot", abilities: ["Quick Strikes"] },
-      { faction: "Protoss", name: "Nexus", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 2x Core Slot", abilities: ["Ancient Pride", "Strategic Recall"] },
-      { faction: "Protoss", name: "Observer", type: "Tactical Card", tags: "25 Gas, Unique", provides: "+1 EN | 1x Support Slot", abilities: ["Surveillance", "Gravitic Boosters"] },
-      { faction: "Protoss", name: "Overcharged Nexus", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: ["Photon Overcharge", "Strategic Recall"] },
-      { faction: "Protoss", name: "Power Field", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 EN | 1x Hero, 1x Elite, 1x Core Slot", abilities: ["Guardian Shell"] },
-      { faction: "Protoss", name: "Robotics Facility", type: "Tactical Card", tags: "35 Gas", provides: "+1 EN | 2x Elite Slot", abilities: ["Plasma Shields"] },
-      { faction: "Protoss", name: "Twilight Council", type: "Tactical Card", tags: "45 Gas, Unique", provides: "+1 EN | 1x Elite, 1x Support Slot", abilities: ["Veil of Shadows", "Weapons of the Firstborn"] },
-      { faction: "Protoss", name: "Void Seeker", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 EN | 1x Core Slot", abilities: ["Personal Transport", "Anakh Su'n"] },
-      { faction: "Protoss", name: "Warp Gate", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 EN | 2x Core Slot", abilities: ["Warp In", "Quick Strikes"] },
-      { faction: "Protoss", name: "Warp Prism", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 2x Core Slot", abilities: ["Phase", "Warp Conduit"] }
+      // PROTOSS FACTION CARDS
+      { 
+        faction: "Protoss", name: "Daelaam", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Elite, 3x Core, 1x Support Slot", 
+        abilities: [
+          { name: "Dae'Uhl", cost: "-", phase: "ANY PHASE", desc: "Reaction: When a Friendly Unit receives Damage, reduce the Total Damage by 2 (to a minimum of 1)." },
+          { name: "Mass Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Once per Game. Set a Faction Indicator anywhere on the battlefield. All Friendly Protoss Units Within 6” of this Faction Indicator are removed from the battlefield and returned to Reserves." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Khalai", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 2x Elite, 3x Core Slot", 
+        abilities: [
+          { name: "Pylon Warp-In", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: If there is no Friendly Pylon on the battlefield, set a Friendly Pylon Unit anywhere on the GROUND LEVEL of the battlefield more than 10” away from any Enemy model. This Round, the Pylon is not eligible to use its Special Abilities (excluding Structure)." },
+          { name: "Bound by the Khala", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: At the end of the active Unit's Activation, select one other Friendly Unit eligible to Activate in the current Phase. Immediately Activate that Unit." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Nerazim", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 3x Elite, 2x Core Slot", 
+        abilities: [
+          { name: "Might Of The Nerazim", cost: "-", phase: "ANY PHASE", desc: "Reaction: If a Friendly Unit loses the HIDDEN Status, it gains Buff Speed (2) and its first Weapon used gains CRITICAL HIT (2)." },
+          { name: "Darkness Descends", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Biological Unit gains the HIDDEN Status until the End of the Round." }
+        ] 
+      },
+      
+      // PROTOSS TACTICAL CARDS
+      { 
+        faction: "Protoss", name: "Forge", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "+1 EN | 1x Elite Slot", 
+        abilities: [
+          { name: "Ground Armor", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll." },
+          { name: "Ground Weapons", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Ground Unit's first Ranged Weapon used gains CRITICAL HIT (1)." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Gate Chronoboosted", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", 
+        abilities: [
+          { name: "Zealous Charge", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit gains BUFF Speed (2)." },
+          { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Gateway", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "+1 EN | 1x Core Slot", 
+        abilities: [
+          { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Nexus", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 2x Core Slot", 
+        abilities: [
+          { name: "Ancient Pride", cost: "-", phase: "ANY PHASE", desc: "Active: The active Unit's first Weapon used gains INSTANT." }, 
+          { name: "Strategic Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Observer", type: "Tactical Card", tags: "Unique", vespene: 25, provides: "+1 EN | 1x Support Slot", 
+        abilities: [
+          { name: "Surveillance", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status." },
+          { name: "Gravitic Boosters", cost: "-", phase: "ASSAULT PHASE", desc: "Reaction: Use after a Friendly Unit rolls a D6 for Charge Distance. Add 1 to the Charge Distance for this Unit." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Overcharged Nexus", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", 
+        abilities: [
+          { name: "Photon Overcharge", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use when an Enemy Unit enters the battlefield from Reserves via a location other than its own Entry Edge. That Unit immediately suffers HITS 3 (1)." },
+          { name: "Strategic Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Power Field", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 1x Hero, 1x Elite, 1x Core Slot", 
+        abilities: [
+          { name: "Guardian Shell", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains DODGE (2) for this roll." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Robotics Facility", type: "Tactical Card", tags: "Standard", vespene: 35, provides: "+1 EN | 2x Elite Slot", 
+        abilities: [
+          { name: "Plasma Shields", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Mechanical Ground Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (1) and DODGE (1) for this roll." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Twilight Council", type: "Tactical Card", tags: "Unique", vespene: 45, provides: "+1 EN | 1x Elite, 1x Support Slot", 
+        abilities: [
+          { name: "Veil of Shadows", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use after a Friendly Unit resolves a PLACE effect. That Unit immediately resolves the HEAL (2) effect." },
+          { name: "Weapons of the Firstborn", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Ground Unit's first Ranged Weapon used gains BUFF Range (4)." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Void Seeker", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 1x Core Slot", 
+        abilities: [
+          { name: "Personal Transport", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Instead of performing an action, the active, Unengaged Ground Unit is returned to Reserves. Then, it performs a Deploy action." },
+          { name: "Anakh Su'n", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: This Unit gains the HIDDEN Status until it performs another action." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Warp Gate", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 2x Core Slot", 
+        abilities: [
+          { name: "Warp In", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Ground Unit Deploys from any table edge that is not a player's Entry Edge. This deployment must end more than 10\" away from any Enemy model. The controlling player cannot use this ability if another Friendly Ground Unit has already Deployed this Round." },
+          { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Warp Prism", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 2x Core Slot", 
+        abilities: [
+          { name: "Phase", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit resolves the PLACE (3) effect." },
+          { name: "Warp Conduit", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator." }
+        ] 
+      }
     ];
 
     const UNITS_DATABASE = [
-      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 2, minerals: 320, supply: 2 }, { models: 3, minerals: 480, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10, 20, 30] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20, 40, 60] }, { name: "Zealous Round", type: "Standard", costs: [10, 20, 30] }, { name: "We Stand as One", type: "Standard", costs: [20, 40, 60] }] },
+      // TERRAN
+      { faction: "Terran", name: "Marine", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 6, minerals: 160, supply: 1 }, { models: 9, minerals: 210, supply: 2 }], supplyProfile: [{ max: 3, supply: 0 }, { max: 6, supply: 1 }, { max: 9, supply: 2 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "C-14 Rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "AGG-12", type: "Replacement", costs: [10, 10] }, { name: "Combat Shield", type: "Standard", costs: [20, 30] }, { name: "Rocket Launcher", type: "Additional", costs: [40, 40] }] },
+      
+      // PROTOSS
+      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10, 10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20, 20] }, { name: "Zealous Round", type: "Standard", costs: [10, 10] }, { name: "We Stand as One", type: "Standard", costs: [20, 20] }] },
       
       { faction: "Protoss", name: "Adept", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 0 }, { models: 4, minerals: 300, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [{ name: "Resonating Glaives", type: "Standard", costs: [20, 20] }, { name: "Guidance", type: "Standard", costs: [10, 10] }, { name: "Glaive Strike", type: "Replacement", costs: [20, 20], replaces: "Strike" }] },
       
@@ -382,82 +328,25 @@
       { faction: "Protoss", name: "Stalker", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 170, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: 3, speed: "4/8", armour: "4+", evade: "6+", hitPoints: 6, size: 3 }, weapons: [{ name: "Particle Disruptors", range: "12", target: "All", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Blink"], upgrades: [{ name: "Path of Shadows (Stalker)", type: "Standard", costs: [20, 40] }, { name: "Fury of the Nerazim", type: "Standard", costs: [20, 30] }] },
       
       { faction: "Protoss", name: "Immortal", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 280, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 2 }], stats: { shield: 6, speed: "7", armour: "4+", evade: "-", hitPoints: 8, size: 3 }, weapons: [{ name: "Left Photon Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "CONCENTRATED FIRE (1), LONG RANGE (16”)", phase: "ASSAULT PHASE" }, { name: "Right Photon Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "CONCENTRATED FIRE (1), LONG RANGE (16”), SIDEARM", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Improved Barrier", "Indomitable", "Devastating Charge"], upgrades: [{ name: "Shield Overcharge", type: "Standard", costs: [20] }, { name: "Left Phase Disruptor", type: "Replacement", costs: [20], replaces: "Left Photon Disruptor" }, { name: "Right Phase Disruptor", type: "Replacement", costs: [20], replaces: "Right Photon Disruptor" }, { name: "Fury Unyielding", type: "Standard", costs: [20] }, { name: "For the Ancients", type: "Standard", costs: [20] }] },
-
+      
       { faction: "Protoss", subFaction: "Khalai", name: "Praetor Guard", tags: "Khalai, Biological, Light, Ground, Unique", slot: "Elite", compositions: [{ models: 3, minerals: 280, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Shield Overcharge (Praetor)", "Leg Enhancements (Praetor)", "Charge", "Devastating Charge (Praetor)", "Titan Killers", "Precognition"], upgrades: [] },
 
       { faction: "Protoss", name: "Sentry", tags: "Light, Mechanical, Psionic, Ground", slot: "Support", compositions: [{ models: 1, minerals: 130, supply: 0 }, { models: 2, minerals: 260, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }, { max: 2, supply: 1 }], stats: { shield: 2, speed: "4/7", armour: "5+", evade: "6+", hitPoints: 4, size: 1 }, weapons: [{ name: "Disruption Beam", range: "8", target: "All", roa: 2, hit: "2+", surge: "-", sDice: "-", dmg: 1, keyword: "INSTANT", phase: "ASSAULT PHASE" }, { name: "Beam", range: "E", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Restoration", "Force Field", "Guardian Shield"], upgrades: [{ name: "Solid-Field Projectors", type: "Standard", costs: [20, 20] }, { name: "Hallucination", type: "Standard", costs: [30, 30] }] },
       
-      { faction: "Protoss", name: "Pylon", tags: "Khalai, Armored, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: 2, speed: "-", armour: "5+", evade: "-", hitPoints: 8, size: 3 }, weapons: [], abilities: ["Structure", "Khalai Ingenuity", "Warp Conduit (Pylon)"], upgrades: [] },
+      { faction: "Protoss", name: "Pylon", tags: "Khalai, Armored, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: 2, speed: "-", armour: "5+", evade: "-", hitPoints: 8, size: 3 }, weapons: [], abilities: ["Structure", "Khalai Ingenuity", "Warp Conduit"], upgrades: [] },
       
       { faction: "Protoss", name: "Artanis", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 4, speed: "7", armour: "4+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Twilight Blades Strike", range: "E", target: "Ground", roa: 2, hit: "2+", surge: "Armoured", sDice: "D3", dmg: 3, keyword: "-", phase: "COMBAT PHASE" }, { name: "Twilight Blades Sweep", range: "E", target: "Ground", roa: 6, hit: "2+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Commander", "Phase Prism", "Hierarch's Stand", "Lightning Dash", "Devastating Charge"], upgrades: [] },
-      
-      { faction: "Protoss", name: "Zeratul", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 230, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 3, speed: "7", armour: "5+", evade: "5+", hitPoints: 5, size: 2 }, weapons: [{ name: "Master Warp Blade", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "INSTANT", phase: "COMBAT PHASE" }], abilities: ["One With the Shadows", "Prophetic Vision", "Sentenced to Death", "Void Prison", "Void Blink", "Devastating Charge (Zeratul)", "Shadow Strike"], upgrades: [] },
 
-      // Terran Units
-      { faction: "Terran", name: "Marauder", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 1 }, { models: 4, minerals: 280, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 4, supply: 2 }], stats: { shield: "-", speed: "4/7", armour: "4+", evade: "6+", hitPoints: 5, size: 2 }, weapons: [{ name: "Quad K12", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack", "Concussive Shells"], upgrades: [{ name: "Veteran of Tarsonis", type: "Standard", costs: [20, 30] }, { name: "Kinetic Foam", type: "Standard", costs: [20, 40] }, { name: "Laser Targeting Systems", type: "Standard", costs: [20, 40] }] },
-
-      { faction: "Terran", name: "Marine", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 3, minerals: 160, supply: 0 }, { models: 6, minerals: 210, supply: 1 }, { models: 9, minerals: 260, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 3, supply: 0 }, { max: 6, supply: 1 }, { max: 9, supply: 2 }], stats: { shield: "-", speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 2 }, weapons: [{ name: "C-14 rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack (Marine)"], upgrades: [{ name: "Combat Shield", type: "Standard", costs: [20, 30, 40] }, { name: "AGG-12", type: "Replacement", costs: [10, 10, 10], replaces: "C-14 rifle" }, { name: "Rocket Launcher", type: "Replacement", costs: [40, 40, 40], replaces: "C-14 rifle" }, { name: "Slugthrower", type: "Standard", costs: [10, 20, 30] }, { name: "Grenades - Frag", type: "Standard", costs: [10, 10, 10] }, { name: "Bayonet", type: "Replacement", costs: [20, 30, 40], replaces: "Strike" }] },
-
-      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Raynor's Raider (Marine)", tags: "Raynor's Raiders, Biological, Light, Ground", slot: "Core", compositions: [{ models: 6, minerals: 230, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 6, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 2 }, weapons: [{ name: "C-14 rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack (Marine)", "Raiders Roll!", "Rapid Reinforcements", "Slugthrower", "Grenades - Frag"], upgrades: [] },
-
-      { faction: "Terran", name: "Medic", tags: "Biological, Light, Ground", slot: "Support", compositions: [{ models: 1, minerals: 110, supply: 0 }, { models: 3, minerals: 220, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 2 }, weapons: [{ name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Life Support", "Restoration (Medic)", "Medpack", "Optical Flare"], upgrades: [{ name: "Advanced Medic Facilities", type: "Standard", costs: [60, 60] }, { name: "A-13 Flash Grenade Launcher", type: "Standard", costs: [20, 20] }, { name: "Stabilizer Medpacks", type: "Standard", costs: [30, 30] }] },
-
-      { faction: "Terran", name: "Goliath", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 190, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 2 }], stats: { shield: "-", speed: "7", armour: "4+", evade: "-", hitPoints: 10, size: 3 }, weapons: [{ name: "Autocannon", range: "12", target: "Ground", roa: 9, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "LONG RANGE (18\")", phase: "ASSAULT PHASE" }, { name: "Underbelly Machine Gun", range: "8", target: "Ground", roa: 6, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PINPOINT, SIDEARM", phase: "ASSAULT PHASE" }, { name: "Hellfire Missiles", range: "16", target: "Flying", roa: 6, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "ANTI-EVADE (1), SIDEARM", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 4, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Target Lock", "Indomitable", "Devastating Charge (Goliath)"], upgrades: [{ name: "Ares-Class Targeting System", type: "Standard", costs: [20] }, { name: "Scatter Missiles", type: "Replacement", costs: [30], replaces: "Hellfire Missiles" }, { name: "Haywire Missiles", type: "Replacement", costs: [40], replaces: "Hellfire Missiles" }] },
-
-      { faction: "Terran", name: "Siege Tank", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 220, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 2 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "-", hitPoints: 14, size: 2 }, weapons: [{ name: "Twin Cannon", range: "12", target: "Ground", roa: 8, hit: "3+", surge: "Armoured", sDice: "D6", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Shock Cannon", range: "18", target: "Ground", roa: "BT+4", hit: "4+", surge: "Light, Armoured", sDice: "BT", dmg: 1, keyword: "SIEGE MODE Status", phase: "ASSAULT PHASE" }, { name: "Rolling Over", range: "E", target: "Ground", roa: 2, hit: "2+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Large", "Heavy Plating", "Indomitable", "Point Blank", "Aftershock Rounds", "Devastating Charge (Goliath)"], upgrades: [{ name: "Mode Transformation", type: "Standard", costs: [20] }, { name: "Coordinated Strike", type: "Standard", costs: [20] }, { name: "Shaped Blast", type: "Standard", costs: [10] }, { name: "Smart Shells", type: "Standard", costs: [10] }] },
-
-      { faction: "Terran", name: "Jim Raynor", tags: "Biological, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "4+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Commando Rifle", range: "18", target: "All", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "BULKY, PIERCE Armoured (3)", phase: "ASSAULT PHASE" }, { name: "\"Justice\" Revolver", range: "6", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "ANTI-EVADE (2), SIDEARM, PINPOINT", phase: "ASSAULT PHASE" }, { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Commander", "Freedom Fighters", "Orders"], upgrades: [{ name: "C-14 rifle", type: "Replacement", costs: [0], replaces: "Commando Rifle" }] },
-
-      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Point Defense Drone", tags: "Raynor's Raiders, Armoured, Flying, Mechanical", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "6+", evade: "6+", hitPoints: 3, size: "-" }, weapons: [], abilities: ["Point Defense Laser", "Gliding", "Structure"], upgrades: [] }
+      { faction: "Protoss", name: "Zeratul", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 230, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 3, speed: "7", armour: "5+", evade: "5+", hitPoints: 5, size: 2 }, weapons: [{ name: "Master Warp Blade", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "INSTANT", phase: "COMBAT PHASE" }], abilities: ["One With the Shadows", "Prophetic Vision", "Sentenced to Death", "Void Prison", "Void Blink", "Devastating Charge (Zeratul)", "Shadow Strike"], upgrades: [] }
     ];
 
+    const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen = false }) => {
+      const [isOpen, setIsOpen] = useState(defaultOpen);
+      useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
 
-    // --- COMPONENTS ---
-    const StatBadge = ({ label, value }) => (
-      <div className="flex flex-col items-center justify-center bg-black/40 border border-white/10 rounded w-12 h-14">
-        <span className="text-lg font-bold text-white">{value}</span>
-        <span className="text-[10px] text-slate-400 font-orbitron font-bold uppercase">{label}</span>
-      </div>
-    );
+      const phaseWeapons = unitWeapons.filter(w => w.phase === phase);
+      const phaseAbilities = unitAbilities.filter(a => a.phase === phase);
 
-    const Modal = ({ isOpen, onClose, title, children }) => {
-      if (!isOpen) return null;
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0f172a] border border-sky-500/30 rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b border-white/10 bg-black/40">
-              <h2 className="text-xl font-orbitron font-bold text-sky-400 uppercase tracking-wider">{title}</h2>
-              <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
-            </div>
-            <div className="p-4 overflow-y-auto flex-1">
-              {children}
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    const RuleBookModal = ({ isOpen, onClose, ruleName }) => {
-      if (!isOpen || !ruleName) return null;
-      const desc = RULES_DICTIONARY[ruleName] || "Rule text available in full rulebook.";
-      return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-          <div className="bg-[#1e293b] border border-amber-500/30 rounded-lg shadow-2xl w-full max-w-md p-6 relative" onClick={e => e.stopPropagation()}>
-            <button onClick={onClose} className="absolute top-2 right-3 text-slate-400 hover:text-white">✕</button>
-            <h3 className="text-lg font-orbitron font-bold text-amber-400 uppercase tracking-wider mb-3">{ruleName}</h3>
-            <p className="text-slate-300 text-sm leading-relaxed">{desc}</p>
-          </div>
-        </div>
-      );
-    };
-
-    const PhaseSection = ({ title, abilities = [], weapons = [], openRule, forceOpen = false }) => {
-      const [isOpen, setIsOpen] = useState(forceOpen);
-      useEffect(() => { if (forceOpen) setIsOpen(true); }, [forceOpen]);
-
-      const phaseAbilities = abilities.filter(a => a.phase === title);
-      const phaseWeapons = weapons.filter(w => w.phase === title);
-      
       if (phaseWeapons.length === 0 && phaseAbilities.length === 0) return null;
 
       return (
@@ -473,6 +362,7 @@
                 if (ab.type === "ACTIVE") badgeColor = "bg-sky-500";
                 if (ab.type === "REACTION") badgeColor = "bg-amber-500 text-black";
                 
+                // Smart display names. Strips hidden identifiers like "(Watchers)" for a clean UI.
                 const displayName = ab.name.includes('(') ? ab.name.split('(')[0].trim() : ab.name;
 
                 return (
@@ -486,31 +376,18 @@
               })}
 
               {phaseWeapons.length > 0 && (
-                <div className="overflow-x-auto mt-2">
-                  <table className="w-full text-left text-xs whitespace-nowrap">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[10px] whitespace-nowrap">
                     <thead>
-                      <tr className="border-b border-white/10 text-slate-400">
-                        <th className="pb-1 font-orbitron uppercase">Weapon</th>
-                        <th className="pb-1 px-2">RNG</th>
-                        <th className="pb-1 px-2">TGT</th>
-                        <th className="pb-1 px-2">RoA</th>
-                        <th className="pb-1 px-2">HIT</th>
-                        <th className="pb-1 px-2 text-rose-400">S.DIE</th>
-                        <th className="pb-1 px-2">DMG</th>
-                        <th className="pb-1 px-2 w-full">KEYWORD</th>
+                      <tr className="border-b border-white/20 text-slate-400 uppercase font-orbitron">
+                        <th className="pb-1 pr-2">Name</th><th className="pb-1 pr-2">Rng</th><th className="pb-1 pr-2">Target</th><th className="pb-1 pr-2">RoA</th><th className="pb-1 pr-2">Hit</th><th className="pb-1 pr-2">Surge</th><th className="pb-1 pr-2">SDice</th><th className="pb-1 pr-2">Dmg</th><th className="pb-1">Keyword</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {phaseWeapons.map((w, i) => (
-                        <tr key={`wpn-${i}`} className="border-b border-white/5 last:border-0 hover:bg-white/5">
-                          <td className="py-2 font-bold text-sky-200">{w.name}</td>
-                          <td className="py-2 px-2 text-center">{w.range}</td>
-                          <td className="py-2 px-2 text-center">{w.target}</td>
-                          <td className="py-2 px-2 text-center">{w.roa}</td>
-                          <td className="py-2 px-2 text-center">{w.hit}</td>
-                          <td className="py-2 px-2 text-center font-bold text-rose-400">{w.sDice}</td>
-                          <td className="py-2 px-2 text-center">{w.dmg}</td>
-                          <td className="py-2 px-2 text-slate-400 text-[10px] uppercase truncate">{w.keyword}</td>
+                      {phaseWeapons.map((w, idx) => (
+                        <tr key={`wpn-${idx}-${w.name}`} className="border-b border-white/5 last:border-0 text-slate-200">
+                          <td className="py-1.5 pr-2 font-bold uppercase font-orbitron text-white">{w.name}</td>
+                          <td className="pr-2">{w.range}</td><td className="pr-2">{w.target}</td><td className="pr-2 text-center">{w.roa}</td><td className="pr-2">{w.hit}</td><td className="pr-2">{w.surge}</td><td className="pr-2">{w.sDice}</td><td className="pr-2 font-black text-amber-300">{w.dmg}</td><td className="text-slate-400">{w.keyword}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -523,410 +400,752 @@
       );
     };
 
-    const UnitConfigModal = ({ unit, isOpen, onClose, onSave, rosterUnit, rosterMode = false }) => {
-      const [compIdx, setCompIdx] = useState(0);
-      const [selectedUpgrades, setSelectedUpgrades] = useState({});
+    const TacticalCardUI = ({ card, isAdded, onToggle, theme }) => (
+      <button 
+        onClick={onToggle}
+        className={`relative rounded-xl border flex flex-col overflow-hidden text-left transition-transform hover:scale-[1.02] shadow-md shrink-0 w-full h-full ${isAdded ? theme.border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] ring-1 ring-white/10' : 'border-white/10 opacity-75 hover:opacity-100 bg-black/80'}`}
+      >
+        <div className={`p-3 flex justify-between items-start border-b ${isAdded ? theme.accent : 'bg-slate-800 border-white/10'}`}>
+          <div>
+            <span className={`font-bold text-sm font-orbitron uppercase tracking-wider block ${isAdded ? 'text-stone-900' : 'text-slate-200'}`}>{card.name}</span>
+            {card.tags && (
+              <span className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 block ${isAdded ? 'text-stone-800/80' : 'text-slate-400'}`}>
+                {card.type} • {card.tags}
+              </span>
+            )}
+            {!card.tags && (
+              <span className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 block ${isAdded ? 'text-stone-800/80' : 'text-slate-400'}`}>
+                {card.type}
+              </span>
+            )}
+          </div>
+          {card.vespene > 0 && <span className={`font-mono text-sm font-black bg-black/40 px-2 py-0.5 rounded shadow-inner border border-black/20 ${isAdded ? 'text-emerald-400' : 'text-emerald-500'}`}>{card.vespene} Gas</span>}
+        </div>
+        
+        <div className={`p-3 flex-1 flex flex-col gap-2 w-full ${isAdded ? theme.cardBg : 'bg-transparent'}`}>
+          {card.provides && (
+            <div className="text-[10px] font-bold uppercase tracking-widest text-amber-300 bg-amber-950/50 px-2 py-1.5 rounded border border-amber-900/50 shadow-inner flex justify-between">
+              <span className="text-white">{card.provides}</span>
+            </div>
+          )}
+          
+          {card.abilities && card.abilities.length > 0 && (
+            <div className="flex flex-col gap-1.5 w-full mt-2">
+              {card.abilities.map((ab, idx) => {
+                 let typeColor = "bg-rose-600";
+                 if(ab.desc.startsWith("Active:")) typeColor = "bg-sky-500";
+                 if(ab.desc.startsWith("Reaction:")) typeColor = "bg-amber-500 text-black";
+                 if(ab.desc.startsWith("Passive:")) typeColor = "bg-emerald-600";
+                 
+                 const descText = ab.desc.replace(/^(Active|Reaction|Passive):\s*/, "");
+
+                 return (
+                  <div key={`${ab.name}-${idx}`} className="bg-black/60 rounded p-2 border border-white/5">
+                     <div className="flex justify-between items-start mb-1">
+                       <span className="font-orbitron text-xs font-bold uppercase text-white">{ab.name}</span>
+                       <span className={`px-1.5 py-0.5 rounded font-bold uppercase text-[8px] text-white shadow tracking-widest ${typeColor}`}>
+                           {ab.desc.split(':')[0]} {ab.cost !== "-" && `(${ab.cost})`}
+                       </span>
+                     </div>
+                     <div className="text-[8px] uppercase font-bold text-slate-500 tracking-widest mb-1">{ab.phase}</div>
+                     <p className="text-[10px] leading-tight text-slate-300">{descText}</p>
+                  </div>
+                 )
+              })}
+            </div>
+          )}
+        </div>
+        {isAdded && <div className="absolute inset-0 border border-white/10 rounded-xl pointer-events-none"></div>}
+      </button>
+    );
+
+    const ArmoryGroup = ({ title, units, onConfigure, theme }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      if (units.length === 0) return null;
+      return (
+        <div className="mb-3">
+          <button onClick={() => setIsOpen(!isOpen)} className={`w-full p-3 ${theme.cardBg} border border-white/10 rounded font-orbitron font-bold uppercase flex justify-between items-center hover:bg-white/5`}>
+            <span>{title} <span className="text-slate-400 text-xs ml-2">({units.length})</span></span>
+            <span>{isOpen ? '▼' : '▶'}</span>
+          </button>
+          {isOpen && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-3 pl-2">
+              {units.map(unit => {
+                const minModels = Math.min(...(unit.compositions || []).map(c => c.models));
+                const maxModels = Math.max(...(unit.compositions || []).map(c => c.models));
+                const modelsDisplay = minModels === maxModels ? minModels : `${minModels}-${maxModels}`;
+                
+                const minSupply = Math.min(...(unit.compositions || []).map(c => c.supply));
+                const maxSupply = Math.max(...(unit.compositions || []).map(c => c.supply));
+                const supplyDisplay = minSupply === maxSupply ? minSupply : `${minSupply}-${maxSupply}`;
+
+                const minMinerals = Math.min(...(unit.compositions || []).map(c => c.minerals));
+                const maxMinerals = Math.max(...(unit.compositions || []).map(c => c.minerals));
+                const costDisplay = minMinerals === maxMinerals ? `${minMinerals}` : `${minMinerals}-${maxMinerals}`;
+
+                return (
+                  <div key={unit.name} className={`${theme.cardBg} border ${theme.border} rounded-lg p-4 flex flex-col justify-between shadow-lg`}>
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <h3 className={`font-orbitron font-black text-xl uppercase ${theme.textPrimary}`}>{unit.name}</h3>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">{unit.tags}</span>
+                      </div>
+                      <button onClick={() => onConfigure(unit)} className={`px-4 py-1.5 rounded font-bold text-sm ${theme.accent}`}>Configure</button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase font-bold text-slate-400 mb-3 mt-2">
+                      <span>Models: <span className="text-white">{modelsDisplay}</span></span>
+                      <span>Supply: <span className="text-amber-300">{supplyDisplay}</span></span>
+                      <span>Cost: <span className="text-sky-400">{costDisplay} Min</span></span>
+                    </div>
+
+                    <div className="grid grid-cols-6 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
+                      {unit.stats && unit.stats.shield !== undefined && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
+                      <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats?.speed || "-"}</span></div>
+                      <div><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats?.armour || "-"}</span></div>
+                      <div><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats?.evade || "-"}</span></div>
+                      <div><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats?.hitPoints || "-"}</span></div>
+                      <div><span className="block text-[9px] text-emerald-400">SIZ</span><span className="font-bold text-emerald-400">{unit.stats?.size || "-"}</span></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const ArmyBuilderView = ({ theme, selectedFaction, isPlayMode, setIsPlayMode }) => {
+      const [subFaction, setSubFaction] = useState(() => loadLocal('sc_subFaction', "Generic"));
+      const [scale, setScale] = useState(() => loadLocal('sc_scale', "Free Build"));
+      const [roster, setRoster] = useState(() => loadLocal('sc_roster', []).filter(u => u && u.name));
+      const [tacticalCards, setTacticalCards] = useState(() => loadLocal('sc_tacCards', []).filter(c => c && c.name));
+      const [matchData, setMatchData] = useState(() => loadLocal('sc_matchData', { round: 1, yourVP: 0, enemyVP: 0, mission: "Frontlines", enemyFaction: "Terran" }));
+      
+      const [savedRosters, setSavedRosters] = useState(() => loadLocal('sc_savedRosters', []));
+      const [showSaveModal, setShowSaveModal] = useState(false);
+      const [showLoadModal, setShowLoadModal] = useState(false);
+      const [rosterName, setRosterName] = useState("");
+
+      const [activeModal, setActiveModal] = useState(null);
+      const [configUnit, setConfigUnit] = useState(null);
 
       useEffect(() => {
-        if (isOpen && rosterUnit) {
-          const cIdx = unit.compositions.findIndex(c => c.models === rosterUnit.models);
-          if (cIdx !== -1) setCompIdx(cIdx);
-          
-          const su = {};
-          if (rosterUnit.upgrades) {
-            rosterUnit.upgrades.forEach(uName => { su[uName] = true; });
-          }
-          setSelectedUpgrades(su);
-        } else if (isOpen) {
-          setCompIdx(0);
-          setSelectedUpgrades({});
+         setSubFaction(SUB_FACTIONS[selectedFaction][0]);
+         setRoster([]);
+         setTacticalCards([]);
+      }, [selectedFaction]);
+
+      useEffect(() => localStorage.setItem('sc_subFaction', JSON.stringify(subFaction)), [subFaction]);
+      useEffect(() => localStorage.setItem('sc_scale', JSON.stringify(scale)), [scale]);
+      useEffect(() => localStorage.setItem('sc_roster', JSON.stringify(roster)), [roster]);
+      useEffect(() => localStorage.setItem('sc_tacCards', JSON.stringify(tacticalCards)), [tacticalCards]);
+      useEffect(() => localStorage.setItem('sc_matchData', JSON.stringify(matchData)), [matchData]);
+      useEffect(() => localStorage.setItem('sc_savedRosters', JSON.stringify(savedRosters)), [savedRosters]);
+
+      const resetAppData = () => {
+        if(window.confirm("Are you sure you want to clear all data?")) {
+           localStorage.clear();
+           window.location.reload();
         }
-      }, [isOpen, rosterUnit, unit]);
-
-      if (!isOpen || !unit) return null;
-
-      const comp = unit.compositions[compIdx];
-      
-      const toggleUpgrade = (uName) => {
-        setSelectedUpgrades(prev => ({ ...prev, [uName]: !prev[uName] }));
       };
 
-      const handleSave = () => {
-        const uList = Object.keys(selectedUpgrades).filter(k => selectedUpgrades[k]);
-        let totalCost = comp.minerals;
-        uList.forEach(uName => {
-          const uDef = unit.upgrades.find(u => u.name === uName);
-          if (uDef && uDef.costs[compIdx]) totalCost += uDef.costs[compIdx];
+      const limits = ENGAGEMENT_SCALES[scale] || ENGAGEMENT_SCALES["Free Build"];
+
+      const factionUnits = UNITS_DATABASE.filter(u => u.faction === selectedFaction && (!u.subFaction || u.subFaction === subFaction));
+      const availableFactionCards = TACTICAL_CARDS.filter(c => c.faction === selectedFaction && c.type === "Faction Card");
+      const availableTacticalCards = TACTICAL_CARDS.filter(c => c.faction === selectedFaction && c.type === "Tactical Card");
+
+      const totalMinerals = roster.reduce((sum, item) => sum + (item.minerals || 0), 0);
+      const totalVespene = tacticalCards.reduce((sum, card) => sum + (card.vespene || 0), 0);
+      
+      const getModelsAlive = (unit) => Math.max(0, (unit.models || 0) - Math.floor((unit.hpDamage || 0) / (unit.stats?.hitPoints || 1)));
+      const getUnitSupply = (unit) => {
+        const alive = getModelsAlive(unit);
+        const tier = (unit.supplyProfile || []).find(p => alive <= p.max);
+        return tier ? tier.supply : 0;
+      };
+
+      const totalSupply = roster.reduce((sum, unit) => sum + getUnitSupply(unit), 0);
+      const activeSupply = roster.filter(u => u.deployed).reduce((sum, unit) => sum + getUnitSupply(unit), 0);
+      
+      const activeMission = MISSIONS_DATABASE[matchData.mission] || MISSIONS_DATABASE["Frontlines"];
+      const supplyPool = matchData.round === 5 ? Infinity : (activeMission.start + (matchData.round - 1) * activeMission.esc);
+      const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
+
+      const SLOT_ORDER = { "Hero": 1, "Core": 2, "Elite": 3, "Support": 4, "Summoned": 5 };
+      const sortedRoster = useMemo(() => {
+        return [...roster].sort((a, b) => {
+          const orderA = SLOT_ORDER[a.slot] || 99;
+          const orderB = SLOT_ORDER[b.slot] || 99;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.name || "").localeCompare(b.name || "");
+        });
+      }, [roster]);
+
+      const toggleDeploy = (id) => {
+        setRoster(prev => prev.map(unit => {
+          if (unit.rosterId === id) return { ...unit, deployed: !unit.deployed };
+          return unit;
+        }));
+      };
+
+      const openRule = (key) => {
+        const cleaned = key.trim();
+        const ruleText = RULES_DICTIONARY[cleaned] || "Rule text available in full rulebook.";
+        setActiveModal({ title: cleaned, text: ruleText });
+      };
+
+      const addToRoster = (unit, compIndex, selectedUpgrades) => {
+        const comp = unit.compositions[compIndex];
+        let upgradeMinerals = 0;
+        const appliedUpgrades = selectedUpgrades.map(u => {
+          upgradeMinerals += u.costs[compIndex] || 0;
+          return u.name;
         });
 
-        onSave({
-          ...unit,
-          instanceId: rosterUnit ? rosterUnit.instanceId : Date.now().toString(),
+        setRoster(prev => [...prev, { 
+          ...unit, 
+          rosterId: Date.now() + Math.random(),
           models: comp.models,
           supply: comp.supply,
-          totalCost: totalCost,
-          upgrades: uList
-        });
-        onClose();
+          minerals: comp.minerals + upgradeMinerals,
+          appliedUpgrades,
+          hpDamage: 0,
+          shieldDamage: 0,
+          deployed: false
+        }]);
       };
 
-      let currentWeapons = [...unit.weapons];
-      const activeUpgradeDefs = Object.keys(selectedUpgrades)
-        .filter(k => selectedUpgrades[k])
-        .map(uName => unit.upgrades.find(u => u.name === uName))
-        .filter(u => u);
+      const updateDamage = (id, type, amount) => {
+        setRoster(prev => prev.map(unit => {
+          if (unit.rosterId !== id) return unit;
+          const maxAmount = type === 'shieldDamage' ? (unit.stats.shield || 0) : ((unit.stats.hitPoints || 1) * (unit.models || 1));
+          const newDamage = Math.max(0, Math.min(maxAmount, (unit[type] || 0) + amount));
+          return { ...unit, [type]: newDamage };
+        }));
+      };
 
-      activeUpgradeDefs.forEach(uDef => {
-        if (uDef.type === "Replacement" && uDef.replaces) {
-          currentWeapons = currentWeapons.filter(w => w.name !== uDef.replaces);
-          if (WEAPON_MAP[uDef.name]) {
-            currentWeapons.push({ name: uDef.name, ...WEAPON_MAP[uDef.name] });
+      const updateMatch = (key, val) => setMatchData(prev => ({ ...prev, [key]: val }));
+
+      const UnitConfigModal = ({ unit, onClose }) => {
+        const [compIndex, setCompIndex] = useState(0);
+        const [selectedUpgrades, setSelectedUpgrades] = useState([]);
+
+        const handleUpgradeToggle = (upgrade) => {
+          if (selectedUpgrades.includes(upgrade)) {
+            setSelectedUpgrades(prev => prev.filter(u => u !== upgrade));
+          } else {
+            setSelectedUpgrades(prev => [...prev, upgrade]);
           }
-        }
-      });
+        };
 
-      const currentAbilities = [...unit.abilities, ...activeUpgradeDefs.map(u => u.name)];
-      
-      const mappedAbilities = currentAbilities.map(aName => {
-        const data = ABILITY_MAP[aName] || { type: "PASSIVE", cost: "-", phase: "ANY PHASE" };
-        const desc = RULES_DICTIONARY[aName] || "Rule text available in full rulebook.";
-        return { name: aName, ...data, desc };
-      });
+        const currentMinerals = (unit.compositions[compIndex]?.minerals || 0) + selectedUpgrades.reduce((sum, u) => sum + (u.costs[compIndex] || 0), 0);
 
-      return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`CONFIGURE: ${unit.name}`}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-orbitron font-bold text-sky-300 uppercase mb-3 border-b border-white/10 pb-1">Squad Size & Composition</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  {unit.compositions.map((c, i) => (
-                    <div 
-                      key={i} 
-                      onClick={() => {
-                        setCompIdx(i);
-                        const newSu = {...selectedUpgrades};
-                        unit.upgrades.forEach(u => {
-                          if (u.costs[i] === undefined) newSu[u.name] = false;
-                        });
-                        setSelectedUpgrades(newSu);
-                      }}
-                      className={`p-3 rounded cursor-pointer border flex justify-between items-center ${compIdx === i ? 'bg-sky-900/40 border-sky-500' : 'bg-black/40 border-white/10 hover:border-sky-500/50'}`}
-                    >
-                      <span className="font-bold text-white">{c.models} Models</span>
-                      <div className="flex gap-4 text-xs font-orbitron">
-                        <span className="text-amber-400">{c.minerals} PTS</span>
-                        <span className="text-sky-400">{c.supply} SUP</span>
+        let previewWeapons = [...(unit.weapons || [])];
+        let previewAbilities = (unit.abilities || []).map(a => {
+            const mappedInfo = ABILITY_MAP[a] || { type: "PASSIVE", phase: "ANY PHASE" };
+            return { 
+                name: a, 
+                ...mappedInfo, 
+                desc: RULES_DICTIONARY[a] || mappedInfo.desc || "Rule text available in full rulebook." 
+            };
+        });
+
+        const unitUpgrades = unit.upgrades || [];
+        selectedUpgrades.forEach(upg => {
+            const upgName = upg.name;
+            if (upg.type === "Replacement" && WEAPON_MAP[upgName]) {
+                if (upg.replaces) {
+                    const replacesList = Array.isArray(upg.replaces) ? upg.replaces : [upg.replaces];
+                    previewWeapons = previewWeapons.filter(w => !replacesList.includes(w.name));
+                } else {
+                    previewWeapons = previewWeapons.filter(w => w.phase !== WEAPON_MAP[upgName].phase);
+                }
+            }
+            if (WEAPON_MAP[upgName]) {
+                previewWeapons.push(WEAPON_MAP[upgName]);
+            } else {
+                const mappedInfo = ABILITY_MAP[upgName] || { type: "PASSIVE", phase: "ANY PHASE" };
+                previewAbilities.push({ 
+                    name: upgName, 
+                    ...mappedInfo, 
+                    desc: RULES_DICTIONARY[upgName] || mappedInfo.desc || "Rule text available in full rulebook." 
+                });
+            }
+        });
+
+        return (
+          <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
+            <div className={`max-w-4xl w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl flex flex-col max-h-[90vh]`}>
+              <h3 className={`text-xl font-orbitron font-black uppercase mb-4 ${theme.textPrimary}`}>Configure {unit.name}</h3>
+              
+              <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6">
+                  {/* Left Column: Config */}
+                  <div className="flex-1 overflow-y-auto pr-2">
+                      <div className="mb-4">
+                        <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Select Composition</label>
+                        <div className="flex flex-col gap-2 mt-2">
+                          {(unit.compositions || []).map((comp, idx) => (
+                            <button key={`comp-${idx}`} onClick={() => { setCompIndex(idx); setSelectedUpgrades([]); }}
+                              className={`p-2 rounded border text-left flex justify-between ${compIndex === idx ? theme.accent : 'bg-black/40 border-white/10'}`}>
+                              <span>{comp.models} Models (Supply: {comp.supply})</span>
+                              <span className="font-mono font-bold text-sky-400">{comp.minerals} Min</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              {unit.upgrades && unit.upgrades.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-orbitron font-bold text-amber-300 uppercase mb-3 border-b border-white/10 pb-1">Armoury & Upgrades</h3>
-                  <div className="space-y-2">
-                    {unit.upgrades.map((u, i) => {
-                      const cost = u.costs[compIdx];
-                      const canEquip = cost !== undefined;
-                      const isSelected = !!selectedUpgrades[u.name];
-
-                      return (
-                        <div 
-                          key={i} 
-                          onClick={() => canEquip && toggleUpgrade(u.name)}
-                          className={`p-3 rounded border flex flex-col gap-1 transition-colors ${!canEquip ? 'opacity-50 cursor-not-allowed bg-black/40 border-white/5' : isSelected ? 'bg-amber-900/30 border-amber-500 cursor-pointer' : 'bg-black/40 border-white/10 cursor-pointer hover:border-amber-500/50'}`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? 'border-amber-400 bg-amber-400' : 'border-slate-500'}`}>
-                                {isSelected && <span className="text-black text-xs font-bold">✓</span>}
+                      {(unit.upgrades || []).length > 0 && (
+                        <div className="mb-6">
+                          <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Available Upgrades</label>
+                          <div className="flex flex-col gap-2 mt-2">
+                            {unit.upgrades.map(upg => (
+                              <div key={upg.name} className="flex items-center justify-between p-2 rounded bg-black/40 border border-white/10">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input type="checkbox" checked={selectedUpgrades.includes(upg)} onChange={() => handleUpgradeToggle(upg)} className="w-4 h-4" />
+                                  <div>
+                                    <span className="text-sm font-bold flex items-center gap-1">
+                                      {upg.name.includes('(') ? upg.name.split('(')[0].trim() : upg.name} 
+                                      <button onClick={(e) => { e.preventDefault(); openRule(upg.name); }} className="text-xs opacity-70 hover:opacity-100 hover:text-amber-300 z-50 relative">ℹ️</button>
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 block">{upg.type}</span>
+                                  </div>
+                                </label>
+                                <span className="font-mono text-sm text-amber-200">+{upg.costs[compIndex] || 0} Min</span>
                               </div>
-                              <span className="font-bold text-sm text-white">{u.name}</span>
-                              {u.type === "Replacement" && <span className="text-[9px] bg-rose-900/50 text-rose-300 px-1 rounded uppercase">Replaces {u.replaces}</span>}
-                            </div>
-                            <span className="text-amber-400 font-orbitron text-xs font-bold">{canEquip ? `+${cost} PTS` : 'N/A'}</span>
+                            ))}
                           </div>
                         </div>
-                      );
-                    })}
+                      )}
                   </div>
-                </div>
-              )}
-            </div>
 
-            <div className="bg-[#0b0e14] p-4 rounded border border-white/10 h-full max-h-[70vh] overflow-y-auto">
-              <h3 className="text-sm font-orbitron font-bold text-slate-300 uppercase mb-4 text-center tracking-widest">Active Data Sheet</h3>
-              
-              <div className="flex justify-center gap-2 mb-4">
-                <StatBadge label="SHLD" value={unit.stats.shield} />
-                <StatBadge label="SPD" value={unit.stats.speed} />
-                <StatBadge label="EVA" value={unit.stats.evade} />
-                <StatBadge label="ARM" value={unit.stats.armour} />
-                <StatBadge label="HP" value={unit.stats.hitPoints} />
-                <StatBadge label="SIZ" value={unit.stats.size} />
+                  {/* Right Column: Live Data Sheet */}
+                  <div className="flex-1 overflow-y-auto bg-black/40 p-4 rounded-lg border border-white/10 hidden md:block">
+                     <h4 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 border-b border-white/10 pb-2">Live Data Sheet</h4>
+                     <PhaseSection phase="ANY PHASE" title="Any Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                     <PhaseSection phase="MOVEMENT PHASE" title="Movement Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                     <PhaseSection phase="ASSAULT PHASE" title="Assault Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                     <PhaseSection phase="COMBAT PHASE" title="Combat Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                  </div>
               </div>
 
-              <PhaseSection title="ANY PHASE" abilities={mappedAbilities} weapons={currentWeapons} forceOpen={true} />
-              <PhaseSection title="MOVEMENT PHASE" abilities={mappedAbilities} weapons={currentWeapons} forceOpen={true} />
-              <PhaseSection title="ASSAULT PHASE" abilities={mappedAbilities} weapons={currentWeapons} forceOpen={true} />
-              <PhaseSection title="COMBAT PHASE" abilities={mappedAbilities} weapons={currentWeapons} forceOpen={true} />
+              <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/10 shrink-0">
+                <span className="font-orbitron text-xl font-black text-sky-400">Total: {currentMinerals} Min</span>
+                <div className="flex gap-2">
+                  <button onClick={onClose} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
+                  <button onClick={() => { addToRoster(unit, compIndex, selectedUpgrades); onClose(); }} className={`px-4 py-2 rounded font-bold ${theme.accent}`}>Add Unit</button>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-            <button onClick={onClose} className="px-6 py-2 border border-slate-600 rounded text-slate-300 hover:bg-slate-800 font-orbitron font-bold uppercase tracking-wider transition-colors">Cancel</button>
-            <button onClick={handleSave} className="px-6 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded font-orbitron font-bold uppercase tracking-wider transition-colors shadow-[0_0_15px_rgba(2,132,199,0.5)]">
-              {rosterMode ? "Update Unit" : "Add to Roster"}
-            </button>
-          </div>
-        </Modal>
-      );
-    };
-
-    const UnitCard = ({ unit, onConfigure }) => {
-      const minCost = unit.compositions[0].minerals;
-      const maxCost = unit.compositions[unit.compositions.length - 1].minerals;
-      const costDisplay = minCost === maxCost ? minCost : `${minCost}/${maxCost}`;
-
-      const slotColors = { Hero: "text-amber-400", Elite: "text-purple-400", Core: "text-emerald-400", Support: "text-sky-400", Summoned: "text-slate-400" };
+        );
+      };
 
       return (
-        <div className="bg-black/40 border border-white/10 rounded overflow-hidden flex flex-col hover:border-sky-500/50 transition-colors">
-          <div className="p-3 border-b border-white/10 bg-white/5 flex justify-between items-start">
-            <div>
-              <h3 className="font-orbitron font-bold text-lg text-white uppercase">{unit.name}</h3>
-              <p className="text-xs text-slate-400">{unit.tags}</p>
-            </div>
-            <div className="text-right">
-              <div className="font-orbitron font-bold text-amber-400">{costDisplay} PTS</div>
-              <div className={`text-[10px] font-bold uppercase tracking-wider ${slotColors[unit.slot]}`}>{unit.slot}</div>
-            </div>
-          </div>
-          <div className="p-3 flex justify-between items-center bg-black/20">
-             <div className="text-xs text-slate-400">Models: {unit.compositions[0].models}{unit.compositions.length > 1 ? ` - ${unit.compositions[unit.compositions.length-1].models}` : ''}</div>
-             <button onClick={() => onConfigure(unit)} className="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-orbitron font-bold uppercase tracking-wider rounded transition-colors">Configure</button>
-          </div>
-        </div>
-      );
-    };
-    
-    const ResourceCard = ({ card }) => {
-      let typeColor = card.type === "Faction Card" ? "text-emerald-400" : "text-amber-400";
-      
-      return (
-        <div className="bg-black/40 border border-white/10 rounded overflow-hidden flex flex-col hover:border-sky-500/50 transition-colors">
-          <div className="p-3 border-b border-white/10 bg-white/5">
-             <h3 className="font-orbitron font-bold text-md text-white uppercase">{card.name}</h3>
-             <p className="text-[10px] text-slate-400">{card.tags}</p>
-          </div>
-          <div className="p-3 space-y-2 flex-1">
-             <div className={`text-xs font-orbitron font-bold ${typeColor} text-center p-1 bg-white/5 rounded`}>
-               {card.provides}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-black/20 sticky top-0 z-20 backdrop-blur-md">
+             <div className="flex items-center gap-4">
+                <h2 className={`text-2xl font-black uppercase font-orbitron drop-shadow-md ${theme.textPrimary}`}>Army Builder</h2>
              </div>
-             <div className="text-xs space-y-1">
-               {card.abilities.map((a, i) => <div key={i} className="text-slate-300">• {a}</div>)}
-             </div>
-          </div>
-        </div>
-      );
-    };
-
-    const App = () => {
-      const [faction, setFaction] = useState("Protoss");
-      const [subFaction, setSubFaction] = useState("Daelaam");
-      const [roster, setRoster] = useState([]);
-      
-      const [isConfigOpen, setIsConfigOpen] = useState(false);
-      const [configUnit, setConfigUnit] = useState(null);
-      const [editingInstance, setEditingInstance] = useState(null);
-      
-      const [activeRule, setActiveRule] = useState(null);
-
-      const availableUnits = UNITS_DATABASE.filter(u => u.faction === faction && (!u.subFaction || u.subFaction === subFaction));
-      const availableFactionCards = FACTION_CARDS.filter(c => c.faction === faction && (!c.subFaction || c.subFaction === subFaction || c.subFaction === "Generic"));
-      const availableTacticalCards = TACTICAL_CARDS.filter(c => c.faction === faction);
-
-      const groupedUnits = availableUnits.reduce((acc, u) => {
-        if (!acc[u.slot]) acc[u.slot] = [];
-        acc[u.slot].push(u);
-        return acc;
-      }, { Hero: [], Elite: [], Core: [], Support: [], Summoned: [] });
-
-      const handleConfigureNew = (unit) => {
-        setConfigUnit(unit);
-        setEditingInstance(null);
-        setIsConfigOpen(true);
-      };
-
-      const handleConfigureExisting = (rosterUnit) => {
-        const baseUnit = UNITS_DATABASE.find(u => u.name === rosterUnit.name);
-        if (baseUnit) {
-          setConfigUnit(baseUnit);
-          setEditingInstance(rosterUnit);
-          setIsConfigOpen(true);
-        }
-      };
-
-      const handleSaveConfig = (finalUnit) => {
-        if (editingInstance) {
-          setRoster(prev => prev.map(u => u.instanceId === finalUnit.instanceId ? finalUnit : u));
-        } else {
-          setRoster(prev => [...prev, finalUnit]);
-        }
-      };
-
-      const handleRemoveUnit = (id) => {
-        setRoster(prev => prev.filter(u => u.instanceId !== id));
-      };
-
-      const totalPts = roster.reduce((sum, u) => sum + u.totalCost, 0);
-      const totalSupply = roster.reduce((sum, u) => sum + u.supply, 0);
-
-      return (
-        <div className="min-h-screen flex text-sm">
-          {/* SIDEBAR COMMAND CENTER */}
-          <div className="w-80 hex-bg border-r border-white/10 flex flex-col h-screen sticky top-0 shadow-2xl z-40">
-            <div className="p-4 border-b border-white/10 bg-black/40">
-              <h1 className="text-xl font-orbitron font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400 uppercase tracking-widest text-center">ARMY BUILDER</h1>
+             
+             <div className="flex items-center gap-4">
+              {!isPlayMode && (
+                <button onClick={resetAppData} className="text-[10px] uppercase font-bold text-slate-500 hover:text-white px-3 py-1 rounded bg-black/50 border border-white/10" title="Click if App crashes on load">
+                  Reset Data
+                </button>
+              )}
+              {!isPlayMode && (
+                <div className="flex gap-2">
+                  <select value={subFaction} onChange={e => setSubFaction(e.target.value)} className="bg-black/50 border border-white/20 rounded p-2 font-bold text-sm outline-none text-slate-200 uppercase tracking-wider">
+                    {SUB_FACTIONS[selectedFaction].map(sf => <option key={sf} value={sf}>{sf}</option>)}
+                  </select>
+                  <select value={scale} onChange={e => setScale(e.target.value)} className="bg-black/50 border border-white/20 rounded p-2 font-bold text-sm outline-none text-slate-200 uppercase tracking-wider">
+                    {Object.keys(ENGAGEMENT_SCALES).map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              )}
+              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-6 py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
+                {isPlayMode ? 'EXIT PLAY MODE' : 'ENTER PLAY MODE'}
+              </button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1800px] w-full mx-auto pb-24">
             
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => { setFaction("Protoss"); setSubFaction("Daelaam"); setRoster([]); }}
-                  className={`flex-1 py-2 rounded font-orbitron font-bold uppercase transition-all ${faction === "Protoss" ? 'bg-amber-600 text-white shadow-[0_0_10px_rgba(217,119,6,0.5)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 opacity-80'}`}
-                >Protoss</button>
-                <button 
-                  onClick={() => { setFaction("Terran"); setSubFaction("Raynor's Raiders"); setRoster([]); }}
-                  className={`flex-1 py-2 rounded font-orbitron font-bold uppercase transition-all ${faction === "Terran" ? 'bg-sky-600 text-white shadow-[0_0_10px_rgba(2,132,199,0.5)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 opacity-80'}`}
-                >Terran</button>
-              </div>
-
-              {faction === "Protoss" && (
-                <div className="grid grid-cols-2 gap-2">
-                  {["Daelaam", "Khalai", "Nerazim", "Purifier", "Tal'darim"].map(sf => (
-                    <button 
-                      key={sf} onClick={() => { setSubFaction(sf); setRoster([]); }}
-                      className={`py-1.5 rounded text-xs font-bold uppercase border ${subFaction === sf ? 'bg-amber-900/50 border-amber-500 text-white' : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'}`}
-                    >{sf}</button>
-                  ))}
-                </div>
-              )}
-              {faction === "Terran" && (
-                <div className="grid grid-cols-2 gap-2">
-                  {["Raynor's Raiders", "Dominion", "Kel-Morian", "Umojan", "Mercenaries"].map(sf => (
-                    <button 
-                      key={sf} onClick={() => { setSubFaction(sf); setRoster([]); }}
-                      className={`py-1.5 rounded text-xs font-bold uppercase border ${subFaction === sf ? 'bg-sky-900/50 border-sky-500 text-white' : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'}`}
-                    >{sf}</button>
-                  ))}
-                </div>
-              )}
-
-              <div className="stat-box rounded p-3 text-center space-y-1">
-                <div className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Resource Allocation</div>
-                <div className="flex justify-center items-end gap-2 font-orbitron">
-                  <span className="text-3xl font-black text-amber-400">{totalPts}</span>
-                  <span className="text-sm font-bold text-slate-500 mb-1">PTS</span>
-                </div>
-                <div className="flex justify-center gap-4 text-xs font-bold text-sky-300 mt-2">
-                  <span>{totalSupply} SUP</span>
-                  <span>{roster.length} UNITS</span>
-                </div>
-              </div>
-
-              {roster.length > 0 ? (
-                <div className="space-y-2 mt-4">
-                  {roster.map(ru => (
-                    <div key={ru.instanceId} className="bg-white/5 border border-white/10 rounded p-2 flex justify-between items-center group hover:bg-white/10 transition-colors cursor-pointer" onClick={() => handleConfigureExisting(ru)}>
-                      <div>
-                        <div className="font-bold text-sky-200">{ru.name}</div>
-                        <div className="text-[10px] text-slate-400 uppercase">{ru.models} Mdl | {ru.upgrades.length} Upg</div>
-                      </div>
-                      <div className="flex items-center gap-2 text-right">
-                        <div>
-                          <div className="font-orbitron font-bold text-amber-400">{ru.totalCost}</div>
-                        </div>
-                        <button onClick={(e) => { e.stopPropagation(); handleRemoveUnit(ru.instanceId); }} className="text-rose-500/50 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-slate-500 py-8 italic text-xs">No units deployed. Awaiting command.</div>
-              )}
-            </div>
-          </div>
-
-          {/* MAIN CATALOG VIEW */}
-          <div className="flex-1 p-6 h-screen overflow-y-auto">
-            <div className="max-w-6xl mx-auto space-y-8">
-              
-              <div className="tech-border pb-4">
-                <h2 className="text-3xl font-orbitron font-black text-white uppercase tracking-widest">
-                  {faction} <span className="text-slate-500 text-xl">/ {subFaction}</span>
+            {!isPlayMode && (
+              <div className={`lg:col-span-8 flex flex-col gap-4 ${theme.panelBg} p-5 rounded-xl border ${theme.border}`}>
+                <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 flex justify-between">
+                  <span>Unit Catalog</span>
+                  <span className="text-sm font-normal text-slate-400 normal-case bg-black/40 px-2 py-0.5 rounded">Sub-Faction: <span className="text-white font-bold">{subFaction}</span></span>
                 </h2>
-                <p className="text-slate-400 text-sm mt-1">Select units below to configure and add them to your roster.</p>
-              </div>
-
-              <div className="space-y-6">
-                {Object.entries(groupedUnits).map(([slot, units]) => {
-                  if (units.length === 0) return null;
-                  return (
-                    <details key={slot} className="group" open>
-                      <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded">
-                        <span>{slot} <span className="text-slate-400 text-xs ml-2">({units.length})</span></span>
-                        <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
-                      </summary>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4 pb-2">
-                        {units.map((u, i) => <UnitCard key={i} unit={u} onConfigure={handleConfigureNew} />)}
-                      </div>
-                    </details>
-                  )
-                })}
+                
+                <div className="overflow-y-auto max-h-[50vh] pr-2">
+                  <ArmoryGroup title="Hero" units={factionUnits.filter(u => u.slot === "Hero")} onConfigure={setConfigUnit} theme={theme} />
+                  <ArmoryGroup title="Core" units={factionUnits.filter(u => u.slot === "Core")} onConfigure={setConfigUnit} theme={theme} />
+                  <ArmoryGroup title="Elite" units={factionUnits.filter(u => u.slot === "Elite")} onConfigure={setConfigUnit} theme={theme} />
+                  <ArmoryGroup title="Support" units={factionUnits.filter(u => u.slot === "Support")} onConfigure={setConfigUnit} theme={theme} />
+                  <ArmoryGroup title="Summoned" units={factionUnits.filter(u => u.slot === "Summoned")} onConfigure={setConfigUnit} theme={theme} />
+                </div>
 
                 <div className="mt-2 border-t border-white/10 pt-4 flex flex-col gap-4">
-                  <details className="group">
+                  <details className="group" open>
                     <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded">
                       <span>Faction Cards <span className="text-slate-400 text-xs ml-2">({availableFactionCards.length})</span></span>
                       <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[50vh] overflow-y-auto pr-2 mt-4 pb-2">
-                      {availableFactionCards.map((c, i) => <ResourceCard key={i} card={c} />)}
+                      {availableFactionCards.map(card => {
+                        const isAdded = tacticalCards.find(c => c.name === card.name);
+                        return (
+                          <TacticalCardUI 
+                            key={card.name} card={card} isAdded={isAdded} theme={theme}
+                            onToggle={() => isAdded ? setTacticalCards(prev => prev.filter(c => c.name !== card.name)) : setTacticalCards(prev => [...prev, card])} 
+                          />
+                        )
+                      })}
                     </div>
                   </details>
 
-                  <details className="group">
+                  <details className="group" open>
                     <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded">
                       <span>Tactical Cards (Vespene Gas) <span className="text-slate-400 text-xs ml-2">({availableTacticalCards.length})</span></span>
                       <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[50vh] overflow-y-auto pr-2 mt-4 pb-2">
-                      {availableTacticalCards.map((c, i) => <ResourceCard key={i} card={c} />)}
+                      {availableTacticalCards.map(card => {
+                        const isAdded = tacticalCards.find(c => c.name === card.name);
+                        return (
+                          <TacticalCardUI 
+                            key={card.name} card={card} isAdded={isAdded} theme={theme}
+                            onToggle={() => isAdded ? setTacticalCards(prev => prev.filter(c => c.name !== card.name)) : setTacticalCards(prev => [...prev, card])} 
+                          />
+                        )
+                      })}
                     </div>
                   </details>
                 </div>
+              </div>
+            )}
 
+            <div className={`${isPlayMode ? 'lg:col-span-12' : 'lg:col-span-4'} flex flex-col gap-6`}>
+              {!isPlayMode && (
+                <div className={`flex flex-col gap-3 ${theme.panelBg} p-5 rounded-xl border ${theme.border}`}>
+                  <h2 className="text-lg font-orbitron font-bold uppercase border-b border-white/10 pb-2">Army Stats</h2>
+                  <div className={`p-3 rounded flex justify-between items-center ${totalMinerals > limits.minerals ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
+                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Minerals</span>
+                    <span className={`font-orbitron text-xl font-black ${totalMinerals > limits.minerals ? 'text-rose-400' : 'text-sky-400'}`}>{totalMinerals} <span className="text-sm font-normal text-slate-400">/ {limits.minerals === Infinity ? '∞' : limits.minerals}</span></span>
+                  </div>
+                  <div className={`p-3 rounded flex justify-between items-center ${totalVespene > limits.vespene ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
+                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Vespene</span>
+                    <span className={`font-orbitron text-xl font-black ${totalVespene > limits.vespene ? 'text-rose-400' : 'text-emerald-400'}`}>{totalVespene} <span className="text-sm font-normal text-slate-400">/ {limits.vespene === Infinity ? '∞' : limits.vespene}</span></span>
+                  </div>
+                  <div className="p-3 rounded flex justify-between items-center bg-black/50 border border-white/10">
+                    <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Drafted Supply</span>
+                    <span className="font-orbitron text-xl font-black text-amber-300">{totalSupply}</span>
+                  </div>
+                </div>
+              )}
+
+              {}
+              {isPlayMode && (
+                <div className={`p-5 rounded-xl border ${theme.border} ${theme.panelBg} grid grid-cols-1 lg:grid-cols-3 gap-6 shadow-xl`}>
+                  <div className="flex flex-col gap-3 bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs uppercase font-bold tracking-widest text-slate-400">Round</span>
+                        <span className="text-2xl font-orbitron font-black text-white">{matchData.round}<span className="text-slate-500 text-sm">/5</span></span>
+                     </div>
+                     <div className="flex gap-2 w-full mt-2">
+                       <button onClick={() => updateMatch('round', Math.max(1, matchData.round - 1))} className="w-10 rounded bg-white/10 hover:bg-white/20 font-bold flex items-center justify-center text-slate-300 transition-colors">◁</button>
+                       <button onClick={() => updateMatch('round', Math.min(5, matchData.round + 1))} className={`flex-1 py-2 rounded font-bold text-sm uppercase tracking-wider shadow-md ${theme.accent}`}>Advance Round ➔</button>
+                     </div>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
+                    <h3 className="text-xs uppercase font-bold tracking-widest text-slate-400 mb-2">Supply Pool HUD</h3>
+                    <div className="flex items-center justify-around w-full">
+                      <div className="text-center">
+                        <span className="block text-2xl font-orbitron font-black text-white">{supplyPool === Infinity ? '∞' : supplyPool}</span>
+                        <span className="text-[10px] uppercase text-slate-500 font-bold">Total Pool</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-2xl font-orbitron font-black text-emerald-400">{availableSupply === Infinity ? '∞' : availableSupply}</span>
+                        <span className="text-[10px] uppercase text-slate-500 font-bold">Available</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-2xl font-orbitron font-black text-amber-300">{activeSupply}</span>
+                        <span className="text-[10px] uppercase text-slate-500 font-bold">Active</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col justify-center bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
+                     <h3 className="text-xs uppercase font-bold tracking-widest text-slate-400 mb-2 text-center">Scoreboard</h3>
+                     <div className="flex items-center justify-between">
+                        <div className="text-center">
+                           <div className="flex items-center gap-2">
+                              <button onClick={() => updateMatch('yourVP', Math.max(0, matchData.yourVP - 1))} className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs">-</button>
+                              <span className={`text-3xl font-orbitron font-black ${theme.textPrimary}`}>{matchData.yourVP}</span>
+                              <button onClick={() => updateMatch('yourVP', matchData.yourVP + 1)} className={`w-6 h-6 rounded ${theme.accentSecondary} flex items-center justify-center font-bold text-xs`}>+</button>
+                           </div>
+                           <span className="text-[10px] uppercase text-slate-400 font-bold mt-1 block">Your VP</span>
+                        </div>
+                        <span className="text-2xl font-black text-slate-600 font-orbitron">-</span>
+                        <div className="text-center">
+                           <div className="flex items-center gap-2">
+                              <button onClick={() => updateMatch('enemyVP', Math.max(0, matchData.enemyVP - 1))} className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs">-</button>
+                              <span className="text-3xl font-orbitron font-black text-rose-500">{matchData.enemyVP}</span>
+                              <button onClick={() => updateMatch('enemyVP', matchData.enemyVP + 1)} className="w-6 h-6 rounded bg-rose-900/60 text-rose-200 border border-rose-900 flex items-center justify-center font-bold text-xs">+</button>
+                           </div>
+                           <span className="text-[10px] uppercase text-slate-400 font-bold mt-1 block">Enemy VP</span>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+              )}
+
+              {}
+              {isPlayMode && tacticalCards.length > 0 && (
+                <div className={`flex flex-col ${theme.panelBg} p-5 rounded-xl border ${theme.border} shadow-xl`}>
+                  <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 mb-4">Command Hand</h2>
+                  <div className="flex overflow-x-auto gap-4 pb-4 snap-x">
+                    {tacticalCards.map((card, idx) => (
+                      <div key={`play-card-${idx}`} className="w-[300px] shrink-0 snap-start">
+                        <TacticalCardUI card={card} isAdded={true} theme={theme} onToggle={() => {}} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className={`flex flex-col ${theme.panelBg} p-5 rounded-xl border ${theme.border} shadow-xl`}>
+                <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
+                  <h2 className="text-xl font-orbitron font-bold uppercase">Active Roster</h2>
+                  {!isPlayMode ? (
+                     <div className="flex gap-2">
+                        <button onClick={() => { setRoster([]); setTacticalCards([]); }} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50 ml-2">Clear</button>
+                     </div>
+                  ) : (
+                    <button onClick={() => setRoster([])} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50">Clear Army</button>
+                  )}
+                </div>
+                
+                <div className={`grid gap-4 ${isPlayMode ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                  {roster.length === 0 && (
+                    <div className="p-8 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-sm font-bold uppercase tracking-widest">
+                      Roster Empty
+                    </div>
+                  )}
+                  {sortedRoster.map((unit, idx) => {
+                    const modelsAlive = getModelsAlive(unit);
+                    const currentSupply = getUnitSupply(unit);
+                    const isDead = modelsAlive <= 0;
+                    const hasShield = unit.stats && unit.stats.shield !== undefined;
+                    const shieldBroken = hasShield && (unit.shieldDamage || 0) >= unit.stats.shield;
+
+                    let currentWeapons = [...(unit.weapons || [])];
+                    let currentAbilities = (unit.abilities || []).map(a => {
+                        const mappedInfo = ABILITY_MAP[a] || { type: "PASSIVE", phase: "ANY PHASE" };
+                        return { 
+                            name: a, 
+                            ...mappedInfo,
+                            desc: RULES_DICTIONARY[a] || mappedInfo.desc || "Rule text available in full rulebook." 
+                        };
+                    });
+
+                    const appliedUpgrades = unit.appliedUpgrades || [];
+                    const unitUpgrades = unit.upgrades || [];
+
+                    appliedUpgrades.forEach(upgName => {
+                      const upgDef = unitUpgrades.find(u => u.name === upgName);
+                      if (upgDef && upgDef.type === "Replacement" && WEAPON_MAP[upgName]) {
+                        if (upgDef.replaces) {
+                          const replacesList = Array.isArray(upgDef.replaces) ? upgDef.replaces : [upgDef.replaces];
+                          currentWeapons = currentWeapons.filter(w => !replacesList.includes(w.name));
+                        } else {
+                          currentWeapons = currentWeapons.filter(w => w.phase !== WEAPON_MAP[upgName].phase);
+                        }
+                      }
+                      
+                      if (WEAPON_MAP[upgName]) {
+                        currentWeapons.push(WEAPON_MAP[upgName]);
+                      } else {
+                        const mappedInfo = ABILITY_MAP[upgName] || { type: "PASSIVE", phase: "ANY PHASE" };
+                        currentAbilities.push({ 
+                            name: upgName, 
+                            ...mappedInfo, 
+                            desc: RULES_DICTIONARY[upgName] || mappedInfo.desc || "Rule text available in full rulebook." 
+                        });
+                      }
+                    });
+
+                    return (
+                      <div key={`roster-${unit.rosterId}-${idx}`} className={`${theme.cardBg} border ${isDead ? 'border-rose-600/50 opacity-50' : theme.border} rounded-lg flex flex-col overflow-hidden shadow-lg`}>
+                        
+                        {isPlayMode && (
+                          <div className="flex bg-black/80 text-white font-orbitron shadow-md">
+                            {hasShield && <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-blue-300 uppercase tracking-widest">Shield</span><span className="font-bold text-blue-300">{unit.stats.shield}</span></div>}
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Speed</span><span className="font-bold">{unit.stats?.speed || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Armour</span><span className="font-bold">{unit.stats?.armour || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Evade</span><span className="font-bold">{unit.stats?.evade || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-rose-300 uppercase tracking-widest">HP</span><span className="font-bold text-rose-300">{unit.stats?.hitPoints || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center"><span className="block text-[8px] text-emerald-400 uppercase tracking-widest">Size</span><span className="font-bold text-emerald-400">{unit.stats?.size || "-"}</span></div>
+                          </div>
+                        )}
+
+                        <div className="p-4 flex flex-col flex-1">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h4 className="font-orbitron font-black text-xl uppercase tracking-wide text-white flex items-center gap-2">
+                                {unit.name}
+                                {!isPlayMode && <button onClick={() => setRoster(prev => prev.filter(r => r.rosterId !== unit.rosterId))} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
+                              </h4>
+                              <div className="flex flex-col gap-1 mt-1">
+                                <span className={`text-[10px] uppercase font-bold tracking-widest text-slate-400 block`}>{unit.tags}</span>
+                                <div className="flex items-center gap-3">
+                                  <span className={`text-sm font-orbitron font-bold tracking-wider ${isDead ? 'text-rose-500' : 'text-slate-200'}`}>{modelsAlive} / {unit.models || 0} Models</span>
+                                  <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">Size: {unit.stats?.size || "-"}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right flex flex-col items-end">
+                              <span className={`block text-3xl font-orbitron font-black leading-none ${isDead ? 'text-rose-600' : (isPlayMode && !unit.deployed ? 'text-slate-500' : 'text-amber-300')}`}>{currentSupply}</span>
+                              <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-2">Supply</span>
+                              {isPlayMode && !isDead && (
+                                <button 
+                                  onClick={() => toggleDeploy(unit.rosterId)}
+                                  className={`px-2 py-1 text-[10px] uppercase font-bold rounded border transition-colors ${unit.deployed ? 'bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700' : theme.accent}`}
+                                >
+                                  {unit.deployed ? 'Recall' : 'Deploy'}
+                                </button>
+                              )}
+                              {isPlayMode && isDead && (
+                                <span className="px-2 py-1 text-[10px] uppercase font-bold rounded border bg-rose-950/50 text-rose-500 border-rose-900">Destroyed</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {!isPlayMode && appliedUpgrades.length > 0 && (
+                             <div className="text-xs text-slate-300 mb-4 border-l-2 border-white/20 pl-2">
+                                + {appliedUpgrades.map(u => u.includes('(') ? u.split('(')[0].trim() : u).join(", ")}
+                             </div>
+                          )}
+
+                          <div className="mb-4">
+                            <PhaseSection phase="ANY PHASE" title="Any Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                            <PhaseSection phase="MOVEMENT PHASE" title="Movement Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                            <PhaseSection phase="ASSAULT PHASE" title="Assault Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                            <PhaseSection phase="COMBAT PHASE" title="Combat Phase" unitWeapons={currentWeapons} unitAbilities={currentAbilities} openRule={openRule} />
+                          </div>
+
+                          {isPlayMode && (
+                            <div className="mt-auto space-y-2 p-3 bg-black/60 rounded-lg border border-white/10 shadow-inner">
+                              {hasShield && (
+                                <div className={`flex items-center justify-between ${shieldBroken ? 'opacity-50' : ''}`}>
+                                  <span className={`text-sm font-bold uppercase tracking-widest ${shieldBroken ? 'text-slate-500 line-through' : 'text-blue-400'}`}>Shields</span>
+                                  <div className="flex items-center gap-3">
+                                    <button onClick={() => updateDamage(unit.rosterId, 'shieldDamage', -1)} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold text-lg flex items-center justify-center">-</button>
+                                    <span className="font-orbitron text-xl font-black w-6 text-center">{unit.shieldDamage || 0}</span>
+                                    <button onClick={() => updateDamage(unit.rosterId, 'shieldDamage', 1)} className="w-8 h-8 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-200 font-bold text-lg flex items-center justify-center">+</button>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between">
+                                <span className={`text-sm font-bold uppercase tracking-widest ${isDead ? 'text-rose-500' : 'text-rose-300'}`}>Hit Points</span>
+                                <div className="flex items-center gap-3">
+                                  <button onClick={() => updateDamage(unit.rosterId, 'hpDamage', -1)} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold text-lg flex items-center justify-center">-</button>
+                                  <span className={`font-orbitron text-xl font-black w-6 text-center ${isDead ? 'text-rose-500' : 'text-white'}`}>{unit.hpDamage || 0}</span>
+                                  <button onClick={() => updateDamage(unit.rosterId, 'hpDamage', 1)} className="w-8 h-8 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 font-bold text-lg flex items-center justify-center">+</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <UnitConfigModal 
-          isOpen={isConfigOpen} 
-          unit={configUnit} 
-          onClose={() => setIsConfigOpen(false)} 
-          onSave={handleSaveConfig}
-          rosterUnit={editingInstance}
-          rosterMode={!!editingInstance}
-        />
-        
-        <RuleBookModal isOpen={!!activeRule} ruleName={activeRule} onClose={() => setActiveRule(null)} />
-      </div>
+          {configUnit && <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} />}
+
+          {}
+          {activeModal && (
+            <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
+              <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`} onClick={e => e.stopPropagation()}>
+                <h3 className={`text-lg font-orbitron font-black uppercase mb-3 ${theme.textPrimary}`}>
+                  {activeModal.title.includes('(') ? activeModal.title.split('(')[0].trim() : activeModal.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-slate-200">{activeModal.text}</p>
+                <button onClick={() => setActiveModal(null)} className={`mt-6 w-full py-2 rounded text-xs font-bold uppercase tracking-widest ${theme.accent}`}>Close</button>
+              </div>
+            </div>
+          )}
+        </div>
       );
     };
+
+    function App() {
+      const [selectedFaction, setSelectedFaction] = useState(() => loadLocal('sc_faction', "Protoss"));
+      const [isPlayMode, setIsPlayMode] = useState(() => loadLocal('sc_playMode', false));
+
+      useEffect(() => localStorage.setItem('sc_faction', JSON.stringify(selectedFaction)), [selectedFaction]);
+      useEffect(() => localStorage.setItem('sc_playMode', JSON.stringify(isPlayMode)), [isPlayMode]);
+
+      const theme = THEMES[selectedFaction];
+
+      return (
+        <div className={`flex h-screen w-full ${theme.bg} text-slate-100 overflow-hidden font-rajdhani transition-colors duration-500`}>
+          <div className="w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+            <div className="p-5 border-b border-white/10 text-center bg-black/50">
+               <h1 className="text-xl font-black uppercase font-orbitron tracking-widest bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-500 drop-shadow">
+                  Command Center
+               </h1>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto py-4">
+               <div className="mb-6 px-4">
+                  <ul className="space-y-1">
+                     <li>
+                        <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${theme.accentSecondary + ' shadow-md'}`}>
+                           <span className="text-lg">⚔️</span>
+                           Army Builder
+                        </button>
+                     </li>
+                  </ul>
+               </div>
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40">
+            {!isPlayMode && (
+              <div className="w-full flex justify-center gap-6 p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg">
+                {Object.keys(THEMES).map(f => (
+                   <button 
+                     key={f} 
+                     onClick={() => setSelectedFaction(f)}
+                     className={`relative w-48 h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${selectedFaction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}
+                   >
+                     <div 
+                       className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${selectedFaction === f ? 'opacity-100' : 'opacity-80'}`} 
+                       style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}
+                     ></div>
+                     <div className="absolute inset-0 bg-black/20"></div>
+                     <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${selectedFaction === f ? 'text-white' : 'text-slate-400'}`}>
+                        {f}
+                     </div>
+                   </button>
+                ))}
+              </div>
+            )}
+            <ArmyBuilderView theme={theme} selectedFaction={selectedFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />
+          </div>
+        </div>
+      );
+    }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
