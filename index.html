@@ -67,7 +67,7 @@
 
     const SUB_FACTIONS = {
       Terran: ["Generic", "Raynor's Raiders"],
-      Protoss: ["Generic", "Daelaam", "Khalai", "Nerazim"],
+      Protoss: ["Daelaam", "Khalai", "Nerazim"],
       Zerg: ["Generic", "Kerrigan's Swarm"]
     };
 
@@ -81,29 +81,21 @@
       "SIDEARM": "Can be fired in addition to a standard weapon during the same activation.",
       "LONG RANGE": "Extends max range. Attacks beyond base range suffer -1 to Hit.",
       
-      "AGG-12": "LONG RANGE (18”), SPECIALIST. Replaces one C-14 Rifle.",
-      "Combat Shield": "PASSIVE: Always eligible to make an Evade Roll against Close Combat Attacks.",
-      "Rocket Launcher": "INDIRECT FIRE, LONG RANGE (18”), SIDEARM, SPECIALIST.",
-      "Grenades - Frag": "PASSIVE: When attacking with C-14 Rifle Within 8”, replace S Dice with D6.",
-      "Kinetic Foam": "PASSIVE: Increases Unit Hit Points characteristic by 1.",
-      "Laser Targeting Systems": "PASSIVE: Quad K12 gains LONG RANGE (16”).",
-      
       "Stimpack": "ACTIVE (1 CP): Suffers NON-LETHAL DAMAGE (2). Gains BUFF Speed (3) and PRECISION.",
       "Devastating Charge": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (6) 4+ effect.",
-      "Life Support": "REACTION (1 CP): Use when Friendly Biological suffers Damage Within 4\". Reduce Damage.",
-      "Path of Shadows": "ACTIVE (1 PE): Resolve the PLACE (8) effect on this unit.",
       
       "Commander": "Treat this Unit's Supply characteristic as increased by 1 for Controlling and Contesting Mission Markers, completing objectives, and resolving Disengage checks.",
       "Phase Prism": "When Artanis is nominated to deploy from Reserves, it may resolve the PLACE (0) effect from another Friendly Unit. That Friendly Unit is removed from the battlefield and returned to Reserves. Artanis' Activation ends.",
       "Hierarch's Stand": "When another Friendly Unit Within 8\" is declared as the target of a Ranged Attack and this Unit is a valid target, redirect the attack to this Unit. This Unit is eligible to make an Evade Roll against the redirected attack. This Special Ability remains active until the End of the current Activation.",
       "Lightning Dash": "After this Unit resolves a successful Charge action, it may declare a second Charge action against a different Enemy Unit, ignoring the restriction on Charging while Engaged. The Devastating Charge ability does not trigger a second time.",
       
+      "Charge": "When determining Charge Distance for this Unit, roll 2D6 instead of D6 and use the higher result to add to the Unit's Speed characteristic.",
+      "Devastating Charge (Zealot)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (3) 4+ effect.",
       "My Life for Aiur": "When this Unit resolves IMPACT, each eligible model generates 1 additional IMPACT die.",
       "Leg Enhancements (Zealot)": "This Unit performs a 2” Move action. This does not count towards its action limit.",
       "Zealous Round": "When this Unit is not Activated and receives Damage, the controlling player may count this Unit as Activated in this Phase (flip its Activation Marker) to reduce the Total Damage by 2.",
       "We Stand as One": "When this Unit makes a Close Combat Attack, if the target is Engaged with at least 1 other Friendly Unit, this Unit's Close Combat Weapon gains PRECISION (2).",
-      "Devastating Charge (Zealot)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (3) 4+ effect.",
-
+      
       "One With the Shadows": "After this Unit fully resolves an Action, it gains the HIDDEN Status.",
       "Prophetic Vision": "REPEATABLE. Use when this Unit is selected as the target of an attack. This Unit's Evade characteristic is treated as 4+ against this attack and cannot be modified.",
       "Sentenced to Death": "Target Enemy Unit on the battlefield. Whenever Zeratul makes a Close Combat Attack targeting the selected Unit, its weapon gains CRITICAL HIT (2).",
@@ -112,24 +104,20 @@
       "Devastating Charge (Zeratul)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 4+ effect.",
       "Shadow Strike": "All Enemy Units Engaged with this Unit suffer HITS 4 (1).",
 
-      "Burrow Ambush": "Deploy from Reserves using the PLACE (18) effect from Entry Edge.",
-      "Adrenal Glands": "Claws and Shredding Claws gain PRECISION (2).",
-      "Heroic Resolve": "Inspires nearby forces, granting combat bonuses.",
-      
-      "Psionic Presence": "All Weapons of Friendly Units targeting an Enemy Unit Within 4\" of this Unit's Shade token gain PRECISION (1).",
-      "Psionic Transfer": "Set a Shade token Wholly Within 12\" of any model in this Unit. At the End of the Round, the controlling player may set all models of this Unit in Coherency, treating the Shade token as the Leading Model. The Shade token has DISPLACEMENT.",
-      "Resonating Glaives": "This Unit's Glaive Cannon gains BUFF RoA (1).",
-      "Guidance": "This Unit's Glaive Cannon Ranged weapon gains ANTI-EVADE (2).",
-      
       "Improved Barrier": "Use when this Unit is selected as the target of an attack. If this Unit has the Shielded Status, the Damage characteristic of the attacking weapon is treated as a maximum of 1 for this attack.",
       "Indomitable": "While Engaged, this Unit may target and be targeted by Unengaged Enemy Units. In both cases, the defending Unit gains an Evade Roll against those attacks.",
       "Shield Overcharge": "Use before this Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (2) for this roll.",
       "Fury Unyielding": "While this Unit is Within 3\" of a Mission Marker, its Ranged Weapons gain CRITICAL HIT (1) when targeting an Enemy Unit that is also Within 3\" of that same Mission Marker.",
       "For the Ancients": "When this Unit makes a Ranged Attack, if the target Unit is more than 8\" away, the attacking weapons gain PRECISION (1).",
 
+      "Psionic Presence": "All Weapons of Friendly Units targeting an Enemy Unit Within 4\" of this Unit's Shade token gain PRECISION (1).",
+      "Psionic Transfer": "Set a Shade token Wholly Within 12\" of any model in this Unit. At the End of the Round, the controlling player may set all models of this Unit in Coherency, treating the Shade token as the Leading Model. The Shade token has DISPLACEMENT.",
+      "Resonating Glaives": "This Unit's Glaive Cannon gains BUFF RoA (1).",
+      "Guidance": "This Unit's Glaive Cannon Ranged weapon gains ANTI-EVADE (2).",
+
       "Path of Shadows (Watchers)": "This Unit gains HIDDEN Status until it performs another action.",
       "Nerazim Farsight": "While Enemy Units are Within 6\" of this Unit's Shade token, they lose HIDDEN Status.",
-
+      
       "Structure": "This Unit cannot be Activated in any Phase and cannot perform actions. Additionally, its Current Supply Value is treated as 0, and it can never Control or Contest Mission Markers, ignoring the standard Zero Supply Exception. This Unit cannot be a target of an ability, unless stated otherwise.",
       "Khalai Ingenuity": "Once per Round, when a Friendly Unit Within 4\" of this Pylon uses a Special Ability that costs Psionic Energy, that ability's PE cost is reduced by 1.",
       "Warp Conduit": "Once per Round, the controlling player may deploy a Ground Unit from Reserves using this Pylon base as the Entry Edge. This Unit's Activation ends.",
@@ -147,44 +135,49 @@
 
       "Shield Overcharge (Praetor)": "This Unit gains TOUGH (2) on the first Armour Roll each Round.",
       "Leg Enhancements (Praetor)": "This Unit performs a 2\" Move action. This does not count towards its action limit.",
-      "Charge": "When determining Charge Distance for this Unit, roll 2D6 instead of D6 and use the higher result to add to the Unit's Speed characteristic.",
       "Devastating Charge (Praetor)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (3) 4+ effect.",
       "Titan Killers": "When this Unit makes a Close Combat Attack, and the target is Size 3 or larger, the weapon's Damage characteristic is treated as 2.",
-      "Precognition": "This Unit is eligible to make an Evade roll against all attacks targeting it.",
-
-      "Dae'Uhl": "When a Friendly Unit receives Damage, reduce the Total Damage by 2 (to a minimum of 1).",
-      "Mass Recall": "Once per Game. Set a Faction Indicator anywhere on the battlefield. All Friendly Protoss Units Within 6” of this Faction Indicator are removed from the battlefield and returned to Reserves.",
-      "Pylon Warp-In": "If there is no Friendly Pylon on the battlefield, set a Friendly Pylon Unit anywhere on the GROUND LEVEL of the battlefield more than 10” away from any Enemy model. This Round, the Pylon is not eligible to use its Special Abilities (excluding Structure).",
-      "Bound by the Khala": "At the end of the active Unit's Activation, select one other Friendly Unit eligible to Activate in the current Phase. Immediately Activate that Unit.",
-      "Might Of The Nerazim": "If a Friendly Unit loses the HIDDEN Status, it gains Buff Speed (2) and its first Weapon used CRITICAL HIT (2).",
-      "Darkness Descends": "The active Biological Unit gains the HIDDEN Status until the End of the Round."
+      "Precognition": "This Unit is eligible to make an Evade roll against all attacks targeting it."
     };
 
     const ABILITY_MAP = {
       "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
       "Devastating Charge": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Life Support": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
-      "Path of Shadows": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
       
       "Commander": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Phase Prism": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
       "Hierarch's Stand": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
       "Lightning Dash": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
+
+      "Charge": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Zealot)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "My Life for Aiur": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Leg Enhancements (Zealot)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Zealous Round": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
+      "We Stand as One": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
       
-      "Psionic Transfer": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Psionic Presence": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Resonating Glaives": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Guidance": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      
+      "One With the Shadows": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Prophetic Vision": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
+      "Sentenced to Death": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Void Prison": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Void Blink": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Zeratul)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Shadow Strike": { type: "ACTIVE", cost: "1 PE", phase: "COMBAT PHASE" },
+
       "Improved Barrier": { type: "REACTION", cost: "0 PE", phase: "ANY PHASE" },
       "Indomitable": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
       "Shield Overcharge": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
       "Fury Unyielding": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
       "For the Ancients": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
 
+      "Psionic Presence": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Psionic Transfer": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Resonating Glaives": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Guidance": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
       "Path of Shadows (Watchers)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
       "Nerazim Farsight": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-
+      
       "Structure": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Khalai Ingenuity": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Warp Conduit": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
@@ -202,29 +195,9 @@
 
       "Shield Overcharge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
       "Leg Enhancements (Praetor)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Charge": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
       "Devastating Charge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
       "Titan Killers": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Precognition": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-
-      "Devastating Charge (Zealot)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "My Life for Aiur": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Leg Enhancements (Zealot)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Zealous Round": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
-      "We Stand as One": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-
-      "One With the Shadows": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Prophetic Vision": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Sentenced to Death": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Void Prison": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Void Blink": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Zeratul)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Shadow Strike": { type: "ACTIVE", cost: "1 PE", phase: "COMBAT PHASE" },
-
-      "Heroic Resolve": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Combat Shield": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Kinetic Foam": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Burrow Ambush": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" }
+      "Precognition": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" }
     };
 
     const WEAPON_MAP = {
@@ -236,105 +209,107 @@
     const TACTICAL_CARDS = [
       // PROTOSS FACTION CARDS
       { 
-        faction: "Protoss", name: "Daelaam", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Supply: 1x Elite, 3x Core, 1x Support", 
+        faction: "Protoss", name: "Daelaam", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Elite, 3x Core, 1x Support Slot", 
         abilities: [
           { name: "Dae'Uhl", cost: "-", phase: "ANY PHASE", desc: "Reaction: When a Friendly Unit receives Damage, reduce the Total Damage by 2 (to a minimum of 1)." },
           { name: "Mass Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Once per Game. Set a Faction Indicator anywhere on the battlefield. All Friendly Protoss Units Within 6” of this Faction Indicator are removed from the battlefield and returned to Reserves." }
         ] 
       },
       { 
-        faction: "Protoss", name: "Khalai", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Supply: 1x Hero, 2x Elite, 3x Core", 
+        faction: "Protoss", name: "Khalai", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 2x Elite, 3x Core Slot", 
         abilities: [
           { name: "Pylon Warp-In", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: If there is no Friendly Pylon on the battlefield, set a Friendly Pylon Unit anywhere on the GROUND LEVEL of the battlefield more than 10” away from any Enemy model. This Round, the Pylon is not eligible to use its Special Abilities (excluding Structure)." },
           { name: "Bound by the Khala", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: At the end of the active Unit's Activation, select one other Friendly Unit eligible to Activate in the current Phase. Immediately Activate that Unit." }
         ] 
       },
       { 
-        faction: "Protoss", name: "Nerazim", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Supply: 1x Hero, 3x Elite, 2x Core", 
+        faction: "Protoss", name: "Nerazim", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 3x Elite, 2x Core Slot", 
         abilities: [
-          { name: "Might Of The Nerazim", cost: "-", phase: "ANY PHASE", desc: "Reaction: If a Friendly Unit loses the HIDDEN Status, it gains Buff Speed (2) and its first Weapon used CRITICAL HIT (2)." },
+          { name: "Might Of The Nerazim", cost: "-", phase: "ANY PHASE", desc: "Reaction: If a Friendly Unit loses the HIDDEN Status, it gains Buff Speed (2) and its first Weapon used gains CRITICAL HIT (2)." },
           { name: "Darkness Descends", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Biological Unit gains the HIDDEN Status until the End of the Round." }
         ] 
       },
       
       // PROTOSS TACTICAL CARDS
       { 
-        faction: "Protoss", name: "Nexus", type: "Tactical Card", tags: "Unique, Structure, Protoss", vespene: 35, provides: "Supply: 2x Core, 1x Support", 
+        faction: "Protoss", name: "Forge", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "+1 EN | 1x Elite Slot", 
         abilities: [
-          { name: "Chrono Boost", cost: "1 PE", phase: "ANY PHASE", desc: "Active: Target a Friendly Unit. That unit may immediately perform one additional Action this round." }, 
-          { name: "Strategic Recall", cost: "2 PE", phase: "MOVEMENT PHASE", desc: "Active: Select a Friendly Unit anywhere on the board. Place them Wholly Within 8” of this Nexus." }
+          { name: "Ground Armor", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll." },
+          { name: "Ground Weapons", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Ground Unit's first Ranged Weapon used gains CRITICAL HIT (1)." }
         ] 
       },
       { 
-        faction: "Protoss", name: "Gateway", type: "Tactical Card", tags: "Structure", vespene: 25, provides: "Supply: 2x Core", 
+        faction: "Protoss", name: "Gate Chronoboosted", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", 
         abilities: [
-          { name: "Warp In", cost: "-", phase: "DEPLOYMENT", desc: "Active: Allows the deployment of Core Protoss Infantry units." }
+          { name: "Zealous Charge", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit gains BUFF Speed (2)." },
+          { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." }
         ] 
       },
       { 
-        faction: "Protoss", name: "Cybernetics Core", type: "Tactical Card", tags: "Structure, Tech", vespene: 30, provides: "Supply: 1x Elite", 
+        faction: "Protoss", name: "Gateway", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "+1 EN | 1x Core Slot", 
         abilities: [
-          { name: "Warp Gate Research", cost: "1 PE", phase: "DEPLOYMENT", desc: "Passive: Deploy a Friendly Unit instantly anywhere Within 8” of a Friendly Power Field instead of standard deployment." }
+          { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." }
         ] 
       },
       { 
-        faction: "Protoss", name: "Forge", type: "Tactical Card", tags: "Structure, Tech", vespene: 20, provides: "Supply: 1x Support", 
+        faction: "Protoss", name: "Nexus", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 2x Core Slot", 
         abilities: [
-          { name: "Plasma Shields", cost: "1 PE", phase: "ASSAULT PHASE", desc: "Reaction: Use when a Friendly Protoss Unit is targeted by an attack. Reduce the incoming Damage by 1." }
+          { name: "Ancient Pride", cost: "-", phase: "ANY PHASE", desc: "Active: The active Unit's first Weapon used gains INSTANT." }, 
+          { name: "Strategic Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action." }
         ] 
       },
       { 
-        faction: "Protoss", name: "Twilight Council", type: "Tactical Card", tags: "Structure, Tech", vespene: 40, provides: "Supply: 1x Elite, 1x Hero", 
+        faction: "Protoss", name: "Observer", type: "Tactical Card", tags: "Unique", vespene: 25, provides: "+1 EN | 1x Support Slot", 
         abilities: [
-          { name: "Charge Research", cost: "-", phase: "PASSIVE", desc: "Passive: All Friendly Zealot units gain the Devastating Charge ability." },
-          { name: "Blink Research", cost: "-", phase: "PASSIVE", desc: "Passive: All Friendly Stalker units gain the Path of Shadows ability." }
-        ] 
-      },
-
-      // TERRAN CARDS
-      { 
-        faction: "Terran", name: "Generic Command", type: "Faction Card", tags: "Standard", vespene: 0, provides: "Supply: 1x Hero, 2x Elite, 3x Core", 
-        abilities: [
-          { name: "Orbital Drop", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Call down reinforcements anywhere on the battlefield." }
+          { name: "Surveillance", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status." },
+          { name: "Gravitic Boosters", cost: "-", phase: "ASSAULT PHASE", desc: "Reaction: Use after a Friendly Unit rolls a D6 for Charge Distance. Add 1 to the Charge Distance for this Unit." }
         ] 
       },
       { 
-        faction: "Terran", name: "Command Center", type: "Tactical Card", tags: "Unique, Structure, Terran", vespene: 30, provides: "Supply: 2x Core, 1x Support", 
+        faction: "Protoss", name: "Overcharged Nexus", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", 
         abilities: [
-          { name: "Call Down: MULE", cost: "1 CP", phase: "ANY PHASE", desc: "Active: Target a Friendly Mechanical Unit or Structure Within 12”. It recovers 3 HP." },
-          { name: "Scanner Sweep", cost: "1 CP", phase: "ANY PHASE", desc: "Active: Select a point on the board. Enemies Within 12” of that point lose all Cover and Stealth bonuses until the End of the Round." }
+          { name: "Photon Overcharge", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use when an Enemy Unit enters the battlefield from Reserves via a location other than its own Entry Edge. That Unit immediately suffers HITS 3 (1)." },
+          { name: "Strategic Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action." }
         ] 
       },
       { 
-        faction: "Terran", name: "Barracks", type: "Tactical Card", tags: "Structure", vespene: 25, provides: "Supply: 2x Core", 
+        faction: "Protoss", name: "Power Field", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 1x Hero, 1x Elite, 1x Core Slot", 
         abilities: [
-          { name: "Mobilize", cost: "-", phase: "DEPLOYMENT", desc: "Passive: Allows the deployment of Biological Core units." }
+          { name: "Guardian Shell", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains DODGE (2) for this roll." }
         ] 
       },
       { 
-        faction: "Terran", name: "Bunker", type: "Tactical Card", tags: "Structure, Fortification", vespene: 20, provides: "Supply: 1x Core", 
+        faction: "Protoss", name: "Robotics Facility", type: "Tactical Card", tags: "Standard", vespene: 35, provides: "+1 EN | 2x Elite Slot", 
         abilities: [
-          { name: "Garrison", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: A Friendly Infantry Unit Within 2” may Garrison this structure. While Garrisoned, the unit gains +2 Armour against Ranged Attacks." }
-        ] 
-      },
-
-      // ZERG CARDS
-      { 
-        faction: "Zerg", name: "The Swarm", type: "Faction Card", tags: "Standard", vespene: 0, provides: "Supply: 1x Hero, 1x Elite, 4x Core", 
-        abilities: [
-          { name: "Endless Numbers", cost: "-", phase: "DEPLOYMENT", desc: "Passive: Zerg Core units may recycle models upon destruction." }
+          { name: "Plasma Shields", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Mechanical Ground Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (1) and DODGE (1) for this roll." }
         ] 
       },
       { 
-        faction: "Zerg", name: "Hatchery", type: "Tactical Card", tags: "Unique, Structure, Zerg", vespene: 30, provides: "Supply: 3x Core", 
+        faction: "Protoss", name: "Twilight Council", type: "Tactical Card", tags: "Unique", vespene: 45, provides: "+1 EN | 1x Elite, 1x Support Slot", 
         abilities: [
-          { name: "Spawn Larvae", cost: "1 BM", phase: "ANY PHASE", desc: "Active: Target a Friendly Zerg Unit Within 8”. Replace 1 lost model in that unit (Cannot exceed starting size)." }
+          { name: "Veil of Shadows", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use after a Friendly Unit resolves a PLACE effect. That Unit immediately resolves the HEAL (2) effect." },
+          { name: "Weapons of the Firstborn", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Ground Unit's first Ranged Weapon used gains BUFF Range (4)." }
         ] 
       },
       { 
-        faction: "Zerg", name: "Spawning Pool", type: "Tactical Card", tags: "Structure, Tech", vespene: 20, provides: "Supply: 2x Core", 
+        faction: "Protoss", name: "Void Seeker", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 1x Core Slot", 
         abilities: [
-          { name: "Metabolic Boost", cost: "-", phase: "PASSIVE", desc: "Passive: All Friendly Zergling units increase their Speed characteristic by +1." }
+          { name: "Personal Transport", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Instead of performing an action, the active, Unengaged Ground Unit is returned to Reserves. Then, it performs a Deploy action." },
+          { name: "Anakh Su'n", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: This Unit gains the HIDDEN Status until it performs another action." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Warp Gate", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 2x Core Slot", 
+        abilities: [
+          { name: "Warp In", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Ground Unit Deploys from any table edge that is not a player's Entry Edge. This deployment must end more than 10\" away from any Enemy model. The controlling player cannot use this ability if another Friendly Ground Unit has already Deployed this Round." },
+          { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." }
+        ] 
+      },
+      { 
+        faction: "Protoss", name: "Warp Prism", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 2x Core Slot", 
+        abilities: [
+          { name: "Phase", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit resolves the PLACE (3) effect." },
+          { name: "Warp Conduit", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator." }
         ] 
       }
     ];
@@ -344,7 +319,7 @@
       { faction: "Terran", name: "Marine", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 6, minerals: 160, supply: 1 }, { models: 9, minerals: 210, supply: 2 }], supplyProfile: [{ max: 3, supply: 0 }, { max: 6, supply: 1 }, { max: 9, supply: 2 }], stats: { speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "C-14 Rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack"], upgrades: [{ name: "AGG-12", type: "Replacement", costs: [10, 10] }, { name: "Combat Shield", type: "Standard", costs: [20, 30] }, { name: "Rocket Launcher", type: "Additional", costs: [40, 40] }] },
       
       // PROTOSS
-      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20] }, { name: "Zealous Round", type: "Standard", costs: [10] }, { name: "We Stand as One", type: "Standard", costs: [20] }] },
+      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10, 10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20, 20] }, { name: "Zealous Round", type: "Standard", costs: [10, 10] }, { name: "We Stand as One", type: "Standard", costs: [20, 20] }] },
       
       { faction: "Protoss", name: "Adept", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 0 }, { models: 4, minerals: 300, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [{ name: "Resonating Glaives", type: "Standard", costs: [20, 20] }, { name: "Guidance", type: "Standard", costs: [10, 10] }, { name: "Glaive Strike", type: "Replacement", costs: [20, 20], replaces: "Strike" }] },
       
@@ -433,9 +408,16 @@
         <div className={`p-3 flex justify-between items-start border-b ${isAdded ? theme.accent : 'bg-slate-800 border-white/10'}`}>
           <div>
             <span className={`font-bold text-sm font-orbitron uppercase tracking-wider block ${isAdded ? 'text-stone-900' : 'text-slate-200'}`}>{card.name}</span>
-            <span className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 block ${isAdded ? 'text-stone-800/80' : 'text-slate-400'}`}>
-              {card.type} • {card.tags}
-            </span>
+            {card.tags && (
+              <span className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 block ${isAdded ? 'text-stone-800/80' : 'text-slate-400'}`}>
+                {card.type} • {card.tags}
+              </span>
+            )}
+            {!card.tags && (
+              <span className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 block ${isAdded ? 'text-stone-800/80' : 'text-slate-400'}`}>
+                {card.type}
+              </span>
+            )}
           </div>
           {card.vespene > 0 && <span className={`font-mono text-sm font-black bg-black/40 px-2 py-0.5 rounded shadow-inner border border-black/20 ${isAdded ? 'text-emerald-400' : 'text-emerald-500'}`}>{card.vespene} Gas</span>}
         </div>
@@ -449,7 +431,7 @@
           
           {card.abilities && card.abilities.length > 0 && (
             <div className="flex flex-col gap-1.5 w-full mt-2">
-              {card.abilities.map(ab => {
+              {card.abilities.map((ab, idx) => {
                  let typeColor = "bg-rose-600";
                  if(ab.desc.startsWith("Active:")) typeColor = "bg-sky-500";
                  if(ab.desc.startsWith("Reaction:")) typeColor = "bg-amber-500 text-black";
@@ -458,7 +440,7 @@
                  const descText = ab.desc.replace(/^(Active|Reaction|Passive):\s*/, "");
 
                  return (
-                  <div key={ab.name} className="bg-black/60 rounded p-2 border border-white/5">
+                  <div key={`${ab.name}-${idx}`} className="bg-black/60 rounded p-2 border border-white/5">
                      <div className="flex justify-between items-start mb-1">
                        <span className="font-orbitron text-xs font-bold uppercase text-white">{ab.name}</span>
                        <span className={`px-1.5 py-0.5 rounded font-bold uppercase text-[8px] text-white shadow tracking-widest ${typeColor}`}>
@@ -866,6 +848,7 @@
                 </div>
               )}
 
+              {}
               {isPlayMode && (
                 <div className={`p-5 rounded-xl border ${theme.border} ${theme.panelBg} grid grid-cols-1 lg:grid-cols-3 gap-6 shadow-xl`}>
                   <div className="flex flex-col gap-3 bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
@@ -922,6 +905,7 @@
                 </div>
               )}
 
+              {}
               {isPlayMode && tacticalCards.length > 0 && (
                 <div className={`flex flex-col ${theme.panelBg} p-5 rounded-xl border ${theme.border} shadow-xl`}>
                   <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 mb-4">Command Hand</h2>
@@ -1088,6 +1072,7 @@
 
           {configUnit && <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} />}
 
+          {}
           {activeModal && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
               <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`} onClick={e => e.stopPropagation()}>
