@@ -253,21 +253,38 @@
           </button>
           {isOpen && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-3 pl-2">
-              {units.map(unit => (
+              {units.map(unit => {
+                const minModels = Math.min(...unit.compositions.map(c => c.models));
+                const maxModels = Math.max(...unit.compositions.map(c => c.models));
+                const modelDisplay = minModels === maxModels ? minModels : `${minModels}-${maxModels}`;
+                
+                const minSupply = Math.min(...unit.compositions.map(c => c.supply));
+                const maxSupply = Math.max(...unit.compositions.map(c => c.supply));
+                const supplyDisplay = minSupply === maxSupply ? minSupply : `${minSupply}-${maxSupply}`;
+
+                return (
                 <div key={unit.name} className={`${theme.cardBg} border ${theme.border} rounded-lg p-4 flex flex-col justify-between shadow-lg`}>
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start mb-2">
                     <h3 className={`font-orbitron font-black text-xl uppercase ${theme.textPrimary}`}>{unit.name}</h3>
                     <button onClick={() => onConfigure(unit)} className={`px-4 py-1.5 rounded font-bold text-sm ${theme.accent}`}>Configure</button>
                   </div>
-                  <div className="grid grid-cols-5 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
-                    {unit.stats.shield !== undefined && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
-                    <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats.speed}</span></div>
-                    <div><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats.armour}</span></div>
-                    <div><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats.evade}</span></div>
-                    <div><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats.hitPoints}</span></div>
+                  
+                  <div className="flex gap-4 mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <span>Models: <span className="text-slate-200 text-xs">{modelDisplay}</span></span>
+                    <span>Supply: <span className="text-amber-300 text-xs">{supplyDisplay}</span></span>
+                  </div>
+
+                  <div className="flex justify-between gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
+                    {unit.stats.shield !== undefined && <div className="flex-1"><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
+                    <div className="flex-1"><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats.speed}</span></div>
+                    <div className="flex-1"><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats.armour}</span></div>
+                    <div className="flex-1"><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats.evade}</span></div>
+                    <div className="flex-1"><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats.hitPoints}</span></div>
+                    <div className="flex-1"><span className="block text-[9px] text-emerald-400">SIZ</span><span className="font-bold text-white">{unit.stats.size}</span></div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -694,6 +711,7 @@
                             <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Armour</span><span className="font-bold">{unit.stats.armour}</span></div>
                             <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Evade</span><span className="font-bold">{unit.stats.evade}</span></div>
                             <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-rose-300 uppercase tracking-widest">HP</span><span className="font-bold text-rose-300">{unit.stats.hitPoints}</span></div>
+                            <div className="flex-1 py-1.5 text-center"><span className="block text-[8px] text-emerald-400 uppercase tracking-widest">Size</span><span className="font-bold text-emerald-400">{unit.stats.size}</span></div>
                           </div>
                         )}
 
@@ -704,7 +722,10 @@
                                 {unit.name}
                                 {!isPlayMode && <button onClick={() => setRoster(prev => prev.filter(r => r.rosterId !== unit.rosterId))} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
                               </h4>
-                              <span className={`text-sm font-orbitron font-bold tracking-wider ${isDead ? 'text-rose-500' : 'text-slate-400'}`}>{modelsAlive} / {unit.models} Models</span>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className={`text-sm font-orbitron font-bold tracking-wider ${isDead ? 'text-rose-500' : 'text-slate-400'}`}>{modelsAlive} / {unit.models} Models</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">Size: {unit.stats.size}</span>
+                              </div>
                             </div>
                             <div className="text-right flex flex-col items-end">
                               <span className={`block text-3xl font-orbitron font-black leading-none ${isDead ? 'text-rose-600' : (isPlayMode && !unit.deployed ? 'text-slate-500' : 'text-amber-300')}`}>{currentSupply}</span>
