@@ -24,6 +24,17 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
+    // --- SAFE LOCAL STORAGE LOADER ---
+    const loadLocal = (key, defaultValue) => {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+      } catch (e) {
+        console.warn(`Could not parse local storage for ${key}. Resetting to default.`);
+        return defaultValue;
+      }
+    };
+
     // --- DATA DEFINITIONS ---
     const MISSIONS_DATABASE = {
       "Frontlines": { start: 6, esc: 2 },
@@ -207,7 +218,7 @@
                 if (ab.type === "ACTIVE") badgeColor = "bg-sky-500";
                 if (ab.type === "REACTION") badgeColor = "bg-amber-500 text-black";
                 return (
-                  <div key={idx} className="text-xs leading-tight">
+                  <div key={`ab-${title}-${idx}`} className="text-xs leading-tight">
                     <span className="font-orbitron font-bold uppercase mr-2 text-white cursor-pointer hover:text-amber-300" onClick={() => openRule && openRule(ab.name)}>{ab.name} {openRule && 'ℹ'}</span>
                     <span className={`inline-block px-1 rounded font-bold uppercase text-[9px] mr-2 ${badgeColor}`}>{ab.type}</span>
                     {ab.cost && <span className="inline-block px-1 rounded font-bold bg-emerald-600 text-white text-[9px] mr-2">{ab.cost}</span>}
@@ -226,7 +237,7 @@
                     </thead>
                     <tbody>
                       {phaseWeapons.map((w, idx) => (
-                        <tr key={idx} className="border-b border-white/5 last:border-0 text-slate-200">
+                        <tr key={`wpn-${title}-${idx}`} className="border-b border-white/5 last:border-0 text-slate-200">
                           <td className="py-1.5 pr-2 font-bold uppercase font-orbitron text-white">{w.name}</td>
                           <td className="pr-2">{w.range}</td><td className="pr-2">{w.target}</td><td className="pr-2 text-center">{w.roa}</td><td className="pr-2">{w.hit}</td><td className="pr-2">{w.surge}</td><td className="pr-2">{w.sDice}</td><td className="pr-2 font-black text-amber-300">{w.dmg}</td><td className="text-slate-400">{w.keyword}</td>
                         </tr>
@@ -253,17 +264,17 @@
           {isOpen && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-3 pl-2">
               {units.map(unit => {
-                const minModels = Math.min(...unit.compositions.map(c => c.models));
-                const maxModels = Math.max(...unit.compositions.map(c => c.models));
+                const minModels = Math.min(...(unit.compositions || []).map(c => c.models));
+                const maxModels = Math.max(...(unit.compositions || []).map(c => c.models));
                 const modelsDisplay = minModels === maxModels ? minModels : `${minModels}-${maxModels}`;
                 
-                const minSupply = Math.min(...unit.compositions.map(c => c.supply));
-                const maxSupply = Math.max(...unit.compositions.map(c => c.supply));
+                const minSupply = Math.min(...(unit.compositions || []).map(c => c.supply));
+                const maxSupply = Math.max(...(unit.compositions || []).map(c => c.supply));
                 const supplyDisplay = minSupply === maxSupply ? minSupply : `${minSupply}-${maxSupply}`;
 
-                const minMinerals = Math.min(...unit.compositions.map(c => c.minerals));
-                const maxMinerals = Math.max(...unit.compositions.map(c => c.minerals));
-                const costDisplay = minMinerals === maxMinerals ? `${minMinerals} Min` : `${minMinerals}-${maxMinerals} Min`;
+                const minMinerals = Math.min(...(unit.compositions || []).map(c => c.minerals));
+                const maxMinerals = Math.max(...(unit.compositions || []).map(c => c.minerals));
+                const costDisplay = minMinerals === maxMinerals ? `${minMinerals}` : `${minMinerals}-${maxMinerals}`;
 
                 return (
                   <div key={unit.name} className={`${theme.cardBg} border ${theme.border} rounded-lg p-4 flex flex-col justify-between shadow-lg`}>
@@ -278,15 +289,16 @@
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase font-bold text-slate-400 mb-3 mt-2">
                       <span>Models: <span className="text-white">{modelsDisplay}</span></span>
                       <span>Supply: <span className="text-amber-300">{supplyDisplay}</span></span>
-                      <span>Cost: <span className="text-sky-400">{costDisplay}</span></span>
+                      <span>Cost: <span className="text-sky-400">{costDisplay} Min</span></span>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
-                      {unit.stats.shield !== undefined && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
-                      <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats.speed}</span></div>
-                      <div><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats.armour}</span></div>
-                      <div><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats.evade}</span></div>
-                      <div><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats.hitPoints}</span></div>
+                    <div className="grid grid-cols-6 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
+                      {unit.stats && unit.stats.shield !== undefined && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
+                      <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats?.speed || "-"}</span></div>
+                      <div><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats?.armour || "-"}</span></div>
+                      <div><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats?.evade || "-"}</span></div>
+                      <div><span className="block text-[9px] text-rose-300">HP</span><span className="font-bold text-white">{unit.stats?.hitPoints || "-"}</span></div>
+                      <div><span className="block text-[9px] text-emerald-400">SIZ</span><span className="font-bold text-emerald-400">{unit.stats?.size || "-"}</span></div>
                     </div>
                   </div>
                 );
@@ -298,14 +310,18 @@
     };
 
     function App() {
-      const [isPlayMode, setIsPlayMode] = useState(() => JSON.parse(localStorage.getItem('sc_playMode')) || false);
-      const [selectedFaction, setSelectedFaction] = useState(() => localStorage.getItem('sc_faction') || "Protoss");
-      const [scale, setScale] = useState(() => localStorage.getItem('sc_scale') || "Free Build");
-      const [roster, setRoster] = useState(() => JSON.parse(localStorage.getItem('sc_roster')) || []);
-      const [tacticalCards, setTacticalCards] = useState(() => JSON.parse(localStorage.getItem('sc_tacCards')) || []);
-      const [matchData, setMatchData] = useState(() => JSON.parse(localStorage.getItem('sc_matchData')) || { round: 1, yourVP: 0, enemyVP: 0, mission: "Frontlines", enemyFaction: "Terran" });
+      // Safe Local Storage State Initialization
+      const [isPlayMode, setIsPlayMode] = useState(() => loadLocal('sc_playMode', false));
+      const [selectedFaction, setSelectedFaction] = useState(() => {
+          const loaded = localStorage.getItem('sc_faction');
+          return loaded && ["Protoss", "Terran", "Zerg"].includes(loaded) ? loaded : "Protoss";
+      });
+      const [scale, setScale] = useState(() => loadLocal('sc_scale', "Free Build"));
+      const [roster, setRoster] = useState(() => loadLocal('sc_roster', []).filter(u => u && u.name));
+      const [tacticalCards, setTacticalCards] = useState(() => loadLocal('sc_tacCards', []).filter(c => c && c.name));
+      const [matchData, setMatchData] = useState(() => loadLocal('sc_matchData', { round: 1, yourVP: 0, enemyVP: 0, mission: "Frontlines", enemyFaction: "Terran" }));
       
-      const [savedRosters, setSavedRosters] = useState(() => JSON.parse(localStorage.getItem('sc_savedRosters')) || []);
+      const [savedRosters, setSavedRosters] = useState(() => loadLocal('sc_savedRosters', []));
       const [showSaveModal, setShowSaveModal] = useState(false);
       const [showLoadModal, setShowLoadModal] = useState(false);
       const [rosterName, setRosterName] = useState("");
@@ -315,32 +331,40 @@
 
       useEffect(() => localStorage.setItem('sc_playMode', JSON.stringify(isPlayMode)), [isPlayMode]);
       useEffect(() => localStorage.setItem('sc_faction', selectedFaction), [selectedFaction]);
-      useEffect(() => localStorage.setItem('sc_scale', scale), [scale]);
+      useEffect(() => localStorage.setItem('sc_scale', JSON.stringify(scale)), [scale]);
       useEffect(() => localStorage.setItem('sc_roster', JSON.stringify(roster)), [roster]);
       useEffect(() => localStorage.setItem('sc_tacCards', JSON.stringify(tacticalCards)), [tacticalCards]);
       useEffect(() => localStorage.setItem('sc_matchData', JSON.stringify(matchData)), [matchData]);
       useEffect(() => localStorage.setItem('sc_savedRosters', JSON.stringify(savedRosters)), [savedRosters]);
 
+      // Failsafe Clear Cache mechanism for the user
+      const resetAppData = () => {
+        if(window.confirm("Are you sure you want to clear all data? This fixes blank screen errors by deleting corrupted saves.")) {
+           localStorage.clear();
+           window.location.reload();
+        }
+      };
+
       const theme = THEMES[selectedFaction];
-      const limits = ENGAGEMENT_SCALES[scale];
+      const limits = ENGAGEMENT_SCALES[scale] || ENGAGEMENT_SCALES["Free Build"];
 
       const factionUnits = UNITS_DATABASE.filter(u => u.faction === selectedFaction);
       const factionCards = TACTICAL_CARDS.filter(c => c.faction === selectedFaction);
 
-      const totalMinerals = roster.reduce((sum, item) => sum + item.minerals, 0);
-      const totalVespene = tacticalCards.reduce((sum, card) => sum + card.vespene, 0);
+      const totalMinerals = roster.reduce((sum, item) => sum + (item.minerals || 0), 0);
+      const totalVespene = tacticalCards.reduce((sum, card) => sum + (card.vespene || 0), 0);
       
-      const getModelsAlive = (unit) => Math.max(0, unit.models - Math.floor(unit.hpDamage / unit.stats.hitPoints));
+      const getModelsAlive = (unit) => Math.max(0, (unit.models || 0) - Math.floor((unit.hpDamage || 0) / (unit.stats?.hitPoints || 1)));
       const getUnitSupply = (unit) => {
         const alive = getModelsAlive(unit);
-        const tier = unit.supplyProfile.find(p => alive <= p.max);
+        const tier = (unit.supplyProfile || []).find(p => alive <= p.max);
         return tier ? tier.supply : 0;
       };
 
       const totalSupply = roster.reduce((sum, unit) => sum + getUnitSupply(unit), 0);
       const activeSupply = roster.filter(u => u.deployed).reduce((sum, unit) => sum + getUnitSupply(unit), 0);
       
-      const activeMission = MISSIONS_DATABASE[matchData.mission];
+      const activeMission = MISSIONS_DATABASE[matchData.mission] || MISSIONS_DATABASE["Frontlines"];
       const supplyPool = matchData.round === 5 ? Infinity : (activeMission.start + (matchData.round - 1) * activeMission.esc);
       const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
 
@@ -350,7 +374,7 @@
           const orderA = SLOT_ORDER[a.slot] || 99;
           const orderB = SLOT_ORDER[b.slot] || 99;
           if (orderA !== orderB) return orderA - orderB;
-          return a.name.localeCompare(b.name);
+          return (a.name || "").localeCompare(b.name || "");
         });
       }, [roster]);
 
@@ -391,8 +415,8 @@
       const updateDamage = (id, type, amount) => {
         setRoster(prev => prev.map(unit => {
           if (unit.rosterId !== id) return unit;
-          const maxAmount = type === 'shieldDamage' ? unit.stats.shield : (unit.stats.hitPoints * unit.models);
-          const newDamage = Math.max(0, Math.min(maxAmount, unit[type] + amount));
+          const maxAmount = type === 'shieldDamage' ? (unit.stats.shield || 0) : ((unit.stats.hitPoints || 1) * (unit.models || 1));
+          const newDamage = Math.max(0, Math.min(maxAmount, (unit[type] || 0) + amount));
           return { ...unit, [type]: newDamage };
         }));
       };
@@ -417,10 +441,10 @@
       };
 
       const handleLoadRoster = (saved) => {
-        setSelectedFaction(saved.faction);
-        setScale(saved.scale);
-        setRoster(saved.roster);
-        setTacticalCards(saved.tacticalCards);
+        setSelectedFaction(saved.faction || "Protoss");
+        setScale(saved.scale || "Free Build");
+        setRoster(saved.roster || []);
+        setTacticalCards(saved.tacticalCards || []);
         setShowLoadModal(false);
       };
 
@@ -440,7 +464,7 @@
           }
         };
 
-        const currentMinerals = unit.compositions[compIndex].minerals + selectedUpgrades.reduce((sum, u) => sum + (u.costs[compIndex] || 0), 0);
+        const currentMinerals = (unit.compositions[compIndex]?.minerals || 0) + selectedUpgrades.reduce((sum, u) => sum + (u.costs[compIndex] || 0), 0);
 
         return (
           <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
@@ -450,17 +474,17 @@
               <div className="mb-4">
                 <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Select Composition</label>
                 <div className="flex flex-col gap-2 mt-2">
-                  {unit.compositions.map((comp, idx) => (
-                    <button key={idx} onClick={() => { setCompIndex(idx); setSelectedUpgrades([]); }}
+                  {(unit.compositions || []).map((comp, idx) => (
+                    <button key={`comp-${idx}`} onClick={() => { setCompIndex(idx); setSelectedUpgrades([]); }}
                       className={`p-2 rounded border text-left flex justify-between ${compIndex === idx ? theme.accent : 'bg-black/40 border-white/10'}`}>
                       <span>{comp.models} Models (Supply: {comp.supply})</span>
-                      <span className="font-mono font-bold">{comp.minerals} Min</span>
+                      <span className="font-mono font-bold text-sky-400">{comp.minerals} Min</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {unit.upgrades.length > 0 && (
+              {(unit.upgrades || []).length > 0 && (
                 <div className="mb-6">
                   <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Available Upgrades</label>
                   <div className="flex flex-col gap-2 mt-2">
@@ -484,7 +508,7 @@
               )}
 
               <div className="flex justify-between items-center pt-4 border-t border-white/10">
-                <span className="font-orbitron text-xl font-black">Total: {currentMinerals}</span>
+                <span className="font-orbitron text-xl font-black text-sky-400">Total: {currentMinerals} Min</span>
                 <div className="flex gap-2">
                   <button onClick={onClose} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
                   <button onClick={() => { addToRoster(unit, compIndex, selectedUpgrades); onClose(); }} className={`px-4 py-2 rounded font-bold ${theme.accent}`}>Add Unit</button>
@@ -499,7 +523,10 @@
         <div className={`min-h-screen ${theme.bg} transition-colors duration-300 flex flex-col`}>
           <header className="border-b border-white/10 px-6 py-4 flex flex-wrap items-center justify-between gap-4 bg-black/40 sticky top-0 z-30 shadow-lg">
             <div className="flex items-center gap-6">
-              <h1 className="text-3xl font-black uppercase font-orbitron drop-shadow-md"><span className={theme.textPrimary}>StarCraft</span> Army Builder</h1>
+              <h1 className="text-3xl font-black uppercase font-orbitron drop-shadow-md flex items-center gap-3">
+                <span className={theme.textPrimary}>StarCraft</span> Army Builder
+              </h1>
+              
               {!isPlayMode && (
                 <div className="flex gap-3 ml-4">
                   {Object.keys(THEMES).map(f => {
@@ -507,21 +534,21 @@
                     const fTheme = THEMES[f];
                     return (
                       <button key={f} onClick={() => { setSelectedFaction(f); setRoster([]); setTacticalCards([]); }}
-                        className={`relative overflow-hidden flex items-center justify-center w-36 h-12 rounded-md font-orbitron text-sm font-black uppercase tracking-widest transition-all border ${isSelected ? fTheme.border + ' shadow-lg scale-105' : 'border-white/20 opacity-70 hover:opacity-100 hover:border-white/40'}`}
+                        className={`relative overflow-hidden flex items-center justify-center w-[300px] h-[80px] shrink-0 rounded-lg font-orbitron text-xl font-black uppercase tracking-widest transition-all border ${isSelected ? fTheme.border + ' shadow-[0_0_15px_rgba(0,0,0,0.5)] scale-[1.02]' : 'border-white/20 hover:border-white/40 hover:scale-[1.01]'}`}
                       >
-                        {/* Static Image Layer */}
+                        {/* Static Image Layer with explicit file name routing */}
                         <div 
                           className="absolute inset-0 bg-no-repeat bg-cover bg-center transition-opacity duration-300"
                           style={{ 
                             backgroundImage: `url('${fTheme.commanderImg}')`,
-                            opacity: isSelected ? 0.45 : 0.15
+                            opacity: isSelected ? 0.8 : 0.5 
                           }}
                         />
                         {/* Tint Layer */}
-                        <div className={`absolute inset-0 ${isSelected ? fTheme.accentSecondary : 'bg-black/75'}`} />
+                        <div className={`absolute inset-0 ${isSelected ? fTheme.accentSecondary : 'bg-black/60'}`} />
                         
                         {/* Text Layer */}
-                        <span className={`relative z-10 ${isSelected ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]' : 'text-slate-300'}`}>
+                        <span className={`relative z-10 ${isSelected ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]' : 'text-slate-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}>
                           {f}
                         </span>
                       </button>
@@ -532,6 +559,11 @@
             </div>
             
             <div className="flex items-center gap-6">
+              {!isPlayMode && (
+                <button onClick={resetAppData} className="text-[10px] uppercase font-bold text-slate-500 hover:text-white px-3 py-1 rounded bg-black/50 border border-white/10" title="Click if App crashes on load">
+                  Reset Data
+                </button>
+              )}
               {!isPlayMode && (
                 <select value={scale} onChange={e => setScale(e.target.value)} className="bg-black/50 border border-white/20 rounded p-2 font-bold text-sm outline-none text-slate-200 uppercase tracking-wider">
                   {Object.keys(ENGAGEMENT_SCALES).map(s => <option key={s} value={s}>{s}</option>)}
@@ -557,21 +589,28 @@
                   <ArmoryGroup title="Summoned" units={factionUnits.filter(u => u.slot === "Summoned")} onConfigure={setConfigUnit} theme={theme} />
                 </div>
 
-                <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 mt-4">Tactical Cards (Vespene Gas)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto pr-2">
-                  {factionCards.map(card => {
-                    const isAdded = tacticalCards.find(c => c.name === card.name);
-                    return (
-                      <button key={card.name} onClick={() => isAdded ? setTacticalCards(prev => prev.filter(c => c.name !== card.name)) : setTacticalCards(prev => [...prev, card])}
-                        className={`p-3.5 rounded-lg border text-left flex flex-col gap-1.5 transition-all ${isAdded ? theme.accentSecondary : 'bg-black/40 border-white/10 hover:border-white/30'}`}>
-                        <div className="flex justify-between items-start w-full">
-                          <span className={`font-bold text-base font-orbitron ${isAdded ? 'text-white' : 'text-slate-200'}`}>{card.name}</span>
-                          <span className="font-mono text-sm font-bold text-emerald-400">{card.vespene} Gas {isAdded && <span className="text-white ml-1">✓</span>}</span>
-                        </div>
-                        <span className={`text-xs leading-relaxed ${isAdded ? 'text-slate-200' : 'text-slate-400'}`}>{card.desc}</span>
-                      </button>
-                    )
-                  })}
+                <div className="mt-4">
+                  <details className="group">
+                    <summary className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 cursor-pointer flex justify-between items-center hover:text-white transition-colors">
+                      Tactical Cards (Vespene Gas)
+                      <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto pr-2 mt-4">
+                      {factionCards.map(card => {
+                        const isAdded = tacticalCards.find(c => c.name === card.name);
+                        return (
+                          <button key={`card-${card.name}`} onClick={() => isAdded ? setTacticalCards(prev => prev.filter(c => c.name !== card.name)) : setTacticalCards(prev => [...prev, card])}
+                            className={`p-3.5 rounded-lg border text-left flex flex-col gap-1.5 transition-all ${isAdded ? theme.accentSecondary : 'bg-black/40 border-white/10 hover:border-white/30'}`}>
+                            <div className="flex justify-between items-start w-full">
+                              <span className={`font-bold text-base font-orbitron ${isAdded ? 'text-white' : 'text-slate-200'}`}>{card.name}</span>
+                              <span className="font-mono text-sm font-bold text-emerald-400">{card.vespene} Gas {isAdded && <span className="text-white ml-1">✓</span>}</span>
+                            </div>
+                            <span className={`text-xs leading-relaxed ${isAdded ? 'text-slate-200' : 'text-slate-400'}`}>{card.desc}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </details>
                 </div>
               </div>
             )}
@@ -583,11 +622,11 @@
                   <h2 className="text-lg font-orbitron font-bold uppercase border-b border-white/10 pb-2">Army Stats</h2>
                   <div className={`p-3 rounded flex justify-between items-center ${totalMinerals > limits.minerals ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Minerals</span>
-                    <span className={`font-orbitron text-xl font-black ${totalMinerals > limits.minerals ? 'text-rose-400' : 'text-sky-400'}`}>{totalMinerals} <span className="text-sm font-normal text-slate-400">/ {limits.minerals}</span></span>
+                    <span className={`font-orbitron text-xl font-black ${totalMinerals > limits.minerals ? 'text-rose-400' : 'text-sky-400'}`}>{totalMinerals} <span className="text-sm font-normal text-slate-400">/ {limits.minerals === Infinity ? '∞' : limits.minerals}</span></span>
                   </div>
                   <div className={`p-3 rounded flex justify-between items-center ${totalVespene > limits.vespene ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Vespene</span>
-                    <span className={`font-orbitron text-xl font-black ${totalVespene > limits.vespene ? 'text-rose-400' : 'text-emerald-400'}`}>{totalVespene} <span className="text-sm font-normal text-slate-400">/ {limits.vespene}</span></span>
+                    <span className={`font-orbitron text-xl font-black ${totalVespene > limits.vespene ? 'text-rose-400' : 'text-emerald-400'}`}>{totalVespene} <span className="text-sm font-normal text-slate-400">/ {limits.vespene === Infinity ? '∞' : limits.vespene}</span></span>
                   </div>
                   <div className="p-3 rounded flex justify-between items-center bg-black/50 border border-white/10">
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Drafted Supply</span>
@@ -673,21 +712,24 @@
                       Roster Empty
                     </div>
                   )}
-                  {sortedRoster.map(unit => {
+                  {sortedRoster.map((unit, idx) => {
                     const modelsAlive = getModelsAlive(unit);
                     const currentSupply = getUnitSupply(unit);
                     const isDead = modelsAlive <= 0;
-                    const hasShield = unit.stats.shield !== undefined;
-                    const shieldBroken = hasShield && unit.shieldDamage >= unit.stats.shield;
+                    const hasShield = unit.stats && unit.stats.shield !== undefined;
+                    const shieldBroken = hasShield && (unit.shieldDamage || 0) >= unit.stats.shield;
 
-                    let currentWeapons = [...unit.weapons];
-                    let currentAbilities = unit.abilities.map(a => ({ 
+                    let currentWeapons = [...(unit.weapons || [])];
+                    let currentAbilities = (unit.abilities || []).map(a => ({ 
                         name: a, 
                         ...(ABILITY_MAP[a] || {type:"PASSIVE", phase:"ANY PHASE", desc: RULES_DICTIONARY[a]}) 
                     }));
 
-                    unit.appliedUpgrades.forEach(upgName => {
-                      const upgDef = unit.upgrades.find(u => u.name === upgName);
+                    const appliedUpgrades = unit.appliedUpgrades || [];
+                    const unitUpgrades = unit.upgrades || [];
+
+                    appliedUpgrades.forEach(upgName => {
+                      const upgDef = unitUpgrades.find(u => u.name === upgName);
                       if (upgDef && upgDef.type === "Replacement" && WEAPON_MAP[upgName]) {
                         currentWeapons = currentWeapons.filter(w => w.phase !== WEAPON_MAP[upgName].phase);
                       }
@@ -711,16 +753,16 @@
                     });
 
                     return (
-                      <div key={unit.rosterId} className={`${theme.cardBg} border ${isDead ? 'border-rose-600/50 opacity-50' : theme.border} rounded-lg flex flex-col overflow-hidden shadow-lg`}>
+                      <div key={`roster-${unit.rosterId}-${idx}`} className={`${theme.cardBg} border ${isDead ? 'border-rose-600/50 opacity-50' : theme.border} rounded-lg flex flex-col overflow-hidden shadow-lg`}>
                         
                         {isPlayMode && (
                           <div className="flex bg-black/80 text-white font-orbitron shadow-md">
                             {hasShield && <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-blue-300 uppercase tracking-widest">Shield</span><span className="font-bold text-blue-300">{unit.stats.shield}</span></div>}
-                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Speed</span><span className="font-bold">{unit.stats.speed}</span></div>
-                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Armour</span><span className="font-bold">{unit.stats.armour}</span></div>
-                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Evade</span><span className="font-bold">{unit.stats.evade}</span></div>
-                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-rose-300 uppercase tracking-widest">HP</span><span className="font-bold text-rose-300">{unit.stats.hitPoints}</span></div>
-                            <div className="flex-1 py-1.5 text-center"><span className="block text-[8px] text-emerald-400 uppercase tracking-widest">Size</span><span className="font-bold text-emerald-400">{unit.stats.size}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Speed</span><span className="font-bold">{unit.stats?.speed || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Armour</span><span className="font-bold">{unit.stats?.armour || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-slate-400 uppercase tracking-widest">Evade</span><span className="font-bold">{unit.stats?.evade || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center border-r border-white/10"><span className="block text-[8px] text-rose-300 uppercase tracking-widest">HP</span><span className="font-bold text-rose-300">{unit.stats?.hitPoints || "-"}</span></div>
+                            <div className="flex-1 py-1.5 text-center"><span className="block text-[8px] text-emerald-400 uppercase tracking-widest">Size</span><span className="font-bold text-emerald-400">{unit.stats?.size || "-"}</span></div>
                           </div>
                         )}
 
@@ -732,8 +774,8 @@
                                 {!isPlayMode && <button onClick={() => setRoster(prev => prev.filter(r => r.rosterId !== unit.rosterId))} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
                               </h4>
                               <div className="flex items-center gap-3 mt-1">
-                                <span className={`text-sm font-orbitron font-bold tracking-wider ${isDead ? 'text-rose-500' : 'text-slate-400'}`}>{modelsAlive} / {unit.models} Models</span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">Size: {unit.stats.size}</span>
+                                <span className={`text-sm font-orbitron font-bold tracking-wider ${isDead ? 'text-rose-500' : 'text-slate-400'}`}>{modelsAlive} / {unit.models || 0} Models</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">Size: {unit.stats?.size || "-"}</span>
                               </div>
                             </div>
                             <div className="text-right flex flex-col items-end">
@@ -753,9 +795,9 @@
                             </div>
                           </div>
 
-                          {!isPlayMode && unit.appliedUpgrades.length > 0 && (
+                          {!isPlayMode && appliedUpgrades.length > 0 && (
                              <div className="text-xs text-slate-300 mb-4 border-l-2 border-white/20 pl-2">
-                                + {unit.appliedUpgrades.join(", ")}
+                                + {appliedUpgrades.join(", ")}
                              </div>
                           )}
 
@@ -773,7 +815,7 @@
                                   <span className={`text-sm font-bold uppercase tracking-widest ${shieldBroken ? 'text-slate-500 line-through' : 'text-blue-400'}`}>Shields</span>
                                   <div className="flex items-center gap-3">
                                     <button onClick={() => updateDamage(unit.rosterId, 'shieldDamage', -1)} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold text-lg flex items-center justify-center">-</button>
-                                    <span className="font-orbitron text-xl font-black w-6 text-center">{unit.shieldDamage}</span>
+                                    <span className="font-orbitron text-xl font-black w-6 text-center">{unit.shieldDamage || 0}</span>
                                     <button onClick={() => updateDamage(unit.rosterId, 'shieldDamage', 1)} className="w-8 h-8 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-200 font-bold text-lg flex items-center justify-center">+</button>
                                   </div>
                                 </div>
@@ -782,7 +824,7 @@
                                 <span className={`text-sm font-bold uppercase tracking-widest ${isDead ? 'text-rose-500' : 'text-rose-300'}`}>Hit Points</span>
                                 <div className="flex items-center gap-3">
                                   <button onClick={() => updateDamage(unit.rosterId, 'hpDamage', -1)} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold text-lg flex items-center justify-center">-</button>
-                                  <span className={`font-orbitron text-xl font-black w-6 text-center ${isDead ? 'text-rose-500' : 'text-white'}`}>{unit.hpDamage}</span>
+                                  <span className={`font-orbitron text-xl font-black w-6 text-center ${isDead ? 'text-rose-500' : 'text-white'}`}>{unit.hpDamage || 0}</span>
                                   <button onClick={() => updateDamage(unit.rosterId, 'hpDamage', 1)} className="w-8 h-8 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 font-bold text-lg flex items-center justify-center">+</button>
                                 </div>
                               </div>
@@ -832,17 +874,17 @@
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                   {savedRosters.length === 0 && <p className="text-slate-500 text-center italic py-6">No saved rosters found.</p>}
-                  {savedRosters.map(saved => (
-                    <div key={saved.id} className="p-4 bg-black/40 border border-white/10 rounded-lg flex justify-between items-center hover:border-white/30 transition-colors">
+                  {savedRosters.map((saved, idx) => (
+                    <div key={`saved-${saved.id || idx}`} className="p-4 bg-black/40 border border-white/10 rounded-lg flex justify-between items-center hover:border-white/30 transition-colors">
                       <div>
                         <h4 className="font-bold text-white text-lg flex items-center gap-2">
                            {saved.name}
                            <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded border font-bold tracking-widest ${saved.faction === 'Terran' ? 'text-blue-300 border-blue-900 bg-blue-950/50' : saved.faction === 'Zerg' ? 'text-fuchsia-300 border-fuchsia-900 bg-fuchsia-950/50' : 'text-amber-300 border-amber-900 bg-amber-950/50'}`}>{saved.faction}</span>
                         </h4>
                         <div className="text-xs text-slate-400 mt-1 flex gap-3">
-                           <span>{saved.roster.length} Units</span>
-                           <span>{saved.totalMinerals} Min</span>
-                           <span>{saved.totalVespene} Gas</span>
+                           <span>{(saved.roster || []).length} Units</span>
+                           <span>{saved.totalMinerals || 0} Min</span>
+                           <span>{saved.totalVespene || 0} Gas</span>
                         </div>
                       </div>
                       <div className="flex gap-2">
