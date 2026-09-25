@@ -10,15 +10,45 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Rajdhani', sans-serif; }
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background-color: #0B0E14;
+      color: #E2E8F0;
+      background-image: 
+        radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 50%),
+        linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+      background-attachment: fixed;
+    }
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    
+    .hex-bg {
+      background-color: rgba(15, 23, 42, 0.7);
+      background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 34.641l10-5.773v-11.547l-10-5.774-10 5.774v11.547l10 5.773zM20 36.95l-12-6.928v-13.856l12-6.928 12 6.928v13.856l-12 6.928z' fill='%231e293b' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
+    }
+
+    .stat-box {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    
+    .tech-border {
+      position: relative;
+    }
+    .tech-border::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.5), transparent);
+    }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
   </style>
 </head>
-<body class="bg-black text-slate-100">
+<body>
   <div id="root"></div>
 
   <script type="text/babel">
@@ -63,12 +93,6 @@
       "Free Build": { minerals: Infinity, vespene: Infinity },
       "Skirmish": { minerals: 1000, vespene: 100 },
       "Standard": { minerals: 2000, vespene: 200 }
-    };
-
-    const SUB_FACTIONS = {
-      Terran: ["Generic", "Raynor's Raiders"],
-      Protoss: ["Daelaam", "Khalai", "Nerazim"],
-      Zerg: ["Generic", "Kerrigan's Swarm"]
     };
 
     const RULES_DICTIONARY = {
@@ -189,7 +213,108 @@
       "Mode Transformation": "The active Unit gains or loses the SIEGE MODE Status. While this Unit has the SIEGE MODE Status, its Size characteristic is treated as if it was 3.",
       "Coordinated Strike": "Target a Friendly Non-Engaged Unit on the battlefield (Line of Sight is not required). When this Unit resolves a Ranged Attack using the Shock Cannon weapon profile this Round, it may choose to ignore the weapon's standard Range characteristic. If it does, it may target an Enemy Unit that is Within 8\" of, and Visible to, a model of the selected Friendly Unit, treating that model as the acting model.",
       "Shaped Blast": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains PINPOINT and LOCKED IN (4).",
-      "Smart Shells": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains INDIRECT FIRE and LONG RANGE (24)."
+      "Smart Shells": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains INDIRECT FIRE and LONG RANGE (24).",
+
+      "Dae'Uhl": "Whenever a Friendly Unit suffers Damage, the controlling player may select another Friendly Unit Within 4\". That selected Unit suffers the Damage instead.",
+      "Mass Recall": "Select up to 2 Friendly Units that are not Engaged. Remove them from the battlefield and set them up anywhere on the battlefield Wholly Within 8\" of a Friendly Nexus, completely within your Deployment Zone, or in Reserves.",
+      "Pylon Warp-In": "Set a Pylon token anywhere on the battlefield Wholly Within 12\" of a Friendly Unit.",
+      "Bound by the Khala": "All Friendly Units gain BUFF Speed (1) for this Phase.",
+      "Might Of The Nerazim": "Select one Friendly Unit. That Unit gains the HIDDEN Status until the End of the Round.",
+      "Darkness Descends": "All Friendly Units gain PRECISION (1) on their first attack this Round.",
+
+      "Ground Armor": "Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll.",
+      "Ground Weapons": "The active Ground Unit's first Ranged Weapon used gains CRITICAL HIT (1).",
+      "Zealous Charge": "The active Unit gains BUFF Speed (2).",
+      "Quick Strikes": "The active Unit's first Close Combat Weapon used gains PRECISION (2).",
+      "Ancient Pride": "The active Unit's first Weapon used gains INSTANT.",
+      "Strategic Recall": "The active, Unengaged Ground Unit is returned to Reserves instead of performing an action.",
+      "Surveillance": "Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status.",
+      "Gravitic Boosters": "Use after a Friendly Unit rolls a D6 for Charge Distance. Add 1 to the Charge Distance for this Unit.",
+      "Photon Overcharge": "Use when an Enemy Unit enters the battlefield from Reserves via a location other than its own Entry Edge. That Unit immediately suffers HITS 3 (1).",
+      "Guardian Shell": "Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains DODGE (2) for this roll.",
+      "Plasma Shields": "Use before a Friendly Mechanical Ground Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (1) and DODGE (1) for this roll.",
+      "Veil of Shadows": "Use after a Friendly Unit resolves a PLACE effect. That Unit immediately resolves the HEAL (2) effect.",
+      "Weapons of the Firstborn": "The active Ground Unit's first Ranged Weapon used gains BUFF Range (4).",
+      "Personal Transport": "Instead of performing an action, the active, Unengaged Ground Unit is returned to Reserves. Then, it performs a Deploy action.",
+      "Anakh Su'n": "This Unit gains the HIDDEN Status until it performs another action.",
+      "Warp In": "The active Ground Unit Deploys from any table edge that is not a player's Entry Edge. This deployment must end more than 10\" away from any Enemy model. The controlling player cannot use this ability if another Friendly Ground Unit has already Deployed this Round.",
+      "Phase": "The active Unit resolves the PLACE (3) effect.",
+      "Warp Conduit": "Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator.",
+      
+      "Wild Mutation": "If the active unit is ON CREEP, the Unit gains BUFF Speed (1) and its first Weapon used gains PRECISION (1).",
+      "Zerg Creep": "During Army Building, select exactly one Creep Card and add it to their Army List, paying its listed cost (if any).",
+      "Omega Network": "If there is no Friendly Omega Worm on the battlefield, set a Friendly Omega Worm Unit anywhere on GROUND LEVEL of the battlefield, more than 10\" away from any Enemy model. This Round, the Omega Worm is not eligible to use its Special Abilities (excluding Structure).",
+      "Brood Instinct": "Use before a Friendly Unit makes an Evade Roll. Apply a +1 Modifier to that roll.",
+      "Rapid Burrowing": "Select one Friendly, Unengaged Ground Zerg Unit on the battlefield. That Unit gains the Burrowed Status, even if it has already been Activated this Round.",
+
+      "Burrow": "If this Unit is Unengaged, it gains or loses the Burrowed Status.",
+      "Roachling Infestation": "Once per Game. Resolve the SUMMON (Roachling) effect.",
+      "Regeneration": "When this Unit becomes Activated, if it has the Burrowed Status, resolve the HEAL (2) effect.",
+      "Devastating Charge (Roach)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (3) 4+ effect.",
+      "Devastating Charge (Ravager)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (2) 4+ effect.",
+      "Tunneling Claws": "While this Unit has the Burrowed Status, it may perform the Move and Run actions without losing that Status. It may also move through other Units' bases.",
+      "Burrow Ambush": "When this Unit is nominated to deploy from the Reserves, it may resolve the PLACE (18) effect from the controlling player's Entry Edge. No model may be set Within 10\" of any Enemy model. This Unit's Activation ends.",
+      "Glial Reconstitution": "This Unit gains BUFF SPEED (1), or BUFF SPEED (2) if the Unit is ON CREEP.",
+      "Hydriodic Bile": "This Unit's Acid Saliva weapon gains Surge Type: Light, and S Dice: D3+1.",
+      "Squadron (Hydralisk)": "This Unit's Horizontal Coherency is 4\".",
+      "Lunge": "When another Friendly Unit Within 10\" is the target of a Ranged Attack, after the attack is fully resolved, this Unit, if Unengaged, may perform a Move action Directly Towards the attacking Unit.",
+      "Ancillary Carapace": "This Unit gains TOUGH (1) on the first Armour Roll of each Activation.",
+      "Lurking": "If this Unit has Stationary Status, it is eligible to make an Evade Roll against the first Ranged Attack targeting it this Round. If this Unit is ON CREEP, it gains +1 Modifier to this Evade Roll.",
+      "Grooved Spines": "This Unit's Needle Spines ranged weapon gains LONG RANGE (16\").",
+      "Crushing Grip": "Select one Enemy Unit Within 12\". That Unit counts as Activated in this Phase (set an Activation Marker next to it).",
+      "Mutating Carapace": "Select one Enemy Unit Within 18\". This Unit is eligible to make an Evade Roll against all attacks made by the selected Enemy Unit, with a +2 Modifier applied to those Evade Rolls.",
+      "Leaping Strike": "If Unengaged, resolve the PLACE (6) effect.",
+      "Devastating Charge (Kerrigan)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 4+ effect.",
+
+      "Raptor Strain": "This Unit can move through IMPASSABLE TERRAIN of Size 4 or less and change elevation without using ACCESS POINTS.",
+      "Leap": "When determining Charge Distance for this Unit, add 2 to the Charge Distance.",
+      "Adrenal Overload": "This Unit gains a +1 Modifier to all IMPACT Hit Rolls.",
+      "Devastating Charge (Kerrigan Swarm Raptor)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (2) 5+ effect.",
+      "Detection": "While Enemy Units are Within 6\" of this Unit, they lose HIDDEN Status.",
+      "Source of Creep": "A Friendly or Enemy Ground Zerg Unit Within 6\" of this Unit, counts as being ON CREEP.",
+      "Omega Network (Unit)": "The base of the Omega Worm counts as an Entry Edge. Each Round, Friendly Units with a combined Supply cost of 2 or less may be Deployed via this Entry Edge. If a Friendly Leading model finishes a Move, Disengage, or Run action in base-to-base contact with the Omega Worm, the controlling player may remove that Unit from the battlefield and return it to Reserves.",
+      "Spawn Creep Tumor": "Set a Creep Tumor token in base-to-base contact with this Unit.",
+      "Transfusion": "Use when another Friendly Biological Unit (including a Structure) suffers Damage Within 4\". Reduce the Total Damage before allocation by 2.",
+      "Restoration (Queen)": "Use when a Friendly Unit Within 4\" receives a DEBUFF. Remove all DEBUFFS from it.",
+      "Psionic Link": "Once per Round, if there are at least 7 Friendly models Within 6\" of this Unit, it may resolve its Special Ability with the BM cost reduced by 1.",
+      "Devastating Charge (Queen)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 3+ effect.",
+      "Creep Speed": "While this Unit is ON CREEP, increase this Unit's Speed characteristic by 2.",
+      "Domineering Presence": "Select another Friendly Unit Within 6\" (Line of Sight is not required). That Unit's Supply characteristic is increased by 1 for Controlling and Contesting Mission Markers and completing objectives.",
+      "Metabolic Boost": "When determining Charge Distance for this Unit, roll 2D6 instead of D6 and use the higher result to add to the Unit's Speed characteristic.",
+      "Devastating Charge (Raptor)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (1) 5+ effect.",
+      "Adrenal Glands": "This Unit's Claws and Shredding Claws weapons gain PRECISION (2).",
+
+      "Corrosive Bile": "For each model in this Unit, set one Corrosive Bile token on the battlefield Within 14\" of that model. These tokens are not removed if this Unit is Destroyed. At the End of the Assault Phase, each Unit suffers HITS 5 (1) effect for each of this Unit's Corrosive Bile tokens it is Within 1\" of. Then, remove all of this Unit's Corrosive Bile tokens from the battlefield. If multiple effects trigger at the End of the Assault Phase, resolve them in the order specified in Part 8.9.4.",
+      "Deep Tunnel": "Set a Ravager Burrow token Wholly Within 12\" of any model in this Unit. At the End of the Round, the controlling player may set all models of this Unit in Coherency, treating the Ravager Burrow token as the Leading Model. The Ravager Burrow token has DISPLACEMENT.",
+      "Bloated Bile Ducts": "Increase the area of effect of this Unit's Corrosive Bile ability to 2\".",
+      "Potent Bile": "Before an Enemy Unit resolves an Armour Roll against the HITS effect generated by this Unit's Corrosive Bile ability, that Unit suffers DEBUFF Armour (1).",
+      "Underdeveloped Claws": "This Unit cannot gain Burrowed Status.",
+
+      "Zergling Reconstitution": "Resolve the RESPAWN (2) effect, or RESPAWN (3) if the Unit is ON CREEP.",
+      "Debilitating Saliva": "Use when an Enemy Unit Within 8\" of this Unit declares a Ranged Attack. Apply DEBUFF Hit (1) to each of that Unit's Ranged Weapons.",
+      "Devastating Charge (Swarmling)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (1) 5+ effect.",
+      "Devastating Charge (Vile)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (1) 4+ effect.",
+      "Devastating Charge (Zergling)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (1) 5+ effect.",
+
+      "Speed on Creep": "If the active Friendly Zerg Unit is ON CREEP, increase its Speed characteristic by 1.",
+      "Living Glob of Tissue": "Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT.",
+      "Creep Removal": "If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield.",
+      "Spawn Larva": "The active Friendly non-Unique Biological Unit with a Size Characteristic of 1 resolves the RESPAWN (2) effect.",
+      "Ravager Morph": "Once per Game. The active Friendly Roach Unit performs MORPH (Ravager) 1.",
+      "Carapace": "Use before a Friendly Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll.",
+      "Extended Claws": "The active Unit gains a +1 Modifier to all IMPACT Hit Rolls.",
+      "Lie in Wait": "The active, Unengaged Ground Unit gains the Burrowed Status.",
+      "Creep Spread": "Set a Creep Tumor token on the battlefield Within 6\" (Line of Sight is not required) of either a Friendly Entry Edge or an existing Friendly Creep Tumor token.",
+      "Missile Attacks": "The active Unit's first Ranged Weapon used gains PRECISION (1).",
+      "Predation": "The active Unit's Close Combat Weapons gain INSTANT.",
+      "Malevolent Matriarch": "If the active Friendly Zerg Unit declares a Charge action while ON CREEP, it gains +1 Modifier to IMPACT Hit Rolls.",
+      "Ventral Sacs": "Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator.",
+      "Excrete Creep": "Set a Creep Tumor token on the battlefield Within 6\" (Line of Sight is not required) of either a Friendly Entry Edge or an existing Friendly Creep Tumor token.",
+      "Oversight Mode": "Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status.",
+      "Pneumatized Carapace": "Use after a Friendly Unit rolls a D6 for Charge Distance. Roll an additional D6 and use the higher result to calculate the total Charge Distance.",
+      "Nasty Surprise": "The active Ground Unit loses the Burrowed Status.",
+      "Feral Rage": "The active Unit's first Close Combat Weapon used gains PRECISION (2).",
+      "Timing Push": "The active Zergling Unit Deploys from any table edge that is not a Player's Entry Edge. This action must end more than 10\" away from any Enemy model."
     };
 
     const ABILITY_MAP = {
@@ -301,57 +426,189 @@
       "Mode Transformation": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
       "Coordinated Strike": { type: "ACTIVE", cost: "0 CP", phase: "MOVEMENT PHASE" },
       "Shaped Blast": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
-      "Smart Shells": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" }
+      "Smart Shells": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
+
+      "Dae'Uhl": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Mass Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Pylon Warp-In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Bound by the Khala": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Might Of The Nerazim": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Darkness Descends": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Ground Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Ground Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Zealous Charge": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Quick Strikes": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
+      "Ancient Pride": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
+      "Strategic Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Surveillance": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Gravitic Boosters": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
+      "Photon Overcharge": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Guardian Shell": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Plasma Shields": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Veil of Shadows": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Weapons of the Firstborn": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Personal Transport": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Anakh Su'n": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Warp In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Phase": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Warp Conduit": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      
+      "Wild Mutation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
+      "Zerg Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Omega Network": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Brood Instinct": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Rapid Burrowing": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+
+      "Burrow": { type: "ACTIVE", cost: "2 BM", phase: "ANY PHASE" },
+      "Roachling Infestation": { type: "ACTIVE", cost: "2 BM", phase: "MOVEMENT PHASE" },
+      "Regeneration": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Roach)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Ravager)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Tunneling Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Burrow Ambush": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Glial Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Hydriodic Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Squadron (Hydralisk)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Lunge": { type: "REACTION", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Ancillary Carapace": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Lurking": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Grooved Spines": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Crushing Grip": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Mutating Carapace": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Leaping Strike": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Kerrigan)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Raptor Strain": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Leap": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Adrenal Overload": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Kerrigan Swarm Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Detection": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Source of Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Omega Network (Unit)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Spawn Creep Tumor": { type: "ACTIVE", cost: "1 BM", phase: "ANY PHASE" },
+      "Transfusion": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
+      "Restoration (Queen)": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
+      "Psionic Link": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Devastating Charge (Queen)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Creep Speed": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Domineering Presence": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Metabolic Boost": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Adrenal Glands": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
+
+      "Corrosive Bile": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Deep Tunnel": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Bloated Bile Ducts": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Potent Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Underdeveloped Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+
+      "Zergling Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Debilitating Saliva": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
+      "Devastating Charge (Swarmling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Vile)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Zergling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Speed on Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Living Glob of Tissue": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Creep Removal": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Spawn Larva": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Ravager Morph": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Carapace": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Extended Claws": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Lie in Wait": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Creep Spread": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Missile Attacks": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Predation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
+      "Malevolent Matriarch": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Ventral Sacs": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Excrete Creep": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Oversight Mode": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Pneumatized Carapace": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
+      "Nasty Surprise": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Feral Rage": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
+      "Timing Push": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" }
     };
 
     const WEAPON_MAP = {
       "Glaive Strike": { name: "Glaive Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PIERCE Light (2)", phase: "COMBAT PHASE" },
       "Left Phase Disruptor": { name: "Left Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3)", phase: "ASSAULT PHASE" },
       "Right Phase Disruptor": { name: "Right Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
-      "C-14 rifle": { name: "C-14 rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "C-14 rifle": { name: "C-14 rifle", range: "12", target: "All", roa: 6, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "BURST FIRE 8\" (3)", phase: "ASSAULT PHASE" },
       "Scatter Missiles": { name: "Scatter Missiles", range: "18", target: "Ground", roa: 6, hit: "5+", surge: "Light", sDice: "D3", dmg: 1, keyword: "INDIRECT FIRE, LOCKED IN (6), LONG RANGE (24\"), SIDEARM", phase: "ASSAULT PHASE" },
       "Haywire Missiles": { name: "Haywire Missiles", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
       "AGG-12": { name: "AGG-12", range: "12", target: "Ground", roa: 2, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "LONG RANGE (18\"), SPECIALIST", phase: "ASSAULT PHASE" },
       "Rocket Launcher": { name: "Rocket Launcher", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "INDIRECT FIRE, LONG RANGE (18\"), SIDEARM, SPECIALIST", phase: "ASSAULT PHASE" },
-      "Bayonet": { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }
+      "Bayonet": { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Acid Saliva": { name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Acid Saliva (Roach)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Acid Saliva (Vile)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Hydriodic Bile": { name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Hydriodic Bile (Roach)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Hydriodic Bile (Vile)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Claws": { name: "Claws", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Basic Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Swarmling Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Vile Claws": { name: "Vile Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Zergling Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Needle Spines": { name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" },
+      "Grooved Spines": { name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "LONG RANGE (16\")", phase: "ASSAULT PHASE" },
+      "Scythe": { name: "Scythe", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Energy Blast": { name: "Energy Blast", range: "8", target: "All", roa: 5, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Blades": { name: "Blades", range: "E", target: "Ground", roa: 6, hit: "4+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2)", phase: "COMBAT PHASE" },
+      "Shredding Claws": { name: "Shredding Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Plasma Discharge": { name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }
     };
 
-    const TACTICAL_CARDS = [
-      // PROTOSS FACTION CARDS
-      { faction: "Protoss", subFaction: "Daelaam", name: "Daelaam", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Elite, 3x Core, 1x Support Slot", abilities: [ { name: "Dae'Uhl", cost: "-", phase: "ANY PHASE", desc: "Reaction: Whenever a Friendly Unit suffers Damage, the controlling player may select another Friendly Unit Within 4\". That selected Unit suffers the Damage instead." }, { name: "Mass Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Select up to 2 Friendly Units that are not Engaged. Remove them from the battlefield and set them up anywhere on the battlefield Wholly Within 8\" of a Friendly Nexus, completely within your Deployment Zone, or in Reserves." } ] },
-      { faction: "Protoss", subFaction: "Khalai", name: "Khalai", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 2x Elite, 3x Core Slot", abilities: [ { name: "Pylon Warp-In", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Pylon token anywhere on the battlefield Wholly Within 12\" of a Friendly Unit." }, { name: "Bound by the Khala", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: All Friendly Units gain BUFF Speed (1) for this Phase." } ] },
-      { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 3x Elite, 2x Core Slot", abilities: [ { name: "Might Of The Nerazim", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Select one Friendly Unit. That Unit gains the HIDDEN Status until the End of the Round." }, { name: "Darkness Descends", cost: "-", phase: "ASSAULT PHASE", desc: "Active: All Friendly Units gain PRECISION (1) on their first attack this Round." } ] },
-      
-      // TERRAN FACTION CARDS
-      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Raynor's Raiders", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Hero, 3x Core, 1x Support Slot", abilities: [ { name: "Rapid Ingress", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Friendly Point Defence Drone Unit anywhere on the battlefield, more than 1\" away from any Enemy model. Remove this Unit at the End of the Round." }, { name: "Ready for Pickup?", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy Unit. This resolves instead of performing a standard action." } ] },
-      { faction: "Terran", subFaction: "Generic", name: "Terran Armed Forces", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Elite, 3x Core, 1x Support Slot", abilities: [ { name: "Tactical Retreat", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit ignores the Disengage penalty for the remainder of the Round." }, { name: "Terran Tenacity", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Once per Game. Immediately claim the First Player Marker. No other player may claim the First Player Marker for the remainder of this Phase." } ] },
+    const FACTION_CARDS = [
+      { faction: "Protoss", subFaction: "Daelaam", name: "Daelaam", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Dae'Uhl", "Mass Recall"] },
+      { faction: "Protoss", subFaction: "Khalai", name: "Khalai", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 2x Elite, 3x Core Slot", abilities: ["Pylon Warp-In", "Bound by the Khala"] },
+      { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 3x Elite, 2x Core Slot", abilities: ["Might Of The Nerazim", "Darkness Descends"] },
+      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Raynor's Raiders", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Hero, 3x Core, 1x Support Slot", abilities: ["Rapid Ingress", "Ready for Pickup?"] },
+      { faction: "Terran", subFaction: "Generic", name: "Terran Armed Forces", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Tactical Retreat", "Terran Tenacity"] },
+      { faction: "Zerg", subFaction: "Kerrigan's Swarm", name: "Kerrigan's Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Hero, 2x Elite, 3x Core Slot", abilities: ["Wild Mutation", "Zerg Creep", "Omega Network"] },
+      { faction: "Zerg", subFaction: "Generic", name: "Zerg Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Brood Instinct", "Zerg Creep", "Rapid Burrowing"] }
+    ];
 
+    const TACTICAL_CARDS = [
       // PROTOSS TACTICAL CARDS
-      { faction: "Protoss", name: "Forge", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "+1 EN | 1x Elite Slot", abilities: [ { name: "Ground Armor", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll." }, { name: "Ground Weapons", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Ground Unit's first Ranged Weapon used gains CRITICAL HIT (1)." } ] },
-      { faction: "Protoss", name: "Gate Chronoboosted", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: [ { name: "Zealous Charge", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit gains BUFF Speed (2)." }, { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." } ] },
-      { faction: "Protoss", name: "Gateway", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "+1 EN | 1x Core Slot", abilities: [ { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." } ] },
-      { faction: "Protoss", name: "Nexus", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 2x Core Slot", abilities: [ { name: "Ancient Pride", cost: "-", phase: "ANY PHASE", desc: "Active: The active Unit's first Weapon used gains INSTANT." }, { name: "Strategic Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action." } ] },
-      { faction: "Protoss", name: "Observer", type: "Tactical Card", tags: "Unique", vespene: 25, provides: "+1 EN | 1x Support Slot", abilities: [ { name: "Surveillance", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status." }, { name: "Gravitic Boosters", cost: "-", phase: "ASSAULT PHASE", desc: "Reaction: Use after a Friendly Unit rolls a D6 for Charge Distance. Add 1 to the Charge Distance for this Unit." } ] },
-      { faction: "Protoss", name: "Overcharged Nexus", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: [ { name: "Photon Overcharge", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use when an Enemy Unit enters the battlefield from Reserves via a location other than its own Entry Edge. That Unit immediately suffers HITS 3 (1)." }, { name: "Strategic Recall", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action." } ] },
-      { faction: "Protoss", name: "Power Field", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 1x Hero, 1x Elite, 1x Core Slot", abilities: [ { name: "Guardian Shell", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Ground Unit makes an Armour Roll. That Unit gains DODGE (2) for this roll." } ] },
-      { faction: "Protoss", name: "Robotics Facility", type: "Tactical Card", tags: "Standard", vespene: 35, provides: "+1 EN | 2x Elite Slot", abilities: [ { name: "Plasma Shields", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Mechanical Ground Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (1) and DODGE (1) for this roll." } ] },
-      { faction: "Protoss", name: "Twilight Council", type: "Tactical Card", tags: "Unique", vespene: 45, provides: "+1 EN | 1x Elite, 1x Support Slot", abilities: [ { name: "Veil of Shadows", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use after a Friendly Unit resolves a PLACE effect. That Unit immediately resolves the HEAL (2) effect." }, { name: "Weapons of the Firstborn", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Ground Unit's first Ranged Weapon used gains BUFF Range (4)." } ] },
-      { faction: "Protoss", name: "Void Seeker", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 1x Core Slot", abilities: [ { name: "Personal Transport", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Instead of performing an action, the active, Unengaged Ground Unit is returned to Reserves. Then, it performs a Deploy action." }, { name: "Anakh Su'n", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: This Unit gains the HIDDEN Status until it performs another action." } ] },
-      { faction: "Protoss", name: "Warp Gate", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 EN | 2x Core Slot", abilities: [ { name: "Warp In", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Ground Unit Deploys from any table edge that is not a player's Entry Edge. This deployment must end more than 10\" away from any Enemy model. The controlling player cannot use this ability if another Friendly Ground Unit has already Deployed this Round." }, { name: "Quick Strikes", cost: "-", phase: "COMBAT PHASE", desc: "Active: The active Unit's first Close Combat Weapon used gains PRECISION (2)." } ] },
-      { faction: "Protoss", name: "Warp Prism", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 EN | 2x Core Slot", abilities: [ { name: "Phase", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit resolves the PLACE (3) effect." }, { name: "Warp Conduit", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator." } ] },
-      
+      { faction: "Protoss", name: "Forge", type: "Tactical Card", tags: "30 Gas", provides: "+1 EN | 1x Elite Slot", abilities: ["Ground Armor", "Ground Weapons"] },
+      { faction: "Protoss", name: "Gate Chronoboosted", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: ["Zealous Charge", "Quick Strikes"] },
+      { faction: "Protoss", name: "Gateway", type: "Tactical Card", tags: "25 Gas", provides: "+1 EN | 1x Core Slot", abilities: ["Quick Strikes"] },
+      { faction: "Protoss", name: "Nexus", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 2x Core Slot", abilities: ["Ancient Pride", "Strategic Recall"] },
+      { faction: "Protoss", name: "Observer", type: "Tactical Card", tags: "25 Gas, Unique", provides: "+1 EN | 1x Support Slot", abilities: ["Surveillance", "Gravitic Boosters"] },
+      { faction: "Protoss", name: "Overcharged Nexus", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: ["Photon Overcharge", "Strategic Recall"] },
+      { faction: "Protoss", name: "Power Field", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 EN | 1x Hero, 1x Elite, 1x Core Slot", abilities: ["Guardian Shell"] },
+      { faction: "Protoss", name: "Robotics Facility", type: "Tactical Card", tags: "35 Gas", provides: "+1 EN | 2x Elite Slot", abilities: ["Plasma Shields"] },
+      { faction: "Protoss", name: "Twilight Council", type: "Tactical Card", tags: "45 Gas, Unique", provides: "+1 EN | 1x Elite, 1x Support Slot", abilities: ["Veil of Shadows", "Weapons of the Firstborn"] },
+      { faction: "Protoss", name: "Void Seeker", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 EN | 1x Core Slot", abilities: ["Personal Transport", "Anakh Su'n"] },
+      { faction: "Protoss", name: "Warp Gate", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 EN | 2x Core Slot", abilities: ["Warp In", "Quick Strikes"] },
+      { faction: "Protoss", name: "Warp Prism", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 EN | 2x Core Slot", abilities: ["Phase", "Warp Conduit"] },
       // TERRAN TACTICAL CARDS
-      { faction: "Terran", name: "Academy", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "+1 CP | 2x Support Slot", abilities: [{name: "Advanced Training", cost: "-", phase: "ANY PHASE", desc: "Reaction: Once per Round, when a Friendly Support Unit activates a Special Ability that costs CP, resolve that ability with its CP cost reduced by 1 (to a minimum of 0). Do not Exhaust this card."}] },
-      { faction: "Terran", name: "Armory", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "+1 CP | 1x Elite Slot", abilities: [{name: "Vehicle Plating", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Mechanical Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll."}, {name: "Vehicle Weapons", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Mechanical Unit's first Ranged Weapon used gain CRITICAL HIT (1)."}] },
-      { faction: "Terran", name: "Barracks", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "+1 CP | 1x Core Slot", abilities: [{name: "Go! Go! Go!", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit."}] },
-      { faction: "Terran", name: "Barracks (Proxy)", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+2 CP | 2x Core Slot", abilities: [{name: "Go! Go! Go!", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit."}, {name: "Armed and Ready", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Biological Unit Deploys from any table edge that is not a player's Entry Edge. No model may be set up Within 10\" of any Enemy model. This ability cannot be used if another Friendly Biological Unit has already been Deployed this Round."}] },
-      { faction: "Terran", name: "Barracks (Tech Lab)", type: "Tactical Card", tags: "Unique", vespene: 45, provides: "+2 CP | 1x Elite, 1x Core Slot", abilities: [{name: "Go! Go! Go!", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit."}, {name: "Let's Have a Blast!", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Biological Unit's first Ranged Weapon used gain ANTI-EVADE (1)."}] },
-      { faction: "Terran", name: "Dropship", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 CP | 1x Core, 1x Support Slot", abilities: [{name: "Strap in!", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action."}, {name: "Ready For Dust-off", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator."}] },
-      { faction: "Terran", name: "Engineering Bay", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "+1 CP | 1x Core Slot", abilities: [{name: "Infantry Armor", cost: "-", phase: "ANY PHASE", desc: "Reaction: Use before a Friendly Biological Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll."}, {name: "Infantry Weapons", cost: "-", phase: "ASSAULT PHASE", desc: "Active: The active Biological Unit's first Ranged Weapon used gains CRITICAL HIT (1)."}] },
-      { faction: "Terran", name: "Factory", type: "Tactical Card", tags: "Standard", vespene: 35, provides: "+1 CP | 2x Elite Slot", abilities: [{name: "Field Repair", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Mechanical Unit resolves the HEAL (2) effect."}] },
-      { faction: "Terran", name: "Factory (Tech Lab)", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 CP | 2x Elite Slot", abilities: [{name: "Field Repair", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Mechanical Unit resolves the HEAL (2) effect."}, {name: "Pound 'em Flat!", cost: "-", phase: "ASSAULT PHASE", desc: "Active: If the active Mechanical Unit has the Stationary Status, its first Ranged Weapon used gains PRECISION (2)."}] },
-      { faction: "Terran", name: "Orbital Command", type: "Tactical Card", tags: "Unique", vespene: 25, provides: "+1 CP | 1x Core Slot", abilities: [{name: "ComSat Station", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Select one table edge that is not a player's Entry Edge. Until the End of the Round, Enemy Units cannot Deploy from that edge."}, {name: "Scanner Sweep", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status."}] },
-      { faction: "Terran", name: "Supply Depot", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "+1 CP | 1x Hero, 1x Elite, 1x Core Slot", abilities: [{name: "Additional Supply Depots", cost: "-", phase: "MOVEMENT PHASE", desc: "Active: The active Unit's Supply Value is improved by 1 for Controlling and Contesting Mission Markers and completing objectives."}] }
+      { faction: "Terran", name: "Academy", type: "Tactical Card", tags: "35 Gas, Unique", provides: "+1 CP | 2x Support Slot", abilities: ["Advanced Training"] },
+      { faction: "Terran", name: "Armory", type: "Tactical Card", tags: "30 Gas", provides: "+1 CP | 1x Elite Slot", abilities: ["Vehicle Plating", "Vehicle Weapons"] },
+      { faction: "Terran", name: "Barracks", type: "Tactical Card", tags: "25 Gas", provides: "+1 CP | 1x Core Slot", abilities: ["Go! Go! Go!"] },
+      { faction: "Terran", name: "Barracks (Proxy)", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+2 CP | 2x Core Slot", abilities: ["Go! Go! Go!", "Armed and Ready"] },
+      { faction: "Terran", name: "Barracks (Tech Lab)", type: "Tactical Card", tags: "45 Gas, Unique", provides: "+2 CP | 1x Elite, 1x Core Slot", abilities: ["Go! Go! Go!", "Let's Have a Blast!"] },
+      { faction: "Terran", name: "Dropship", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 CP | 1x Core, 1x Support Slot", abilities: ["Strap in!", "Ready For Dust-off"] },
+      { faction: "Terran", name: "Engineering Bay", type: "Tactical Card", tags: "25 Gas", provides: "+1 CP | 1x Core Slot", abilities: ["Infantry Armor", "Infantry Weapons"] },
+      { faction: "Terran", name: "Factory", type: "Tactical Card", tags: "35 Gas", provides: "+1 CP | 2x Elite Slot", abilities: ["Field Repair"] },
+      { faction: "Terran", name: "Factory (Tech Lab)", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 CP | 2x Elite Slot", abilities: ["Field Repair", "Pound 'em Flat!"] },
+      { faction: "Terran", name: "Orbital Command", type: "Tactical Card", tags: "25 Gas, Unique", provides: "+1 CP | 1x Core Slot", abilities: ["ComSat Station", "Scanner Sweep"] },
+      { faction: "Terran", name: "Supply Depot", type: "Tactical Card", tags: "40 Gas, Unique", provides: "+1 CP | 1x Hero, 1x Elite, 1x Core Slot", abilities: ["Additional Supply Depots"] },
+      // ZERG TACTICAL CARDS
+      { faction: "Zerg", name: "Accelerating Creep", type: "Tactical Card", tags: "Unique", vespene: 0, provides: null, abilities: ["Speed on Creep", "Living Glob of Tissue", "Creep Removal"] },
+      { faction: "Zerg", name: "Cocoon", type: "Tactical Card", tags: "Unique", vespene: 30, provides: "1x Elite Slot", abilities: ["Spawn Larva", "Ravager Morph"] },
+      { faction: "Zerg", name: "Evolution Chamber", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Carapace", "Extended Claws"] },
+      { faction: "Zerg", name: "Hatchery", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "Resource: +1 BM | 1x Support Slot", abilities: ["Lie in Wait", "Creep Spread"] },
+      { faction: "Zerg", name: "Hydralisk Den", type: "Tactical Card", tags: "Standard", vespene: 35, provides: "Resource: +1 BM | 2x Elite Slot", abilities: ["Missile Attacks"] },
+      { faction: "Zerg", name: "Lair", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "Resource: +1 BM | 1x Elite, 1x Core Slot", abilities: ["Predation", "Creep Spread"] },
+      { faction: "Zerg", name: "Malignant Creep", type: "Tactical Card", tags: "Unique", vespene: 10, provides: null, abilities: ["Living Glob of Tissue", "Creep Removal", "Malevolent Matriarch"] },
+      { faction: "Zerg", name: "Overlord", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "Resource: +1 BM | 1x Hero, 1x Elite, 1x Core Slot", abilities: ["Ventral Sacs", "Excrete Creep"] },
+      { faction: "Zerg", name: "Overseer", type: "Tactical Card", tags: "Unique", vespene: 25, provides: "Resource: +1 BM | 1x Support Slot", abilities: ["Oversight Mode", "Pneumatized Carapace"] },
+      { faction: "Zerg", name: "Roach Warren", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Nasty Surprise"] },
+      { faction: "Zerg", name: "Spawning Pool", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Feral Rage"] },
+      { faction: "Zerg", name: "Spawning Pool (Six Pool)", type: "Tactical Card", tags: "Unique", vespene: 40, provides: "Resource: +2 BM | 2x Core Slot", abilities: ["Timing Push", "Feral Rage"] }
     ];
 
     const UNITS_DATABASE = [
@@ -366,7 +623,7 @@
       { faction: "Terran", subFaction: "Raynor's Raiders", name: "Point Defense Drone", tags: "Raynor's Raiders, Armoured, Flying, Mechanical", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "6+", evade: "6+", hitPoints: 3, size: "-" }, weapons: [], abilities: ["Point Defense Laser", "Gliding", "Structure"], upgrades: [] },
       
       // PROTOSS
-      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20] }, { name: "Zealous Round", type: "Standard", costs: [10] }, { name: "We Stand as One", type: "Standard", costs: [20] }] },
+      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 2, minerals: 160, supply: 2 }, { models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10, 10, 10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20, 20, 20] }, { name: "Zealous Round", type: "Standard", costs: [10, 10, 10] }, { name: "We Stand as One", type: "Standard", costs: [20, 20, 20] }] },
       { faction: "Protoss", name: "Adept", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 0 }, { models: 4, minerals: 300, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [{ name: "Resonating Glaives", type: "Standard", costs: [20, 20] }, { name: "Guidance", type: "Standard", costs: [10, 10] }, { name: "Glaive Strike", type: "Replacement", costs: [20, 20], replaces: "Strike" }] },
       { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim Watchers", tags: "Protoss, Nerazim, Biological, Light, Ground", slot: "Core", compositions: [{ models: 2, minerals: 210, supply: 0 }, { models: 4, minerals: 420, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 3, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1), PINPOINT", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Path of Shadows (Watchers)", "Nerazim Farsight", "Psionic Transfer"], upgrades: [] },
       { faction: "Protoss", name: "Stalker", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 170, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: 3, speed: "4/8", armour: "4+", evade: "6+", hitPoints: 6, size: 3 }, weapons: [{ name: "Particle Disruptors", range: "12", target: "All", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Blink"], upgrades: [{ name: "Path of Shadows (Stalker)", type: "Standard", costs: [20, 40] }, { name: "Fury of the Nerazim", type: "Standard", costs: [20, 30] }] },
@@ -375,7 +632,22 @@
       { faction: "Protoss", name: "Sentry", tags: "Light, Mechanical, Psionic, Ground", slot: "Support", compositions: [{ models: 1, minerals: 130, supply: 0 }, { models: 2, minerals: 260, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }, { max: 2, supply: 1 }], stats: { shield: 2, speed: "4/7", armour: "5+", evade: "6+", hitPoints: 4, size: 1 }, weapons: [{ name: "Disruption Beam", range: "8", target: "All", roa: 2, hit: "2+", surge: "-", sDice: "-", dmg: 1, keyword: "INSTANT", phase: "ASSAULT PHASE" }, { name: "Beam", range: "E", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Restoration", "Force Field", "Guardian Shield"], upgrades: [{ name: "Solid-Field Projectors", type: "Standard", costs: [20, 20] }, { name: "Hallucination", type: "Standard", costs: [30, 30] }] },
       { faction: "Protoss", name: "Pylon", tags: "Khalai, Armored, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: 2, speed: "-", armour: "5+", evade: "-", hitPoints: 8, size: 3 }, weapons: [], abilities: ["Structure", "Khalai Ingenuity", "Warp Conduit"], upgrades: [] },
       { faction: "Protoss", name: "Artanis", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 4, speed: "7", armour: "4+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Twilight Blades Strike", range: "E", target: "Ground", roa: 2, hit: "2+", surge: "Armoured", sDice: "D3", dmg: 3, keyword: "-", phase: "COMBAT PHASE" }, { name: "Twilight Blades Sweep", range: "E", target: "Ground", roa: 6, hit: "2+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Commander", "Phase Prism", "Hierarch's Stand", "Lightning Dash", "Devastating Charge"], upgrades: [] },
-      { faction: "Protoss", name: "Zeratul", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 230, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 3, speed: "7", armour: "5+", evade: "5+", hitPoints: 5, size: 2 }, weapons: [{ name: "Master Warp Blade", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "INSTANT", phase: "COMBAT PHASE" }], abilities: ["One With the Shadows", "Prophetic Vision", "Sentenced to Death", "Void Prison", "Void Blink", "Devastating Charge (Zeratul)", "Shadow Strike"], upgrades: [] }
+      { faction: "Protoss", name: "Zeratul", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 230, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 3, speed: "7", armour: "5+", evade: "5+", hitPoints: 5, size: 2 }, weapons: [{ name: "Master Warp Blade", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "INSTANT", phase: "COMBAT PHASE" }], abilities: ["One With the Shadows", "Prophetic Vision", "Sentenced to Death", "Void Prison", "Void Blink", "Devastating Charge (Zeratul)", "Shadow Strike"], upgrades: [] },
+      
+      // ZERG
+      { faction: "Zerg", name: "Corpser (Roach)", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 240, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Claws", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Burrow", "Roachling Infestation", "Regeneration", "Devastating Charge (Roach)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [20] }, { name: "Hydriodic Bile", type: "Replacement", costs: [10], replaces: "Acid Saliva" }] },
+      { faction: "Zerg", name: "Hydralisk", tags: "Biological, Light, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 140, supply: 1 }, { models: 2, minerals: 260, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 2, supply: 2 }, { max: 4, supply: 3 }], stats: { shield: "-", speed: "4/8", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Scythe", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron (Hydralisk)", "Lunge"], upgrades: [{ name: "Ancillary Carapace", type: "Standard", costs: [20, 40] }, { name: "Lurking", type: "Standard", costs: [10, 20] }, { name: "Burrow Ambush", type: "Standard", costs: [20, 40] }, { name: "Grooved Spines", type: "Replacement", costs: [20, 40], replaces: "Needle Spines" }] },
+      { faction: "Zerg", name: "Kerrigan", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "6+", hitPoints: 9, size: 2 }, weapons: [{ name: "Energy Blast", range: "8", target: "All", roa: 5, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Blades", range: "E", target: "Ground", roa: 6, hit: "4+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2)", phase: "COMBAT PHASE" }], abilities: ["Commander", "Crushing Grip", "Mutating Carapace", "Leaping Strike", "Devastating Charge (Kerrigan)"], upgrades: [] },
+      { faction: "Zerg", subFaction: "Kerrigan's Swarm", name: "Kerrigan Swarm Raptor (Zergling)", tags: "Kerrigan's Swarm, Biological, Light, Ground, Unique", slot: "Elite", compositions: [{ models: 6, minerals: 250, supply: 1 }], supplyProfile: [{ max: 3, supply: 0 }, { max: 6, supply: 1 }], stats: { shield: "-", speed: "5/9", armour: "4+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "3+", surge: "Light, Armoured", sDice: "D6", dmg: 1, keyword: "INSTANT", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Raptor Strain", "Leap", "Adrenal Overload", "Devastating Charge (Kerrigan Swarm Raptor)"], upgrades: [] },
+      { faction: "Zerg", subFaction: "Kerrigan's Swarm", name: "Omega Worm", tags: "Kerrigan's Swarm, Armoured, Biological, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "5+", evade: "-", hitPoints: 10, size: 3 }, weapons: [], abilities: ["Detection", "Source of Creep", "Structure", "Omega Network (Unit)"], upgrades: [] },
+      { faction: "Zerg", name: "Queen", tags: "Armoured, Biological, Psionic, Ground", slot: "Support", compositions: [{ models: 1, minerals: 150, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "4", armour: "4+", evade: "-", hitPoints: 9, size: 3 }, weapons: [{ name: "Talons", range: "6", target: "Ground", roa: 4, hit: "4+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Acid spines", range: "12", target: "Flying", roa: 4, hit: "4+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Talons", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Spawn Creep Tumor", "Transfusion", "Restoration (Queen)", "Psionic Link", "Devastating Charge (Queen)"], upgrades: [{ name: "Creep Speed", type: "Standard", costs: [10] }, { name: "Domineering Presence", type: "Standard", costs: [10] }] },
+      { faction: "Zerg", name: "Raptor (Zergling)", tags: "Biological, Light, Ground", slot: "Elite", compositions: [{ models: 12, minerals: 240, supply: 1 }, { models: 18, minerals: 300, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "5/9", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Raptor Strain", "Adrenal Overload", "Metabolic Boost", "Devastating Charge (Raptor)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] },
+      { faction: "Zerg", name: "Ravager", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "5+", evade: "5+", hitPoints: 9, size: 3 }, weapons: [{ name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Basic Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Corrosive Bile", "Deep Tunnel", "Devastating Charge (Ravager)"], upgrades: [{ name: "Bloated Bile Ducts", type: "Standard", costs: [20, 40] }, { name: "Burrow Ambush", type: "Standard", costs: [20, 40] }, { name: "Potent Bile", type: "Standard", costs: [20, 40] }] },
+      { faction: "Zerg", name: "Roach", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 170, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva (Roach)", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Basic Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Burrow", "Regeneration", "Devastating Charge (Ravager)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [20] }, { name: "Hydriodic Bile (Roach)", type: "Replacement", costs: [10], replaces: "Acid Saliva (Roach)" }] },
+      { faction: "Zerg", name: "Roachling", tags: "Biological, Light, Ground", slot: "Summoned", compositions: [{ models: 3, minerals: 0, supply: 0 }], supplyProfile: [{ max: 3, supply: 0 }], stats: { shield: "-", speed: "4/7", armour: "6+", evade: "6+", hitPoints: 1, size: 1 }, weapons: [{ name: "Basic Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Underdeveloped Claws"], upgrades: [] },
+      { faction: "Zerg", name: "Swarmling (Zergling)", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 18, minerals: 260, supply: 1 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 18, supply: 1 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "5+", hitPoints: 1, size: 1 }, weapons: [{ name: "Swarmling Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Zergling Reconstitution", "Metabolic Boost", "Devastating Charge (Swarmling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20] }] },
+      { faction: "Zerg", name: "Vile (Roach)", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 200, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva (Vile)", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Vile Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Debilitating Saliva", "Burrow", "Regeneration", "Devastating Charge (Vile)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [20] }, { name: "Hydriodic Bile (Vile)", type: "Replacement", costs: [10], replaces: "Acid Saliva (Vile)" }] },
+      { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 180, supply: 1 }, { models: 18, minerals: 220, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Zergling Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Metabolic Boost", "Devastating Charge (Zergling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Zergling Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] }
     ];
 
     const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen = false }) => {
@@ -414,7 +686,7 @@
               })}
 
               {phaseWeapons.length > 0 && (
-                <div className="overflow-x-auto mt-2">
+                <div className="overflow-x-auto">
                   <table className="w-full text-left text-[10px] whitespace-nowrap">
                     <thead>
                       <tr className="border-b border-white/20 text-slate-400 uppercase font-orbitron">
@@ -422,12 +694,15 @@
                       </tr>
                     </thead>
                     <tbody>
-                      {phaseWeapons.map((w, idx) => (
-                        <tr key={`wpn-${idx}-${w.name}`} className="border-b border-white/5 last:border-0 text-slate-200">
-                          <td className="py-1.5 pr-2 font-bold uppercase font-orbitron text-white">{w.name}</td>
-                          <td className="pr-2">{w.range}</td><td className="pr-2">{w.target}</td><td className="pr-2 text-center">{w.roa}</td><td className="pr-2">{w.hit}</td><td className="pr-2">{w.surge}</td><td className="pr-2 text-center font-bold text-rose-400">{w.sDice}</td><td className="pr-2 font-black text-amber-300">{w.dmg}</td><td className="text-slate-400">{w.keyword}</td>
-                        </tr>
-                      ))}
+                      {phaseWeapons.map((w, idx) => {
+                        const wDisplayName = w.name.includes('(') ? w.name.split('(')[0].trim() : w.name;
+                        return (
+                          <tr key={`wpn-${idx}-${w.name}`} className="border-b border-white/5 last:border-0 text-slate-200">
+                            <td className="py-1.5 pr-2 font-bold uppercase font-orbitron text-white">{wDisplayName}</td>
+                            <td className="pr-2">{w.range}</td><td className="pr-2">{w.target}</td><td className="pr-2 text-center">{w.roa}</td><td className="pr-2">{w.hit}</td><td className="pr-2">{w.surge}</td><td className="pr-2">{w.sDice}</td><td className="pr-2 font-black text-amber-300">{w.dmg}</td><td className="text-slate-400">{w.keyword}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -577,6 +852,20 @@
       const [activeModal, setActiveModal] = useState(null);
       const [configUnit, setConfigUnit] = useState(null);
 
+      // Determine Sub-Faction dynamically based on the Drafted Faction Card
+      const activeFactionCard = tacticalCards.find(c => c.type === "Faction Card");
+      const currentSubFaction = activeFactionCard ? activeFactionCard.subFaction : (selectedFaction === "Protoss" ? "Daelaam" : "Generic");
+
+      const factionUnits = UNITS_DATABASE.filter(u => 
+        u.faction === selectedFaction && (!u.subFaction || u.subFaction === "Generic" || u.subFaction === currentSubFaction)
+      );
+      
+      const availableFactionCards = FACTION_CARDS.filter(c => c.faction === selectedFaction);
+      
+      const availableTacticalCards = TACTICAL_CARDS.filter(c => 
+        c.faction === selectedFaction && (!c.subFaction || c.subFaction === "Generic" || c.subFaction === currentSubFaction)
+      );
+
       useEffect(() => {
          setRoster([]);
          setTacticalCards([]);
@@ -596,14 +885,6 @@
       };
 
       const limits = ENGAGEMENT_SCALES[scale] || ENGAGEMENT_SCALES["Free Build"];
-
-      // Sub-Faction dynamically determined by Faction Card selection
-      const draftedFactionCard = tacticalCards.find(c => c.type === "Faction Card");
-      const activeSubFaction = draftedFactionCard && draftedFactionCard.subFaction !== "Generic" ? draftedFactionCard.subFaction : SUB_FACTIONS[selectedFaction][0];
-
-      const factionUnits = UNITS_DATABASE.filter(u => u.faction === selectedFaction && (!u.subFaction || u.subFaction === "Generic" || u.subFaction === activeSubFaction));
-      const availableFactionCards = TACTICAL_CARDS.filter(c => c.faction === selectedFaction && c.type === "Faction Card");
-      const availableTacticalCards = TACTICAL_CARDS.filter(c => c.faction === selectedFaction && c.type === "Tactical Card" && (!c.subFaction || c.subFaction === "Generic" || c.subFaction === activeSubFaction));
 
       const totalMinerals = roster.reduce((sum, item) => sum + (item.minerals || 0), 0);
       const totalVespene = tacticalCards.reduce((sum, card) => sum + (card.vespene || 0), 0);
@@ -673,20 +954,6 @@
           const newDamage = Math.max(0, Math.min(maxAmount, (unit[type] || 0) + amount));
           return { ...unit, [type]: newDamage };
         }));
-      };
-
-      const handleToggleCard = (card) => {
-        const isAdded = tacticalCards.find(c => c.name === card.name);
-        if (isAdded) {
-            setTacticalCards(prev => prev.filter(c => c.name !== card.name));
-        } else {
-            if (card.type === "Faction Card") {
-                // Ensure only one Faction Card is drafted at a time
-                setTacticalCards(prev => [...prev.filter(c => c.type !== "Faction Card"), card]);
-            } else {
-                setTacticalCards(prev => [...prev, card]);
-            }
-        }
       };
 
       const updateMatch = (key, val) => setMatchData(prev => ({ ...prev, [key]: val }));
@@ -856,7 +1123,13 @@
                         return (
                           <TacticalCardUI 
                             key={card.name} card={card} isAdded={isAdded} theme={theme}
-                            onToggle={() => handleToggleCard(card)} 
+                            onToggle={() => {
+                              if (isAdded) {
+                                setTacticalCards(prev => prev.filter(c => c.name !== card.name));
+                              } else {
+                                setTacticalCards(prev => [...prev.filter(c => c.type !== "Faction Card"), card]);
+                              }
+                            }} 
                           />
                         )
                       })}
@@ -865,7 +1138,7 @@
 
                   <details className="group">
                     <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
-                      <span>Tactical Cards (Vespene Gas) <span className="text-slate-400 text-xs ml-2">({availableTacticalCards.length})</span></span>
+                      <span>Tactical Cards <span className="text-slate-400 text-xs ml-2">({availableTacticalCards.length})</span></span>
                       <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
@@ -874,7 +1147,13 @@
                         return (
                           <TacticalCardUI 
                             key={card.name} card={card} isAdded={isAdded} theme={theme}
-                            onToggle={() => handleToggleCard(card)} 
+                            onToggle={() => {
+                              if (isAdded) {
+                                setTacticalCards(prev => prev.filter(c => c.name !== card.name));
+                              } else {
+                                setTacticalCards(prev => [...prev, card]);
+                              }
+                            }} 
                           />
                         )
                       })}
@@ -883,8 +1162,8 @@
                 </div>
 
                 <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 flex justify-between mt-4">
-                  <span>Unit Catalog</span>
-                  <span className="text-sm font-normal text-slate-400 normal-case bg-black/40 px-2 py-0.5 rounded">Sub-Faction: <span className="text-white font-bold">{activeSubFaction}</span></span>
+                  <span>Unit Catalog <span className="text-slate-400 text-xs ml-2">({factionUnits.length})</span></span>
+                  <span className="text-sm font-normal text-slate-400 normal-case bg-black/40 px-2 py-0.5 rounded">Sub-Faction: <span className="text-white font-bold">{currentSubFaction}</span></span>
                 </h2>
                 
                 <div className="overflow-y-auto max-h-[50vh] pr-2">
@@ -1007,7 +1286,7 @@
                     const modelsAlive = getModelsAlive(unit);
                     const currentSupply = getUnitSupply(unit);
                     const isDead = modelsAlive <= 0;
-                    const hasShield = unit.stats && unit.stats.shield !== undefined;
+                    const hasShield = unit.stats && unit.stats.shield !== undefined && unit.stats.shield !== "-";
                     const shieldBroken = hasShield && (unit.shieldDamage || 0) >= unit.stats.shield;
 
                     let currentWeapons = [...(unit.weapons || [])];
@@ -1164,52 +1443,54 @@
       const theme = THEMES[selectedFaction];
 
       return (
-        <div className={`flex h-screen w-full ${theme.bg} text-slate-100 overflow-hidden font-rajdhani transition-colors duration-500`}>
-          <div className="w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
-            <div className="p-5 border-b border-white/10 text-center bg-black/50">
-               <h1 className="text-xl font-black uppercase font-orbitron tracking-widest bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-500 drop-shadow">
-                  Command Center
-               </h1>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto py-4">
-               <div className="mb-6 px-4">
-                  <ul className="space-y-1">
-                     <li>
-                        <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${theme.accentSecondary + ' shadow-md'}`}>
-                           <span className="text-lg">⚔️</span>
-                           Army Builder
-                        </button>
-                     </li>
-                  </ul>
-               </div>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40">
-            {!isPlayMode && (
-              <div className="w-full flex justify-center gap-6 p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg">
-                {Object.keys(THEMES).map(f => (
-                   <button 
-                     key={f} 
-                     onClick={() => setSelectedFaction(f)}
-                     className={`relative w-48 h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${selectedFaction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}
-                   >
-                     <div 
-                       className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${selectedFaction === f ? 'opacity-100' : 'opacity-80'}`} 
-                       style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}
-                     ></div>
-                     <div className="absolute inset-0 bg-black/20"></div>
-                     <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${selectedFaction === f ? 'text-white' : 'text-slate-400'}`}>
-                        {f}
-                     </div>
-                   </button>
-                ))}
+        <>
+          <div className={`flex h-screen w-full ${theme.bg} text-slate-100 overflow-hidden font-rajdhani transition-colors duration-500`}>
+            <div className="w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+              <div className="p-5 border-b border-white/10 text-center bg-black/50">
+                 <h1 className="text-xl font-black uppercase font-orbitron tracking-widest bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-500 drop-shadow">
+                    Command Center
+                 </h1>
               </div>
-            )}
-            <ArmyBuilderView theme={theme} selectedFaction={selectedFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />
+              
+              <div className="flex-1 overflow-y-auto py-4">
+                 <div className="mb-6 px-4">
+                    <ul className="space-y-1">
+                       <li>
+                          <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${theme.accentSecondary + ' shadow-md'}`}>
+                             <span className="text-lg">⚔️</span>
+                             Army Builder
+                          </button>
+                       </li>
+                    </ul>
+                 </div>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40">
+              {!isPlayMode && (
+                <div className="w-full flex justify-center gap-6 p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg">
+                  {Object.keys(THEMES).map(f => (
+                     <button 
+                       key={f} 
+                       onClick={() => setSelectedFaction(f)}
+                       className={`relative w-48 h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${selectedFaction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}
+                     >
+                       <div 
+                         className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${selectedFaction === f ? 'opacity-100' : 'opacity-80'}`} 
+                         style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}
+                       ></div>
+                       <div className="absolute inset-0 bg-black/20"></div>
+                       <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${selectedFaction === f ? 'text-white' : 'text-slate-400'}`}>
+                          {f}
+                       </div>
+                     </button>
+                  ))}
+                </div>
+              )}
+              <ArmyBuilderView theme={theme} selectedFaction={selectedFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />
+            </div>
           </div>
-        </div>
+        </>
       );
     }
 
