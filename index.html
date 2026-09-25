@@ -623,7 +623,7 @@
       { faction: "Terran", subFaction: "Raynor's Raiders", name: "Point Defense Drone", tags: "Raynor's Raiders, Armoured, Flying, Mechanical", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "6+", evade: "6+", hitPoints: 3, size: "-" }, weapons: [], abilities: ["Point Defense Laser", "Gliding", "Structure"], upgrades: [] },
       
       // PROTOSS
-      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 2, minerals: 160, supply: 2 }, { models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10, 10, 10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20, 20, 20] }, { name: "Zealous Round", type: "Standard", costs: [10, 10, 10] }, { name: "We Stand as One", type: "Standard", costs: [20, 20, 20] }] },
+      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 3, minerals: 160, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20] }, { name: "Zealous Round", type: "Standard", costs: [10] }, { name: "We Stand as One", type: "Standard", costs: [20] }] },
       { faction: "Protoss", name: "Adept", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 2, minerals: 150, supply: 0 }, { models: 4, minerals: 300, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [{ name: "Resonating Glaives", type: "Standard", costs: [20, 20] }, { name: "Guidance", type: "Standard", costs: [10, 10] }, { name: "Glaive Strike", type: "Replacement", costs: [20, 20], replaces: "Strike" }] },
       { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim Watchers", tags: "Protoss, Nerazim, Biological, Light, Ground", slot: "Core", compositions: [{ models: 2, minerals: 210, supply: 0 }, { models: 4, minerals: 420, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 3, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1), PINPOINT", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Path of Shadows (Watchers)", "Nerazim Farsight", "Psionic Transfer"], upgrades: [] },
       { faction: "Protoss", name: "Stalker", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 170, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: 3, speed: "4/8", armour: "4+", evade: "6+", hitPoints: 6, size: 3 }, weapons: [{ name: "Particle Disruptors", range: "12", target: "All", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Blink"], upgrades: [{ name: "Path of Shadows (Stalker)", type: "Standard", costs: [20, 40] }, { name: "Fury of the Nerazim", type: "Standard", costs: [20, 30] }] },
@@ -672,7 +672,6 @@
                 if (ab.type === "ACTIVE") badgeColor = "bg-sky-500";
                 if (ab.type === "REACTION") badgeColor = "bg-amber-500 text-black";
                 
-                // Smart display names. Strips hidden identifiers like "(Watchers)" for a clean UI.
                 const displayName = ab.name.includes('(') ? ab.name.split('(')[0].trim() : ab.name;
 
                 return (
@@ -822,7 +821,7 @@
                     </div>
 
                     <div className="grid grid-cols-6 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
-                      {unit.stats && unit.stats.shield !== undefined && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
+                      {unit.stats && unit.stats.shield !== undefined && unit.stats.shield !== "-" && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
                       <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats?.speed || "-"}</span></div>
                       <div><span className="block text-[9px] text-slate-400">ARM</span><span className="font-bold text-white">{unit.stats?.armour || "-"}</span></div>
                       <div><span className="block text-[9px] text-slate-400">EVD</span><span className="font-bold text-white">{unit.stats?.evade || "-"}</span></div>
@@ -838,17 +837,117 @@
       );
     };
 
+    const GameRulesView = ({ theme }) => {
+      const [activeTab, setActiveTab] = useState("keywords");
+      const [customRules, setCustomRules] = useState(() => loadLocal('sc_customRules', []));
+      const [newRuleTitle, setNewRuleTitle] = useState("");
+      const [newRuleDesc, setNewRuleDesc] = useState("");
+
+      useEffect(() => {
+        localStorage.setItem('sc_customRules', JSON.stringify(customRules));
+      }, [customRules]);
+
+      const handleAddRule = (e) => {
+        e.preventDefault();
+        if (!newRuleTitle.trim() || !newRuleDesc.trim()) return;
+        setCustomRules(prev => [...prev, { title: newRuleTitle.trim(), desc: newRuleDesc.trim() }]);
+        setNewRuleTitle("");
+        setNewRuleDesc("");
+      };
+
+      const handleDeleteRule = (index) => {
+        setCustomRules(prev => prev.filter((_, i) => i !== index));
+      };
+
+      const sortedKeywords = useMemo(() => {
+        return Object.entries(RULES_DICTIONARY).sort((a, b) => a[0].localeCompare(b[0]));
+      }, []);
+
+      return (
+        <div className="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-black uppercase font-orbitron ${theme.textPrimary}`}>Rules & Reference</h2>
+            <div className="flex bg-black/50 p-1 rounded border border-white/10">
+              <button 
+                onClick={() => setActiveTab("keywords")} 
+                className={`px-4 py-1.5 rounded text-xs font-bold uppercase font-orbitron transition-all ${activeTab === "keywords" ? theme.accent : 'text-slate-400 hover:text-white'}`}
+              >
+                Keywords ({sortedKeywords.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab("rules")} 
+                className={`px-4 py-1.5 rounded text-xs font-bold uppercase font-orbitron transition-all ${activeTab === "rules" ? theme.accent : 'text-slate-400 hover:text-white'}`}
+              >
+                Rules Feed ({customRules.length})
+              </button>
+            </div>
+          </div>
+
+          {activeTab === "keywords" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sortedKeywords.map(([key, desc]) => (
+                <div key={key} className={`${theme.cardBg} border ${theme.border} p-4 rounded-lg shadow-md`}>
+                  <h3 className="font-orbitron font-bold text-sm text-amber-300 uppercase mb-1">{key}</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">{desc}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <form onSubmit={handleAddRule} className={`${theme.cardBg} border ${theme.border} p-4 rounded-lg shadow-md space-y-4`}>
+                <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">Add Custom Rule / Note</h3>
+                <div>
+                  <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Rule Title</label>
+                  <input 
+                    type="text" 
+                    value={newRuleTitle} 
+                    onChange={e => setNewRuleTitle(e.target.value)} 
+                    placeholder="e.g., Line of Sight & Cover" 
+                    className="w-full bg-black/60 border border-white/20 rounded p-2 text-sm text-white outline-none focus:border-sky-500" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Rule Description</label>
+                  <textarea 
+                    value={newRuleDesc} 
+                    onChange={e => setNewRuleDesc(e.target.value)} 
+                    placeholder="Enter rule details here..." 
+                    rows="3" 
+                    className="w-full bg-black/60 border border-white/20 rounded p-2 text-sm text-white outline-none focus:border-sky-500 resize-none"
+                  ></textarea>
+                </div>
+                <button type="submit" className={`px-6 py-2 rounded font-bold font-orbitron text-xs uppercase tracking-wider ${theme.accent}`}>Publish Rule</button>
+              </form>
+
+              <div className="space-y-4">
+                {customRules.length === 0 ? (
+                  <div className="p-8 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-sm font-bold uppercase tracking-widest">
+                    No custom rules fed yet. Use the form above to add rules.
+                  </div>
+                ) : (
+                  customRules.map((r, idx) => (
+                    <div key={idx} className={`${theme.cardBg} border ${theme.border} p-4 rounded-lg shadow-md relative group`}>
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-orbitron font-bold text-sm text-amber-300 uppercase">{r.title}</h3>
+                        <button onClick={() => handleDeleteRule(idx)} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50">Delete</button>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed">{r.desc}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
     const ArmyBuilderView = ({ theme, selectedFaction, isPlayMode, setIsPlayMode }) => {
       const [scale, setScale] = useState(() => loadLocal('sc_scale', "Free Build"));
       const [roster, setRoster] = useState(() => loadLocal('sc_roster', []).filter(u => u && u.name));
       const [tacticalCards, setTacticalCards] = useState(() => loadLocal('sc_tacCards', []).filter(c => c && c.name));
       const [matchData, setMatchData] = useState(() => loadLocal('sc_matchData', { round: 1, yourVP: 0, enemyVP: 0, mission: "Frontlines", enemyFaction: "Terran" }));
       
-      const [savedRosters, setSavedRosters] = useState(() => loadLocal('sc_savedRosters', []));
-      const [showSaveModal, setShowSaveModal] = useState(false);
-      const [showLoadModal, setShowLoadModal] = useState(false);
-      const [rosterName, setRosterName] = useState("");
-
       const [activeModal, setActiveModal] = useState(null);
       const [configUnit, setConfigUnit] = useState(null);
 
@@ -875,7 +974,6 @@
       useEffect(() => localStorage.setItem('sc_roster', JSON.stringify(roster)), [roster]);
       useEffect(() => localStorage.setItem('sc_tacCards', JSON.stringify(tacticalCards)), [tacticalCards]);
       useEffect(() => localStorage.setItem('sc_matchData', JSON.stringify(matchData)), [matchData]);
-      useEffect(() => localStorage.setItem('sc_savedRosters', JSON.stringify(savedRosters)), [savedRosters]);
 
       const resetAppData = () => {
         if(window.confirm("Are you sure you want to clear all data?")) {
@@ -1417,7 +1515,6 @@
 
           {configUnit && <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} />}
 
-          {}
           {activeModal && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
               <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`} onClick={e => e.stopPropagation()}>
@@ -1435,6 +1532,7 @@
 
     function App() {
       const [selectedFaction, setSelectedFaction] = useState(() => loadLocal('sc_faction', "Protoss"));
+      const [activeTab, setActiveTab] = useState("builder"); // "builder" or "rules"
       const [isPlayMode, setIsPlayMode] = useState(() => loadLocal('sc_playMode', false));
 
       useEffect(() => localStorage.setItem('sc_faction', JSON.stringify(selectedFaction)), [selectedFaction]);
@@ -1456,9 +1554,21 @@
                  <div className="mb-6 px-4">
                     <ul className="space-y-1">
                        <li>
-                          <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${theme.accentSecondary + ' shadow-md'}`}>
+                          <button 
+                            onClick={() => setActiveTab("builder")}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "builder" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}
+                          >
                              <span className="text-lg">⚔️</span>
                              Army Builder
+                          </button>
+                       </li>
+                       <li>
+                          <button 
+                            onClick={() => setActiveTab("rules")}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "rules" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}
+                          >
+                             <span className="text-lg">📖</span>
+                             Rules & Reference
                           </button>
                        </li>
                     </ul>
@@ -1467,7 +1577,7 @@
             </div>
 
             <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40">
-              {!isPlayMode && (
+              {!isPlayMode && activeTab === "builder" && (
                 <div className="w-full flex justify-center gap-6 p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg">
                   {Object.keys(THEMES).map(f => (
                      <button 
@@ -1487,7 +1597,12 @@
                   ))}
                 </div>
               )}
-              <ArmyBuilderView theme={theme} selectedFaction={selectedFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />
+              
+              {activeTab === "builder" ? (
+                <ArmyBuilderView theme={theme} selectedFaction={selectedFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />
+              ) : (
+                <GameRulesView theme={theme} />
+              )}
             </div>
           </div>
         </>
