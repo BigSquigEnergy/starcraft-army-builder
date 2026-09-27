@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>StarCraft Tabletop Army Builder</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -46,6 +46,8 @@
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   </style>
 </head>
 <body>
@@ -54,7 +56,6 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
-    /* STREAMING_CHUNK: Initializing Base State... */
     const loadLocal = (key, defaultValue) => {
       try {
         const item = localStorage.getItem(key);
@@ -95,7 +96,6 @@
       "Standard": { minerals: 2000, vespene: 200 }
     };
 
-    /* STREAMING_CHUNK: Loading Core Rules Dictionaries... */
     const RULES_DICTIONARY = {
       "Armoured": "Weapon deals enhanced damage against targets with the ARMOURED tag.",
       "Light": "Weapon deals enhanced damage against targets with the LIGHT tag.",
@@ -165,7 +165,7 @@
       "Precognition": "This Unit is eligible to make an Evade roll against all attacks targeting it.",
 
       "Rapid Ingress": "Set a Friendly Point Defence Drone Unit anywhere on the battlefield, more than 1\" away from any Enemy model. Remove this Unit at the End of the Round.",
-      "Ready for Pickup?": "Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy model. This resolves instead of performing a standard action.",
+      "Ready for Pickup?": "Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy Unit. This resolves instead of performing a standard action.",
       "Tactical Retreat": "The active Unit ignores the Disengage penalty for the remainder of the Round.",
       "Terran Tenacity": "Once per Game. Immediately claim the First Player Marker. No other player may claim the First Player Marker for the remainder of this Phase.",
       "Advanced Training": "Once per Round, when a Friendly Support Unit activates a Special Ability that costs CP, resolve that ability with its CP cost reduced by 1 (to a minimum of 0). Do not Exhaust this card.",
@@ -651,7 +651,6 @@
       { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 180, supply: 1 }, { models: 18, minerals: 220, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Zergling Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Metabolic Boost", "Devastating Charge (Zergling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Zergling Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] }
     ];
 
-    /* STREAMING_CHUNK: Core App Components... */
     const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen = false }) => {
       const [isOpen, setIsOpen] = useState(defaultOpen);
       useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
@@ -688,7 +687,7 @@
               })}
 
               {phaseWeapons.length > 0 && (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto mt-2">
                   <table className="w-full text-left text-[10px] whitespace-nowrap">
                     <thead>
                       <tr className="border-b border-white/20 text-slate-400 uppercase font-orbitron">
@@ -784,6 +783,129 @@
       );
     };
 
+    const UnitConfigModal = ({ unit, onClose, onSave, theme }) => {
+      const [compIndex, setCompIndex] = useState(0);
+      const [selectedUpgrades, setSelectedUpgrades] = useState([]);
+
+      if (!unit) return null;
+
+      const handleUpgradeToggle = (upgrade) => {
+        if (selectedUpgrades.includes(upgrade)) {
+          setSelectedUpgrades(prev => prev.filter(u => u !== upgrade));
+        } else {
+          setSelectedUpgrades(prev => [...prev, upgrade]);
+        }
+      };
+
+      const currentMinerals = (unit.compositions[compIndex]?.minerals || 0) + selectedUpgrades.reduce((sum, u) => sum + (u.costs[compIndex] || 0), 0);
+
+      let previewWeapons = [...(unit.weapons || [])];
+      let previewAbilities = (unit.abilities || []).map(a => {
+          const mappedInfo = ABILITY_MAP[a] || { type: "PASSIVE", phase: "ANY PHASE" };
+          return { 
+              name: a, 
+              ...mappedInfo, 
+              desc: RULES_DICTIONARY[a] || mappedInfo.desc || "Rule text available in full rulebook." 
+          };
+      });
+
+      const unitUpgrades = unit.upgrades || [];
+      selectedUpgrades.forEach(upg => {
+          const upgName = upg.name;
+          if (upg.type === "Replacement" && WEAPON_MAP[upgName]) {
+              if (upg.replaces) {
+                  const replacesList = Array.isArray(upg.replaces) ? upg.replaces : [upg.replaces];
+                  previewWeapons = previewWeapons.filter(w => !replacesList.includes(w.name));
+              } else {
+                  previewWeapons = previewWeapons.filter(w => w.phase !== WEAPON_MAP[upgName].phase);
+              }
+          }
+          if (WEAPON_MAP[upgName]) {
+              previewWeapons.push(WEAPON_MAP[upgName]);
+          } else {
+              const mappedInfo = ABILITY_MAP[upgName] || { type: "PASSIVE", phase: "ANY PHASE" };
+              previewAbilities.push({ 
+                  name: upgName, 
+                  ...mappedInfo, 
+                  desc: RULES_DICTIONARY[upgName] || mappedInfo.desc || "Rule text available in full rulebook." 
+              });
+          }
+      });
+
+      return (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 pt-16 md:pt-4 pb-20 md:pb-4">
+          <div className={`max-w-4xl w-full p-4 md:p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl flex flex-col max-h-full md:max-h-[90vh]`}>
+            <h3 className={`text-xl font-orbitron font-black uppercase mb-4 ${theme.textPrimary}`}>Configure {unit.name}</h3>
+            
+            <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6">
+                {/* Left Column: Config */}
+                <div className="flex-1 overflow-y-auto pr-2">
+                    <div className="mb-4">
+                      <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Select Composition</label>
+                      <div className="flex flex-col gap-2 mt-2">
+                        {(unit.compositions || []).map((comp, idx) => (
+                          <button key={`comp-${idx}`} onClick={() => { setCompIndex(idx); setSelectedUpgrades([]); }}
+                            className={`p-2 rounded border text-left flex justify-between ${compIndex === idx ? theme.accent : 'bg-black/40 border-white/10'}`}>
+                            <span>{comp.models} Models (Supply: {comp.supply})</span>
+                            <span className="font-mono font-bold text-sky-400">{comp.minerals} Min</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(unit.upgrades || []).length > 0 && (
+                      <div className="mb-6">
+                        <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Available Upgrades</label>
+                        <div className="flex flex-col gap-2 mt-2">
+                          {unit.upgrades.map(upg => {
+                            const cost = upg.costs[compIndex];
+                            const canEquip = cost !== undefined;
+                            const isSelected = selectedUpgrades.includes(upg);
+                            
+                            return (
+                              <div key={upg.name} className={`flex items-center justify-between p-2 rounded border ${!canEquip ? 'opacity-50 cursor-not-allowed bg-black/40 border-white/5' : isSelected ? 'bg-amber-900/30 border-amber-500' : 'bg-black/40 border-white/10'}`}>
+                                <label className={`flex items-center gap-2 ${canEquip ? 'cursor-pointer' : ''} w-full`}>
+                                  <input type="checkbox" disabled={!canEquip} checked={isSelected} onChange={() => handleUpgradeToggle(upg)} className="w-4 h-4" />
+                                  <div>
+                                    <span className="text-sm font-bold flex items-center gap-1">
+                                      {upg.name.includes('(') ? upg.name.split('(')[0].trim() : upg.name} 
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 block">
+                                      {upg.type} {upg.type === "Replacement" && upg.replaces ? `(Replaces ${Array.isArray(upg.replaces) ? upg.replaces.join(", ") : upg.replaces})` : ''}
+                                    </span>
+                                  </div>
+                                </label>
+                                <span className="font-mono text-sm text-amber-200 shrink-0">{canEquip ? `+${cost} Min` : 'N/A'}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                </div>
+
+                {/* Right Column: Live Data Sheet */}
+                <div className="flex-1 overflow-y-auto bg-black/40 p-4 rounded-lg border border-white/10 hidden md:block">
+                   <h4 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 border-b border-white/10 pb-2">Live Data Sheet</h4>
+                   <PhaseSection phase="ANY PHASE" title="Any Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                   <PhaseSection phase="MOVEMENT PHASE" title="Movement Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                   <PhaseSection phase="ASSAULT PHASE" title="Assault Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                   <PhaseSection phase="COMBAT PHASE" title="Combat Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
+                </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/10 shrink-0">
+              <span className="font-orbitron text-xl font-black text-sky-400">Total: {currentMinerals} Min</span>
+              <div className="flex gap-2">
+                <button onClick={onClose} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
+                <button onClick={() => { onSave(unit, compIndex, selectedUpgrades); onClose(); }} className={`px-4 py-2 rounded font-bold ${theme.accent}`}>Add Unit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     const ArmoryGroup = ({ title, units, onConfigure, theme }) => {
       const [isOpen, setIsOpen] = useState(false);
       if (units.length === 0) return null;
@@ -841,7 +963,6 @@
       );
     };
 
-    /* STREAMING_CHUNK: Secondary Views (Keywords & Rules)... */
     const KeywordsView = ({ theme }) => {
       const [searchQuery, setSearchQuery] = useState("");
 
@@ -920,7 +1041,7 @@
       };
 
       return (
-        <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full pb-24">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
             <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Keywords Library</h2>
             
@@ -973,7 +1094,7 @@
       const filteredCustom = customRules.filter(r => matchSearch(r.title) || matchSearch(r.desc));
 
       return (
-        <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full pb-24">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
             <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Game Rules</h2>
             
@@ -1003,7 +1124,7 @@
                             <div key={idx} className="bg-sky-950/20 border border-sky-900/50 p-4 rounded-lg shadow-md relative group">
                             <div className="flex justify-between items-start mb-1">
                                 <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">{r.title}</h3>
-                                <button onClick={() => setCustomRules(prev => prev.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
+                                <button onClick={() => setCustomRules(prev => prev.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
                             </div>
                             <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{r.desc}</p>
                             </div>
@@ -1030,7 +1151,6 @@
       );
     };
 
-    /* STREAMING_CHUNK: Main Builder App Component... */
     const ArmyBuilderView = ({ theme, selectedFaction, isPlayMode, setIsPlayMode }) => {
       const [scale, setScale] = useState(() => loadLocal('sc_scale', "Free Build"));
       const [roster, setRoster] = useState(() => loadLocal('sc_roster', []).filter(u => u && u.name));
@@ -1040,7 +1160,6 @@
       const [activeModal, setActiveModal] = useState(null);
       const [configUnit, setConfigUnit] = useState(null);
 
-      // Determine Sub-Faction dynamically based on the Drafted Faction Card
       const activeFactionCard = tacticalCards.find(c => c.type === "Faction Card");
       const currentSubFaction = activeFactionCard ? activeFactionCard.subFaction : (selectedFaction === "Protoss" ? "Daelaam" : "Generic");
 
@@ -1051,7 +1170,7 @@
       const availableFactionCards = FACTION_CARDS.filter(c => c.faction === selectedFaction);
       
       const availableTacticalCards = TACTICAL_CARDS.filter(c => 
-        c.faction === selectedFaction && (!c.subFaction || c.subFaction === "Generic" || c.subFaction === currentSubFaction)
+        c.faction === selectedFaction && c.type === "Tactical Card" && (!c.subFaction || c.subFaction === "Generic" || c.subFaction === currentSubFaction)
       );
 
       useEffect(() => {
@@ -1145,166 +1264,44 @@
 
       const updateMatch = (key, val) => setMatchData(prev => ({ ...prev, [key]: val }));
 
-      const UnitConfigModal = ({ unit, onClose }) => {
-        const [compIndex, setCompIndex] = useState(0);
-        const [selectedUpgrades, setSelectedUpgrades] = useState([]);
-
-        const handleUpgradeToggle = (upgrade) => {
-          if (selectedUpgrades.includes(upgrade)) {
-            setSelectedUpgrades(prev => prev.filter(u => u !== upgrade));
-          } else {
-            setSelectedUpgrades(prev => [...prev, upgrade]);
-          }
-        };
-
-        const currentMinerals = (unit.compositions[compIndex]?.minerals || 0) + selectedUpgrades.reduce((sum, u) => sum + (u.costs[compIndex] || 0), 0);
-
-        let previewWeapons = [...(unit.weapons || [])];
-        let previewAbilities = (unit.abilities || []).map(a => {
-            const mappedInfo = ABILITY_MAP[a] || { type: "PASSIVE", phase: "ANY PHASE" };
-            return { 
-                name: a, 
-                ...mappedInfo, 
-                desc: RULES_DICTIONARY[a] || mappedInfo.desc || "Rule text available in full rulebook." 
-            };
-        });
-
-        const unitUpgrades = unit.upgrades || [];
-        selectedUpgrades.forEach(upg => {
-            const upgName = upg.name;
-            if (upg.type === "Replacement" && WEAPON_MAP[upgName]) {
-                if (upg.replaces) {
-                    const replacesList = Array.isArray(upg.replaces) ? upg.replaces : [upg.replaces];
-                    previewWeapons = previewWeapons.filter(w => !replacesList.includes(w.name));
-                } else {
-                    previewWeapons = previewWeapons.filter(w => w.phase !== WEAPON_MAP[upgName].phase);
-                }
-            }
-            if (WEAPON_MAP[upgName]) {
-                previewWeapons.push(WEAPON_MAP[upgName]);
-            } else {
-                const mappedInfo = ABILITY_MAP[upgName] || { type: "PASSIVE", phase: "ANY PHASE" };
-                previewAbilities.push({ 
-                    name: upgName, 
-                    ...mappedInfo, 
-                    desc: RULES_DICTIONARY[upgName] || mappedInfo.desc || "Rule text available in full rulebook." 
-                });
-            }
-        });
-
-        return (
-          <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
-            <div className={`max-w-4xl w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl flex flex-col max-h-[90vh]`}>
-              <h3 className={`text-xl font-orbitron font-black uppercase mb-4 ${theme.textPrimary}`}>Configure {unit.name}</h3>
-              
-              <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6">
-                  {/* Left Column: Config */}
-                  <div className="flex-1 overflow-y-auto pr-2">
-                      <div className="mb-4">
-                        <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Select Composition</label>
-                        <div className="flex flex-col gap-2 mt-2">
-                          {(unit.compositions || []).map((comp, idx) => (
-                            <button key={`comp-${idx}`} onClick={() => { setCompIndex(idx); setSelectedUpgrades([]); }}
-                              className={`p-2 rounded border text-left flex justify-between ${compIndex === idx ? theme.accent : 'bg-black/40 border-white/10'}`}>
-                              <span>{comp.models} Models (Supply: {comp.supply})</span>
-                              <span className="font-mono font-bold text-sky-400">{comp.minerals} Min</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {(unit.upgrades || []).length > 0 && (
-                        <div className="mb-6">
-                          <label className="text-xs text-slate-400 uppercase font-bold tracking-widest">Available Upgrades</label>
-                          <div className="flex flex-col gap-2 mt-2">
-                            {unit.upgrades.map(upg => {
-                              const cost = upg.costs[compIndex];
-                              const canEquip = cost !== undefined;
-                              const isSelected = selectedUpgrades.includes(upg);
-                              
-                              return (
-                                <div key={upg.name} className={`flex items-center justify-between p-2 rounded border ${!canEquip ? 'opacity-50 cursor-not-allowed bg-black/40 border-white/5' : isSelected ? 'bg-amber-900/30 border-amber-500' : 'bg-black/40 border-white/10'}`}>
-                                  <label className={`flex items-center gap-2 ${canEquip ? 'cursor-pointer' : ''} w-full`}>
-                                    <input type="checkbox" disabled={!canEquip} checked={isSelected} onChange={() => handleUpgradeToggle(upg)} className="w-4 h-4" />
-                                    <div>
-                                      <span className="text-sm font-bold flex items-center gap-1">
-                                        {upg.name.includes('(') ? upg.name.split('(')[0].trim() : upg.name} 
-                                        <button onClick={(e) => { e.preventDefault(); openRule(upg.name); }} className="text-xs opacity-70 hover:opacity-100 hover:text-amber-300 z-50 relative">ℹ️</button>
-                                      </span>
-                                      <span className="text-[10px] text-slate-400 block">
-                                        {upg.type} {upg.type === "Replacement" && upg.replaces ? `(Replaces ${Array.isArray(upg.replaces) ? upg.replaces.join(", ") : upg.replaces})` : ''}
-                                      </span>
-                                    </div>
-                                  </label>
-                                  <span className="font-mono text-sm text-amber-200 shrink-0">{canEquip ? `+${cost} Min` : 'N/A'}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                  </div>
-
-                  {/* Right Column: Live Data Sheet */}
-                  <div className="flex-1 overflow-y-auto bg-black/40 p-4 rounded-lg border border-white/10 hidden md:block">
-                     <h4 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 border-b border-white/10 pb-2">Live Data Sheet</h4>
-                     <PhaseSection phase="ANY PHASE" title="Any Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
-                     <PhaseSection phase="MOVEMENT PHASE" title="Movement Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
-                     <PhaseSection phase="ASSAULT PHASE" title="Assault Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
-                     <PhaseSection phase="COMBAT PHASE" title="Combat Phase" unitWeapons={previewWeapons} unitAbilities={previewAbilities} defaultOpen={true} />
-                  </div>
-              </div>
-
-              <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/10 shrink-0">
-                <span className="font-orbitron text-xl font-black text-sky-400">Total: {currentMinerals} Min</span>
-                <div className="flex gap-2">
-                  <button onClick={onClose} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
-                  <button onClick={() => { addToRoster(unit, compIndex, selectedUpgrades); onClose(); }} className={`px-4 py-2 rounded font-bold ${theme.accent}`}>Add Unit</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      };
-
       return (
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-black/20 sticky top-0 z-20 backdrop-blur-md">
+        <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
+          <div className="px-4 py-3 md:px-6 md:py-4 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-black/20 sticky top-0 z-20 backdrop-blur-md">
              <div className="flex items-center gap-4">
-                <h2 className={`text-2xl font-black uppercase font-orbitron drop-shadow-md ${theme.textPrimary}`}>Army Builder</h2>
+                <h2 className={`text-xl md:text-2xl font-black uppercase font-orbitron drop-shadow-md ${theme.textPrimary}`}>Army Builder</h2>
              </div>
              
-             <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2 md:gap-4">
               {!isPlayMode && (
-                <button onClick={resetAppData} className="text-[10px] uppercase font-bold text-slate-500 hover:text-white px-3 py-1 rounded bg-black/50 border border-white/10" title="Click if App crashes on load">
+                <button onClick={resetAppData} className="text-[10px] uppercase font-bold text-slate-500 hover:text-white px-2 py-1 rounded bg-black/50 border border-white/10 hidden md:block" title="Click if App crashes on load">
                   Reset Data
                 </button>
               )}
               {!isPlayMode && (
                 <div className="flex gap-2">
-                  <select value={scale} onChange={e => setScale(e.target.value)} className="bg-black/50 border border-white/20 rounded p-2 font-bold text-sm outline-none text-slate-200 uppercase tracking-wider">
+                  <select value={scale} onChange={e => setScale(e.target.value)} className="bg-black/50 border border-white/20 rounded p-1 md:p-2 font-bold text-xs md:text-sm outline-none text-slate-200 uppercase tracking-wider">
                     {Object.keys(ENGAGEMENT_SCALES).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               )}
-              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-6 py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
+              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-3 md:px-6 py-1.5 md:py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg text-[10px] md:text-base ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
                 {isPlayMode ? 'EXIT PLAY MODE' : 'ENTER PLAY MODE'}
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1800px] w-full mx-auto pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 p-4 md:p-6 max-w-[1800px] w-full mx-auto">
             
             {!isPlayMode && (
-              <div className={`lg:col-span-8 flex flex-col gap-4 ${theme.panelBg} p-5 rounded-xl border ${theme.border}`}>
+              <div className={`lg:col-span-8 flex flex-col gap-4 ${theme.panelBg} p-4 md:p-5 rounded-xl border ${theme.border}`}>
                 
                 <div className="flex flex-col gap-4 mb-2">
                   <details className="group">
-                    <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
+                    <summary className="text-lg md:text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
                       <span>Faction Cards <span className="text-slate-400 text-xs ml-2">({availableFactionCards.length})</span></span>
                       <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
                       {availableFactionCards.map(card => {
                         const isAdded = tacticalCards.find(c => c.name === card.name);
                         return (
@@ -1324,11 +1321,11 @@
                   </details>
 
                   <details className="group">
-                    <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
+                    <summary className="text-lg md:text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
                       <span>Tactical Cards <span className="text-slate-400 text-xs ml-2">({availableTacticalCards.length})</span></span>
                       <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
                       {availableTacticalCards.map(card => {
                         const isAdded = tacticalCards.find(c => c.name === card.name);
                         return (
@@ -1348,12 +1345,12 @@
                   </details>
                 </div>
 
-                <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 flex justify-between mt-4">
+                <h2 className="text-lg md:text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 flex flex-col sm:flex-row sm:justify-between mt-4 gap-2">
                   <span>Unit Catalog <span className="text-slate-400 text-xs ml-2">({factionUnits.length})</span></span>
-                  <span className="text-sm font-normal text-slate-400 normal-case bg-black/40 px-2 py-0.5 rounded">Sub-Faction: <span className="text-white font-bold">{currentSubFaction}</span></span>
+                  <span className="text-xs font-normal text-slate-400 normal-case bg-black/40 px-2 py-0.5 rounded w-fit">Sub-Faction: <span className="text-white font-bold">{currentSubFaction}</span></span>
                 </h2>
                 
-                <div className="overflow-y-auto max-h-[50vh] pr-2">
+                <div className="overflow-y-auto max-h-[60vh] md:max-h-[50vh] pr-2">
                   <ArmoryGroup title="Hero" units={factionUnits.filter(u => u.slot === "Hero")} onConfigure={setConfigUnit} theme={theme} />
                   <ArmoryGroup title="Core" units={factionUnits.filter(u => u.slot === "Core")} onConfigure={setConfigUnit} theme={theme} />
                   <ArmoryGroup title="Elite" units={factionUnits.filter(u => u.slot === "Elite")} onConfigure={setConfigUnit} theme={theme} />
@@ -1363,9 +1360,9 @@
               </div>
             )}
 
-            <div className={`${isPlayMode ? 'lg:col-span-12' : 'lg:col-span-4'} flex flex-col gap-6`}>
+            <div className={`${isPlayMode ? 'lg:col-span-12' : 'lg:col-span-4'} flex flex-col gap-4 md:gap-6`}>
               {!isPlayMode && (
-                <div className={`flex flex-col gap-3 ${theme.panelBg} p-5 rounded-xl border ${theme.border}`}>
+                <div className={`flex flex-col gap-3 ${theme.panelBg} p-4 md:p-5 rounded-xl border ${theme.border}`}>
                   <h2 className="text-lg font-orbitron font-bold uppercase border-b border-white/10 pb-2">Army Stats</h2>
                   <div className={`p-3 rounded flex justify-between items-center ${totalMinerals > limits.minerals ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Minerals</span>
@@ -1383,7 +1380,7 @@
               )}
 
               {isPlayMode && (
-                <div className={`p-5 rounded-xl border ${theme.border} ${theme.panelBg} grid grid-cols-1 lg:grid-cols-3 gap-6 shadow-xl`}>
+                <div className={`p-4 md:p-5 rounded-xl border ${theme.border} ${theme.panelBg} grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 shadow-xl`}>
                   <div className="flex flex-col gap-3 bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
                      <div className="flex justify-between items-center">
                         <span className="text-xs uppercase font-bold tracking-widest text-slate-400">Round</span>
@@ -1439,11 +1436,11 @@
               )}
 
               {isPlayMode && tacticalCards.length > 0 && (
-                <div className={`flex flex-col ${theme.panelBg} p-5 rounded-xl border ${theme.border} shadow-xl`}>
+                <div className={`flex flex-col ${theme.panelBg} p-4 md:p-5 rounded-xl border ${theme.border} shadow-xl`}>
                   <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 mb-4">Command Hand</h2>
                   <div className="flex overflow-x-auto gap-4 pb-4 snap-x">
                     {tacticalCards.map((card, idx) => (
-                      <div key={`play-card-${idx}`} className="w-[300px] shrink-0 snap-start">
+                      <div key={`play-card-${idx}`} className="w-72 md:w-[300px] shrink-0 snap-start">
                         <TacticalCardUI card={card} isAdded={true} theme={theme} onToggle={null} defaultOpen={true} />
                       </div>
                     ))}
@@ -1451,7 +1448,7 @@
                 </div>
               )}
 
-              <div className={`flex flex-col ${theme.panelBg} p-5 rounded-xl border ${theme.border} shadow-xl`}>
+              <div className={`flex flex-col ${theme.panelBg} p-4 md:p-5 rounded-xl border ${theme.border} shadow-xl`}>
                 <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
                   <h2 className="text-xl font-orbitron font-bold uppercase">Active Roster</h2>
                   {!isPlayMode ? (
@@ -1602,9 +1599,8 @@
             </div>
           </div>
 
-          {configUnit && <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} />}
+          <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} onSave={addToRoster} theme={theme} />
 
-          {}
           {activeModal && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
               <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`} onClick={e => e.stopPropagation()}>
@@ -1620,63 +1616,101 @@
       );
     };
 
-    /* STREAMING_CHUNK: Bootstrapping main App... */
-    const App = () => {
-      const [faction, setFaction] = useState("Protoss");
+    function App() {
+      const [selectedFaction, setSelectedFaction] = useState(() => loadLocal('sc_faction', "Protoss"));
       const [activeTab, setActiveTab] = useState("builder");
-      const [isPlayMode, setIsPlayMode] = useState(false);
+      const [isPlayMode, setIsPlayMode] = useState(() => loadLocal('sc_playMode', false));
 
-      const theme = THEMES[faction];
+      useEffect(() => localStorage.setItem('sc_faction', JSON.stringify(selectedFaction)), [selectedFaction]);
+      useEffect(() => localStorage.setItem('sc_playMode', JSON.stringify(isPlayMode)), [isPlayMode]);
+
+      const theme = THEMES[selectedFaction];
 
       return (
         <div className={`flex h-screen w-full ${theme.bg} text-slate-100 overflow-hidden font-rajdhani transition-colors duration-500`}>
-          {/* SIDEBAR */}
-          <div className="w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+          
+          {/* DESKTOP SIDEBAR */}
+          <div className="hidden md:flex w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
             <div className="p-5 border-b border-white/10 text-center bg-black/50">
                <h1 className="text-xl font-black uppercase font-orbitron tracking-widest bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-500 drop-shadow">
                   Command Center
                </h1>
             </div>
-            <div className="flex-1 overflow-y-auto py-4 px-4">
-               <div className="space-y-1 mb-6 border-b border-white/10 pb-4">
-                 <button onClick={() => setActiveTab("builder")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "builder" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
-                    <span className="text-lg">⚔️</span> Army Roster
-                 </button>
-                 <button onClick={() => setActiveTab("keywords")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "keywords" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
-                    <span className="text-lg">🔍</span> Keywords
-                 </button>
-                 <button onClick={() => setActiveTab("rules")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "rules" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
-                    <span className="text-lg">📖</span> Game Rules
-                 </button>
+            
+            <div className="flex-1 overflow-y-auto py-4">
+               <div className="mb-6 px-4 space-y-2 border-b border-white/10 pb-4">
+                  <button 
+                    onClick={() => setActiveTab("builder")}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "builder" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}
+                  >
+                     <span className="text-lg">⚔️</span> Army Roster
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab("keywords")}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "keywords" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}
+                  >
+                     <span className="text-lg">🔍</span> Keywords
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab("rules")}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "rules" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}
+                  >
+                     <span className="text-lg">📖</span> Rules
+                  </button>
                </div>
             </div>
           </div>
 
           {/* MAIN CONTENT AREA */}
-          <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40">
+          <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40 pb-20 md:pb-0">
             {!isPlayMode && activeTab === "builder" && (
-              <div className="w-full flex justify-center gap-6 p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg shrink-0">
+              <div className="w-full flex justify-center gap-4 md:gap-6 p-3 md:p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg">
                 {Object.keys(THEMES).map(f => (
-                   <button key={f} onClick={() => setFaction(f)} className={`relative w-48 h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${faction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}>
-                     <div className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${faction === f ? 'opacity-100' : 'opacity-80'}`} style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}></div>
+                   <button 
+                     key={f} 
+                     onClick={() => setSelectedFaction(f)}
+                     className={`relative flex-1 max-w-[12rem] h-12 md:h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${selectedFaction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}
+                   >
+                     <div 
+                       className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${selectedFaction === f ? 'opacity-100' : 'opacity-80'}`} 
+                       style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}
+                     ></div>
                      <div className="absolute inset-0 bg-black/20"></div>
-                     <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${faction === f ? 'text-white' : 'text-slate-400'}`}>{f}</div>
+                     <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-sm md:text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${selectedFaction === f ? 'text-white' : 'text-slate-400'}`}>
+                        {f}
+                     </div>
                    </button>
                 ))}
               </div>
             )}
-            
-            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />}
+
+            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={selectedFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />}
             {activeTab === "keywords" && <KeywordsView theme={theme} />}
             {activeTab === "rules" && <RulesView theme={theme} />}
           </div>
+
+          {/* MOBILE BOTTOM APP BAR */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0a] border-t border-white/10 flex justify-around items-center px-2 pt-2 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.5)] z-50">
+             <button onClick={() => setActiveTab("builder")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "builder" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+                <span className="text-xl mb-1">⚔️</span>
+                <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Roster</span>
+             </button>
+             <button onClick={() => setActiveTab("keywords")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "keywords" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+                <span className="text-xl mb-1">🔍</span>
+                <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Keywords</span>
+             </button>
+             <button onClick={() => setActiveTab("rules")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "rules" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+                <span className="text-xl mb-1">📖</span>
+                <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Rules</span>
+             </button>
+          </div>
+
         </div>
       );
-    };
+    }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
 </body>
 </html>
-```eof
