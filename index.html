@@ -54,12 +54,12 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
+    /* STREAMING_CHUNK: Initializing Base State... */
     const loadLocal = (key, defaultValue) => {
       try {
         const item = localStorage.getItem(key);
         return item ? JSON.parse(item) : defaultValue;
       } catch (e) {
-        console.warn(`Could not parse local storage for ${key}. Resetting to default.`);
         return defaultValue;
       }
     };
@@ -95,6 +95,7 @@
       "Standard": { minerals: 2000, vespene: 200 }
     };
 
+    /* STREAMING_CHUNK: Loading Core Rules Dictionaries... */
     const RULES_DICTIONARY = {
       "Armoured": "Weapon deals enhanced damage against targets with the ARMOURED tag.",
       "Light": "Weapon deals enhanced damage against targets with the LIGHT tag.",
@@ -164,7 +165,7 @@
       "Precognition": "This Unit is eligible to make an Evade roll against all attacks targeting it.",
 
       "Rapid Ingress": "Set a Friendly Point Defence Drone Unit anywhere on the battlefield, more than 1\" away from any Enemy model. Remove this Unit at the End of the Round.",
-      "Ready for Pickup?": "Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy Unit. This resolves instead of performing a standard action.",
+      "Ready for Pickup?": "Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy model. This resolves instead of performing a standard action.",
       "Tactical Retreat": "The active Unit ignores the Disengage penalty for the remainder of the Round.",
       "Terran Tenacity": "Once per Game. Immediately claim the First Player Marker. No other player may claim the First Player Marker for the remainder of this Phase.",
       "Advanced Training": "Once per Round, when a Friendly Support Unit activates a Special Ability that costs CP, resolve that ability with its CP cost reduced by 1 (to a minimum of 0). Do not Exhaust this card.",
@@ -650,6 +651,7 @@
       { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 180, supply: 1 }, { models: 18, minerals: 220, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Zergling Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Metabolic Boost", "Devastating Charge (Zergling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Zergling Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] }
     ];
 
+    /* STREAMING_CHUNK: Core App Components... */
     const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen = false }) => {
       const [isOpen, setIsOpen] = useState(defaultOpen);
       useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
@@ -671,6 +673,7 @@
                 let badgeColor = "bg-rose-600"; 
                 if (ab.type === "ACTIVE") badgeColor = "bg-sky-500";
                 if (ab.type === "REACTION") badgeColor = "bg-amber-500 text-black";
+                if (ab.type === "PASSIVE") badgeColor = "bg-emerald-600";
                 
                 const displayName = ab.name.includes('(') ? ab.name.split('(')[0].trim() : ab.name;
 
@@ -751,23 +754,24 @@
               
               {card.abilities && card.abilities.length > 0 && (
                 <div className="flex flex-col gap-1.5 w-full mt-2">
-                  {card.abilities.map((ab, idx) => {
-                     let typeColor = "bg-rose-600";
-                     if(ab.desc.startsWith("Active:")) typeColor = "bg-sky-500";
-                     if(ab.desc.startsWith("Reaction:")) typeColor = "bg-amber-500 text-black";
-                     if(ab.desc.startsWith("Passive:")) typeColor = "bg-emerald-600";
+                  {card.abilities.map((abilityName, idx) => {
+                     const mappedInfo = ABILITY_MAP[abilityName] || { type: "PASSIVE", cost: "-", phase: "ANY PHASE" };
+                     const descText = RULES_DICTIONARY[abilityName] || "Rule text available in full rulebook.";
                      
-                     const descText = ab.desc.replace(/^(Active|Reaction|Passive):\s*/, "");
+                     let typeColor = "bg-rose-600";
+                     if (mappedInfo.type === "ACTIVE") typeColor = "bg-sky-500";
+                     if (mappedInfo.type === "REACTION") typeColor = "bg-amber-500 text-black";
+                     if (mappedInfo.type === "PASSIVE") typeColor = "bg-emerald-600";
 
                      return (
-                      <div key={`${ab.name}-${idx}`} className="bg-black/60 rounded p-2 border border-white/5">
+                      <div key={`${abilityName}-${idx}`} className="bg-black/60 rounded p-2 border border-white/5">
                          <div className="flex justify-between items-start mb-1">
-                           <span className="font-orbitron text-xs font-bold uppercase text-white">{ab.name}</span>
+                           <span className="font-orbitron text-xs font-bold uppercase text-white">{abilityName}</span>
                            <span className={`px-1.5 py-0.5 rounded font-bold uppercase text-[8px] text-white shadow tracking-widest ${typeColor}`}>
-                               {ab.desc.split(':')[0]} {ab.cost !== "-" && `(${ab.cost})`}
+                               {mappedInfo.type} {mappedInfo.cost && mappedInfo.cost !== "-" && `(${mappedInfo.cost})`}
                            </span>
                          </div>
-                         <div className="text-[8px] uppercase font-bold text-slate-500 tracking-widest mb-1">{ab.phase}</div>
+                         <div className="text-[8px] uppercase font-bold text-slate-500 tracking-widest mb-1">{mappedInfo.phase}</div>
                          <p className="text-[10px] leading-tight text-slate-300">{descText}</p>
                       </div>
                      )
@@ -837,15 +841,125 @@
       );
     };
 
-    const GameRulesView = ({ theme }) => {
-      const [activeTab, setActiveTab] = useState("keywords");
+    /* STREAMING_CHUNK: Secondary Views (Keywords & Rules)... */
+    const KeywordsView = ({ theme }) => {
+      const [searchQuery, setSearchQuery] = useState("");
+
+      const getCategory = (ruleName) => {
+        const lowerRule = ruleName.toLowerCase();
+        const weaponKeys = ['armoured', 'light', 'anti-evade', 'precision', 'pierce', 'indirect fire', 'sidearm', 'long range', 'instant', 'critical hit', 'burst fire', 'locked in', 'pinpoint', 'concentrated fire'];
+        if (weaponKeys.some(k => lowerRule.includes(k))) return 'weapons';
+        
+        let usedByProtoss = false, usedByTerran = false, usedByZerg = false;
+        
+        UNITS_DATABASE.forEach(u => {
+           if (u.abilities && u.abilities.includes(ruleName)) {
+               if(u.faction === 'Protoss') usedByProtoss = true;
+               if(u.faction === 'Terran') usedByTerran = true;
+               if(u.faction === 'Zerg') usedByZerg = true;
+           }
+        });
+        
+        TACTICAL_CARDS.forEach(c => {
+           if (c.abilities && c.abilities.includes(ruleName)) {
+               if(c.faction === 'Protoss') usedByProtoss = true;
+               if(c.faction === 'Terran') usedByTerran = true;
+               if(c.faction === 'Zerg') usedByZerg = true;
+           }
+        });
+        
+        if (usedByProtoss && !usedByTerran && !usedByZerg) return 'protoss';
+        if (!usedByProtoss && usedByTerran && !usedByZerg) return 'terran';
+        if (!usedByProtoss && !usedByTerran && usedByZerg) return 'zerg';
+        
+        if (lowerRule.includes('protoss') || lowerRule.includes('khala') || lowerRule.includes('nerazim') || lowerRule.includes('psionic')) return 'protoss';
+        if (lowerRule.includes('terran') || lowerRule.includes('medic') || lowerRule.includes('marine')) return 'terran';
+        if (lowerRule.includes('zerg') || lowerRule.includes('creep') || lowerRule.includes('burrow')) return 'zerg';
+
+        return 'mechanics';
+      };
+
+      const sortedKeywords = useMemo(() => {
+        return Object.entries(RULES_DICTIONARY).sort((a, b) => a[0].localeCompare(b[0]));
+      }, []);
+
+      const categorizedData = useMemo(() => {
+        const data = { weapons: [], mechanics: [], protoss: [], terran: [], zerg: [] };
+        sortedKeywords.forEach(([key, desc]) => {
+            const cat = getCategory(key);
+            data[cat].push({ key, desc });
+        });
+        return data;
+      }, [sortedKeywords]);
+
+      const matchSearch = (text) => text.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const filteredData = {
+        weapons: categorizedData.weapons.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
+        mechanics: categorizedData.mechanics.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
+        terran: categorizedData.terran.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
+        protoss: categorizedData.protoss.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
+        zerg: categorizedData.zerg.filter(r => matchSearch(r.key) || matchSearch(r.desc))
+      };
+
+      const RuleBlock = ({ title, data, icon, color }) => {
+        if (data.length === 0) return null;
+        return (
+          <div className="mb-10">
+             <h2 className={`text-2xl font-black uppercase font-orbitron mb-4 border-b border-white/10 pb-2 ${color} flex items-center gap-3`}><span className="text-3xl">{icon}</span> {title}</h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.map(r => (
+                  <div key={r.key} className="bg-black/40 border border-white/10 p-4 rounded-lg shadow-md hover:border-white/30 transition-colors">
+                    <h3 className="font-orbitron font-bold text-sm text-white uppercase mb-2">{r.key}</h3>
+                    <p className="text-xs text-slate-300 leading-relaxed">{r.desc}</p>
+                  </div>
+                ))}
+             </div>
+          </div>
+        );
+      };
+
+      return (
+        <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full pb-24">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
+            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Keywords Library</h2>
+            
+            <div className="flex-1 w-full max-w-md relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search keywords or abilities..."
+                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+             {Object.values(filteredData).every(arr => arr.length === 0) && (
+                 <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
+                    No keywords found.
+                 </div>
+             )}
+             
+             <RuleBlock title="Weapon Traits" data={filteredData.weapons} icon="🎯" color="text-rose-400" />
+             <RuleBlock title="Universal Mechanics" data={filteredData.mechanics} icon="⚙️" color="text-slate-300" />
+             <RuleBlock title="Terran Abilities" data={filteredData.terran} icon="🦅" color="text-blue-400" />
+             <RuleBlock title="Protoss Abilities" data={filteredData.protoss} icon="💠" color="text-amber-400" />
+             <RuleBlock title="Zerg Abilities" data={filteredData.zerg} icon="🪲" color="text-fuchsia-400" />
+          </div>
+        </div>
+      );
+    };
+
+    const RulesView = ({ theme }) => {
+      const [searchQuery, setSearchQuery] = useState("");
       const [customRules, setCustomRules] = useState(() => loadLocal('sc_customRules', []));
       const [newRuleTitle, setNewRuleTitle] = useState("");
       const [newRuleDesc, setNewRuleDesc] = useState("");
 
-      useEffect(() => {
-        localStorage.setItem('sc_customRules', JSON.stringify(customRules));
-      }, [customRules]);
+      useEffect(() => { localStorage.setItem('sc_customRules', JSON.stringify(customRules)); }, [customRules]);
 
       const handleAddRule = (e) => {
         e.preventDefault();
@@ -855,93 +969,68 @@
         setNewRuleDesc("");
       };
 
-      const handleDeleteRule = (index) => {
-        setCustomRules(prev => prev.filter((_, i) => i !== index));
-      };
-
-      const sortedKeywords = useMemo(() => {
-        return Object.entries(RULES_DICTIONARY).sort((a, b) => a[0].localeCompare(b[0]));
-      }, []);
+      const matchSearch = (text) => text.toLowerCase().includes(searchQuery.toLowerCase());
+      const filteredCustom = customRules.filter(r => matchSearch(r.title) || matchSearch(r.desc));
 
       return (
-        <div className="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-2xl font-black uppercase font-orbitron ${theme.textPrimary}`}>Rules & Reference</h2>
-            <div className="flex bg-black/50 p-1 rounded border border-white/10">
-              <button 
-                onClick={() => setActiveTab("keywords")} 
-                className={`px-4 py-1.5 rounded text-xs font-bold uppercase font-orbitron transition-all ${activeTab === "keywords" ? theme.accent : 'text-slate-400 hover:text-white'}`}
-              >
-                Keywords ({sortedKeywords.length})
-              </button>
-              <button 
-                onClick={() => setActiveTab("rules")} 
-                className={`px-4 py-1.5 rounded text-xs font-bold uppercase font-orbitron transition-all ${activeTab === "rules" ? theme.accent : 'text-slate-400 hover:text-white'}`}
-              >
-                Rules Feed ({customRules.length})
-              </button>
+        <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full pb-24">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
+            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Game Rules</h2>
+            
+            <div className="flex-1 w-full max-w-md relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search rules..."
+                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner"
+              />
             </div>
           </div>
 
-          {activeTab === "keywords" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {sortedKeywords.map(([key, desc]) => (
-                <div key={key} className={`${theme.cardBg} border ${theme.border} p-4 rounded-lg shadow-md`}>
-                  <h3 className="font-orbitron font-bold text-sm text-amber-300 uppercase mb-1">{key}</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">{desc}</p>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="xl:col-span-2 space-y-6">
+                <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
+                    Core Rulebook Data Not Yet Assimilated.<br/><span className="text-xs text-slate-600">Awaiting transmission...</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <form onSubmit={handleAddRule} className={`${theme.cardBg} border ${theme.border} p-4 rounded-lg shadow-md space-y-4`}>
-                <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">Add Custom Rule / Note</h3>
-                <div>
-                  <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Rule Title</label>
-                  <input 
-                    type="text" 
-                    value={newRuleTitle} 
-                    onChange={e => setNewRuleTitle(e.target.value)} 
-                    placeholder="e.g., Line of Sight & Cover" 
-                    className="w-full bg-black/60 border border-white/20 rounded p-2 text-sm text-white outline-none focus:border-sky-500" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Rule Description</label>
-                  <textarea 
-                    value={newRuleDesc} 
-                    onChange={e => setNewRuleDesc(e.target.value)} 
-                    placeholder="Enter rule details here..." 
-                    rows="3" 
-                    className="w-full bg-black/60 border border-white/20 rounded p-2 text-sm text-white outline-none focus:border-sky-500 resize-none"
-                  ></textarea>
-                </div>
-                <button type="submit" className={`px-6 py-2 rounded font-bold font-orbitron text-xs uppercase tracking-wider ${theme.accent}`}>Publish Rule</button>
-              </form>
 
-              <div className="space-y-4">
-                {customRules.length === 0 ? (
-                  <div className="p-8 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-sm font-bold uppercase tracking-widest">
-                    No custom rules fed yet. Use the form above to add rules.
-                  </div>
-                ) : (
-                  customRules.map((r, idx) => (
-                    <div key={idx} className={`${theme.cardBg} border ${theme.border} p-4 rounded-lg shadow-md relative group`}>
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-orbitron font-bold text-sm text-amber-300 uppercase">{r.title}</h3>
-                        <button onClick={() => handleDeleteRule(idx)} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50">Delete</button>
-                      </div>
-                      <p className="text-xs text-slate-300 leading-relaxed">{r.desc}</p>
+                {filteredCustom.length > 0 && (
+                    <div>
+                        <h2 className={`text-xl font-black uppercase font-orbitron mb-4 border-b border-white/10 pb-2 text-sky-300`}>Custom Rules & Notes</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredCustom.map((r, idx) => (
+                            <div key={idx} className="bg-sky-950/20 border border-sky-900/50 p-4 rounded-lg shadow-md relative group">
+                            <div className="flex justify-between items-start mb-1">
+                                <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">{r.title}</h3>
+                                <button onClick={() => setCustomRules(prev => prev.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
+                            </div>
+                            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{r.desc}</p>
+                            </div>
+                        ))}
+                        </div>
                     </div>
-                  ))
                 )}
-              </div>
             </div>
-          )}
+
+            <div className="xl:col-span-1">
+                <form onSubmit={handleAddRule} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
+                <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Add Custom Rule</h3>
+                <div>
+                    <input type="text" value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)} placeholder="Rule Title (e.g., Cover Mechanics)" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" />
+                </div>
+                <div>
+                    <textarea value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)} placeholder="Rule details..." rows="5" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea>
+                </div>
+                <button type="submit" className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${theme.accent}`}>Save Rule</button>
+                </form>
+            </div>
+          </div>
         </div>
       );
     };
 
+    /* STREAMING_CHUNK: Main Builder App Component... */
     const ArmyBuilderView = ({ theme, selectedFaction, isPlayMode, setIsPlayMode }) => {
       const [scale, setScale] = useState(() => loadLocal('sc_scale', "Free Build"));
       const [roster, setRoster] = useState(() => loadLocal('sc_roster', []).filter(u => u && u.name));
@@ -1439,10 +1528,10 @@
 
                         <div className="p-4 flex flex-col flex-1">
                           <div className="flex justify-between items-start mb-4">
-                            <div>
+                            <div className="flex-1 pr-2">
                               <h4 className="font-orbitron font-black text-xl uppercase tracking-wide text-white flex items-center gap-2">
                                 {unit.name}
-                                {!isPlayMode && <button onClick={() => setRoster(prev => prev.filter(r => r.rosterId !== unit.rosterId))} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
+                                {!isPlayMode && <button onClick={(e) => { e.stopPropagation(); handleRemoveUnit(unit.rosterId); }} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
                               </h4>
                               <div className="flex flex-col gap-1 mt-1">
                                 <span className={`text-[10px] uppercase font-bold tracking-widest text-slate-400 block`}>{unit.tags}</span>
@@ -1452,12 +1541,12 @@
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right flex flex-col items-end">
+                            <div className="text-right flex flex-col items-end shrink-0">
                               <span className={`block text-3xl font-orbitron font-black leading-none ${isDead ? 'text-rose-600' : (isPlayMode && !unit.deployed ? 'text-slate-500' : 'text-amber-300')}`}>{currentSupply}</span>
                               <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-2">Supply</span>
                               {isPlayMode && !isDead && (
                                 <button 
-                                  onClick={() => toggleDeploy(unit.rosterId)}
+                                  onClick={(e) => { e.stopPropagation(); toggleDeploy(unit.rosterId); }}
                                   className={`px-2 py-1 text-[10px] uppercase font-bold rounded border transition-colors ${unit.deployed ? 'bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700' : theme.accent}`}
                                 >
                                   {unit.deployed ? 'Recall' : 'Deploy'}
@@ -1515,6 +1604,7 @@
 
           {configUnit && <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} />}
 
+          {}
           {activeModal && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
               <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`} onClick={e => e.stopPropagation()}>
@@ -1530,87 +1620,63 @@
       );
     };
 
-    function App() {
-      const [selectedFaction, setSelectedFaction] = useState(() => loadLocal('sc_faction', "Protoss"));
-      const [activeTab, setActiveTab] = useState("builder"); // "builder" or "rules"
-      const [isPlayMode, setIsPlayMode] = useState(() => loadLocal('sc_playMode', false));
+    /* STREAMING_CHUNK: Bootstrapping main App... */
+    const App = () => {
+      const [faction, setFaction] = useState("Protoss");
+      const [activeTab, setActiveTab] = useState("builder");
+      const [isPlayMode, setIsPlayMode] = useState(false);
 
-      useEffect(() => localStorage.setItem('sc_faction', JSON.stringify(selectedFaction)), [selectedFaction]);
-      useEffect(() => localStorage.setItem('sc_playMode', JSON.stringify(isPlayMode)), [isPlayMode]);
-
-      const theme = THEMES[selectedFaction];
+      const theme = THEMES[faction];
 
       return (
-        <>
-          <div className={`flex h-screen w-full ${theme.bg} text-slate-100 overflow-hidden font-rajdhani transition-colors duration-500`}>
-            <div className="w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
-              <div className="p-5 border-b border-white/10 text-center bg-black/50">
-                 <h1 className="text-xl font-black uppercase font-orbitron tracking-widest bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-500 drop-shadow">
-                    Command Center
-                 </h1>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto py-4">
-                 <div className="mb-6 px-4">
-                    <ul className="space-y-1">
-                       <li>
-                          <button 
-                            onClick={() => setActiveTab("builder")}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "builder" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}
-                          >
-                             <span className="text-lg">⚔️</span>
-                             Army Builder
-                          </button>
-                       </li>
-                       <li>
-                          <button 
-                            onClick={() => setActiveTab("rules")}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "rules" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}
-                          >
-                             <span className="text-lg">📖</span>
-                             Rules & Reference
-                          </button>
-                       </li>
-                    </ul>
-                 </div>
-              </div>
+        <div className={`flex h-screen w-full ${theme.bg} text-slate-100 overflow-hidden font-rajdhani transition-colors duration-500`}>
+          {/* SIDEBAR */}
+          <div className="w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+            <div className="p-5 border-b border-white/10 text-center bg-black/50">
+               <h1 className="text-xl font-black uppercase font-orbitron tracking-widest bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-500 drop-shadow">
+                  Command Center
+               </h1>
             </div>
-
-            <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40">
-              {!isPlayMode && activeTab === "builder" && (
-                <div className="w-full flex justify-center gap-6 p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg">
-                  {Object.keys(THEMES).map(f => (
-                     <button 
-                       key={f} 
-                       onClick={() => setSelectedFaction(f)}
-                       className={`relative w-48 h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${selectedFaction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}
-                     >
-                       <div 
-                         className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${selectedFaction === f ? 'opacity-100' : 'opacity-80'}`} 
-                         style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}
-                       ></div>
-                       <div className="absolute inset-0 bg-black/20"></div>
-                       <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${selectedFaction === f ? 'text-white' : 'text-slate-400'}`}>
-                          {f}
-                       </div>
-                     </button>
-                  ))}
-                </div>
-              )}
-              
-              {activeTab === "builder" ? (
-                <ArmyBuilderView theme={theme} selectedFaction={selectedFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />
-              ) : (
-                <GameRulesView theme={theme} />
-              )}
+            <div className="flex-1 overflow-y-auto py-4 px-4">
+               <div className="space-y-1 mb-6 border-b border-white/10 pb-4">
+                 <button onClick={() => setActiveTab("builder")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "builder" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                    <span className="text-lg">⚔️</span> Army Roster
+                 </button>
+                 <button onClick={() => setActiveTab("keywords")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "keywords" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                    <span className="text-lg">🔍</span> Keywords
+                 </button>
+                 <button onClick={() => setActiveTab("rules")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "rules" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                    <span className="text-lg">📖</span> Game Rules
+                 </button>
+               </div>
             </div>
           </div>
-        </>
+
+          {/* MAIN CONTENT AREA */}
+          <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40">
+            {!isPlayMode && activeTab === "builder" && (
+              <div className="w-full flex justify-center gap-6 p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg shrink-0">
+                {Object.keys(THEMES).map(f => (
+                   <button key={f} onClick={() => setFaction(f)} className={`relative w-48 h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${faction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}>
+                     <div className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${faction === f ? 'opacity-100' : 'opacity-80'}`} style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}></div>
+                     <div className="absolute inset-0 bg-black/20"></div>
+                     <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${faction === f ? 'text-white' : 'text-slate-400'}`}>{f}</div>
+                   </button>
+                ))}
+              </div>
+            )}
+            
+            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />}
+            {activeTab === "keywords" && <KeywordsView theme={theme} />}
+            {activeTab === "rules" && <RulesView theme={theme} />}
+          </div>
+        </div>
       );
-    }
+    };
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
 </body>
 </html>
+```eof
