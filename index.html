@@ -987,62 +987,62 @@
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8 pb-10">
              {filteredMissions.map((mission, idx) => (
-                <div key={idx} className="bg-[#e2e8f0] border-[3px] border-slate-400 rounded-xl overflow-hidden flex flex-col relative text-slate-900 shadow-2xl h-full" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1.5px, transparent 1.5px)', backgroundSize: '16px 16px' }}>
+                <div key={idx} className="bg-slate-900 border border-sky-500/30 rounded-xl overflow-hidden flex flex-col relative text-slate-200 shadow-[0_0_20px_rgba(14,165,233,0.1)] h-full">
                    
                    {/* Card Header */}
-                   <div className="bg-[#1e293b] text-white flex justify-between items-stretch border-b-4 border-slate-800 relative z-10">
-                      <div className="p-3 pl-5 flex flex-col justify-center">
-                         <h3 className="font-orbitron font-black text-2xl md:text-3xl uppercase tracking-wide drop-shadow-md leading-tight">{mission.name}</h3>
-                         {mission.type === "Skirmish" && <div className="font-orbitron font-bold text-lg text-slate-300 mt-1">(SKIRMISH)</div>}
+                   <div className="bg-gradient-to-r from-sky-950 to-slate-900 text-white flex justify-between items-stretch border-b border-sky-500/30 relative z-10">
+                      <div className="p-3 md:p-4 pl-5 flex flex-col justify-center flex-1">
+                         <h3 className="font-orbitron font-black text-2xl md:text-3xl uppercase tracking-wide text-sky-400 drop-shadow-md leading-tight">{mission.name}</h3>
+                         {mission.type === "Skirmish" && <div className="font-orbitron font-bold text-lg text-amber-400 mt-1">(SKIRMISH)</div>}
                       </div>
-                      <div className="flex shrink-0 shadow-xl border-l-4 border-slate-800">
-                        <div className="bg-[#e2e8f0] text-slate-900 flex flex-col items-center justify-center px-4 md:px-6 py-2 border-r-2 border-slate-400 min-w-[70px] md:min-w-[90px]">
-                           <span className="font-black text-3xl md:text-4xl leading-none -mb-1">{mission.supply}</span>
-                           <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mt-1">Supply</span>
-                        </div>
-                        <div className="bg-[#0f172a] text-white flex flex-col items-center justify-center px-4 md:px-6 py-2 min-w-[100px] md:min-w-[120px]">
-                           <span className="font-black text-xl md:text-2xl leading-none whitespace-nowrap">{mission.escalation}</span>
-                           <span className="text-xs md:text-sm font-bold text-slate-300 mt-0.5 tracking-wide">per round</span>
-                        </div>
-                     </div>
-                  </div>
+                      <div className="flex shrink-0 border-l border-sky-500/30">
+                         <div className="bg-sky-900/40 text-sky-300 flex flex-col items-center justify-center px-4 md:px-6 py-2 border-r border-sky-500/30 min-w-[70px] md:min-w-[90px] backdrop-blur-sm">
+                            <span className="font-black text-3xl md:text-4xl leading-none -mb-1">{mission.supply}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-sky-400 mt-1">Supply</span>
+                         </div>
+                         <div className="bg-black/60 text-white flex flex-col items-center justify-center px-4 md:px-6 py-2 min-w-[100px] md:min-w-[120px]">
+                            <span className="font-black text-xl md:text-2xl leading-none whitespace-nowrap text-amber-300">{mission.escalation}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Per Round</span>
+                         </div>
+                      </div>
+                   </div>
 
-                  {/* Game Length flag */}
+                   {/* Game Length flag */}
                    <div className="absolute top-[75px] md:top-[85px] right-2 md:right-4 z-20 drop-shadow-lg">
-                     <div className="bg-stone-900 text-amber-500 font-black text-xs md:text-sm px-6 py-1.5 uppercase tracking-widest border border-amber-500/30 shadow-md" style={{ clipPath: 'polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%)' }}>
+                     <div className="bg-amber-500 text-black font-black text-xs md:text-sm px-6 py-1.5 uppercase tracking-widest border border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.5)]" style={{ clipPath: 'polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%)' }}>
                         Game Length: {mission.gameLength}
                      </div>
                    </div>
 
                    {/* Card Body */}
-                   <div className="p-4 md:p-6 pt-10 md:pt-12 flex-1 flex flex-col gap-5 md:gap-7">
+                   <div className="p-4 md:p-6 pt-10 md:pt-12 flex-1 flex flex-col gap-6 md:gap-7">
                       
                       {/* Mission Parameters */}
-                      <div className="bg-white border-[3px] border-slate-300 rounded-lg p-4 pt-5 relative shadow-sm">
-                         <div className="absolute -top-4 left-4 bg-[#334155] text-white px-3 py-1 rounded shadow-md border border-slate-600">
-                            <span className="text-[11px] font-black uppercase tracking-wider">Mission Parameters:</span>
+                      <div className="bg-black/40 border border-white/10 rounded-lg p-4 pt-6 relative shadow-inner">
+                         <div className="absolute -top-3 left-4 bg-sky-900 text-sky-100 px-3 py-0.5 rounded shadow-md border border-sky-500/50">
+                            <span className="text-[10px] font-black uppercase tracking-wider">Mission Parameters</span>
                          </div>
-                         <div className="text-sm md:text-base font-bold text-slate-800 whitespace-pre-wrap leading-relaxed">
+                         <div className="text-sm md:text-base text-slate-300 whitespace-pre-wrap leading-relaxed">
                             {mission.parameters}
                          </div>
                       </div>
 
                       {/* Scoring Conditions */}
-                      <div className="bg-white border-[3px] border-slate-300 rounded-lg p-4 pt-5 relative shadow-sm">
-                         <div className="absolute -top-4 left-4 bg-[#334155] text-white px-3 py-1 rounded shadow-md border border-slate-600">
-                            <span className="text-[11px] font-black uppercase tracking-wider">Scoring Conditions:</span>
+                      <div className="bg-black/40 border border-white/10 rounded-lg p-4 pt-6 relative shadow-inner">
+                         <div className="absolute -top-3 left-4 bg-sky-900 text-sky-100 px-3 py-0.5 rounded shadow-md border border-sky-500/50">
+                            <span className="text-[10px] font-black uppercase tracking-wider">Scoring Conditions</span>
                          </div>
-                         <div className="text-sm md:text-base font-bold text-slate-800 whitespace-pre-wrap leading-relaxed">
+                         <div className="text-sm md:text-base text-slate-300 whitespace-pre-wrap leading-relaxed">
                             {mission.scoring}
                          </div>
                       </div>
 
                       {/* Additional Conditions */}
-                      <div className="bg-white border-[3px] border-slate-300 rounded-lg p-4 pt-5 relative shadow-sm mt-auto">
-                         <div className="absolute -top-4 left-4 bg-[#334155] text-white px-3 py-1 rounded shadow-md border border-slate-600">
-                            <span className="text-[11px] font-black uppercase tracking-wider">Additional Conditions:</span>
+                      <div className="bg-black/40 border border-white/10 rounded-lg p-4 pt-6 relative shadow-inner mt-auto">
+                         <div className="absolute -top-3 left-4 bg-sky-900 text-sky-100 px-3 py-0.5 rounded shadow-md border border-sky-500/50">
+                            <span className="text-[10px] font-black uppercase tracking-wider">Additional Conditions</span>
                          </div>
-                         <div className="text-sm md:text-base font-bold text-slate-800 whitespace-pre-wrap leading-relaxed">
+                         <div className="text-sm md:text-base text-slate-300 whitespace-pre-wrap leading-relaxed">
                             {mission.additional}
                          </div>
                       </div>
@@ -1050,9 +1050,9 @@
                    </div>
                    
                    {/* Footer */}
-                   <div className="bg-[#e2e8f0] border-t-2 border-slate-300 px-4 py-2 flex justify-between items-center text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider z-10 relative mt-auto">
-                      <span>© 2026 Blizzard Entertainment, Inc. © 2026 Archon Studio</span>
-                      <span className="bg-[#334155] text-white px-3 py-1 rounded">{mission.type} Level</span>
+                   <div className="bg-black/60 border-t border-sky-500/20 px-4 py-2 flex justify-between items-center text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider z-10 relative mt-auto">
+                      <span>Custom Mission Datapad</span>
+                      <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded">{mission.type} Level</span>
                    </div>
                 </div>
              ))}
