@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StarCraft Tabletop Army Builder</title>
+  <title>StarCraft Tabletop Army Builder - Cloud Edition</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -53,6 +53,28 @@
 <body>
   <div id="root"></div>
 
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    window.fbHelpers = { doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs, signInWithCustomToken, signInAnonymously, onAuthStateChanged };
+
+    const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+    if (configStr) {
+        try {
+            const firebaseConfig = JSON.parse(configStr);
+            window.fbApp = initializeApp(firebaseConfig);
+            window.fbDb = getFirestore(window.fbApp);
+            window.fbAuth = getAuth(window.fbApp);
+            window.fbAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            window.dispatchEvent(new Event('firebase-ready'));
+        } catch (e) {
+            console.error("Firebase init failed", e);
+        }
+    }
+  </script>
+
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
@@ -76,121 +98,73 @@
 
     const MISSION_CARDS = [
       {
-        name: "Artefact Hunt",
-        type: "Standard",
-        supply: 6,
-        escalation: "+2 Supply",
-        gameLength: 5,
+        name: "Artefact Hunt", type: "Standard", supply: 6, escalation: "+2", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nEnd of Round 5:\nGain 4 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 2 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.",
         additional: "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It has its Current Supply Value reduced.\n- Before It resolves a PLACE effect.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves."
       },
       {
-        name: "Artefact Hunt",
-        type: "Skirmish",
-        supply: 3,
-        escalation: "+1 Supply",
-        gameLength: 5,
+        name: "Artefact Hunt", type: "Skirmish", supply: 3, escalation: "+1", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nEnd of Round 5:\nGain 3 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 1 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.",
         additional: "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It resolves a PLACE effect.\n- It has its Current Supply Value reduced.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves."
       },
       {
-        name: "Divide and Conquer",
-        type: "Standard",
-        supply: 8,
-        escalation: "+2 Supply",
-        gameLength: 4,
+        name: "Divide and Conquer", type: "Standard", supply: 8, escalation: "+2", gameLength: 4,
         parameters: "All Mission Markers are Activated.\nSplit the battlefield into four quarters as shown on the Deployment Card.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the First Round:\nCalculate the Total Current Supply in each battlefield quarter.\nGain 1 VP for each quarter where your Total Current Supply is higher than the Opponent's.\nOnly Units Wholly Within a quarter contribute their Supply to this check.\nIf a Unit controls a Mission Marker, that Unit is worth 1 extra Supply for controlling quarters.\n\nGain 2 VP for Controlling Mission Marker 5.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
       },
       {
-        name: "Divide and Conquer",
-        type: "Skirmish",
-        supply: 4,
-        escalation: "+1 Supply",
-        gameLength: 4,
+        name: "Divide and Conquer", type: "Skirmish", supply: 4, escalation: "+1", gameLength: 4,
         parameters: "All Mission Markers are Activated.\nSplit the battlefield into four quarters as shown on the Deployment Card.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the First Round:\nCalculate the Total Current Supply in each battlefield quarter.\nGain 1 VP for each quarter where your Total Current Supply is higher than the Opponent's.\nOnly Units Wholly Within a quarter contribute their Supply to this check.\nIf a Unit controls a Mission Marker, that Unit is worth 1 extra Supply for controlling quarters.\n\nGain 2 VP for Controlling Mission Marker 5.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
       },
       {
-        name: "Frontlines",
-        type: "Standard",
-        supply: 6,
-        escalation: "+2 Supply",
-        gameLength: 5,
+        name: "Frontlines", type: "Standard", supply: 6, escalation: "+2", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 1 VP for each Controlled Mission Marker.\nGain an additional 2 VPs for a Marker if you gained Control of it from the Opponent this Round.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
       },
       {
-        name: "Frontlines",
-        type: "Skirmish",
-        supply: 3,
-        escalation: "+1 Supply",
-        gameLength: 5,
+        name: "Frontlines", type: "Skirmish", supply: 3, escalation: "+1", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 1 VP for each Controlled Mission Marker.\nGain an additional 2 VPs for a Marker if you gained Control of it from the Opponent this Round.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
       },
       {
-        name: "Gather the Resources",
-        type: "Standard",
-        supply: 6,
-        escalation: "+2 Supply",
-        gameLength: 5,
+        name: "Gather the Resources", type: "Standard", supply: 6, escalation: "+2", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
         additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
       },
       {
-        name: "Gather the Resources",
-        type: "Skirmish",
-        supply: 3,
-        escalation: "+1 Supply",
-        gameLength: 5,
+        name: "Gather the Resources", type: "Skirmish", supply: 3, escalation: "+1", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
         additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
       },
       {
-        name: "Hold Position",
-        type: "Standard",
-        supply: 6,
-        escalation: "+2 Supply",
-        gameLength: 5,
+        name: "Hold Position", type: "Standard", supply: 6, escalation: "+2", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\nFrom the Start of the Second Round: Gain 1 VP for each Controlled Mission Marker that is Neutral or associated with your colour. Gain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
       },
       {
-        name: "Hold Position",
-        type: "Skirmish",
-        supply: 3,
-        escalation: "+1 Supply",
-        gameLength: 5,
+        name: "Hold Position", type: "Skirmish", supply: 3, escalation: "+1", gameLength: 5,
         parameters: "All Mission Markers are Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\nFrom the Start of the Second Round: Gain 1 VP for each Controlled Mission Marker that is Neutral or associated with your colour. Gain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
       },
       {
-        name: "Supply Drop",
-        type: "Standard",
-        supply: 6,
-        escalation: "+2 Supply",
-        gameLength: 5,
+        name: "Supply Drop", type: "Standard", supply: 6, escalation: "+2", gameLength: 5,
         parameters: "All Mission Markers are Deactivated.\nStart of the Round (1-4): Randomly determine one Deactivated Mission Marker (1-4) and flip it to its Activated side.\nStart of Round 5: Mission Marker 5 is automatically Activated.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the first Round: For each activated Controlled Mission Marker, gain VPs equal to the Game Round number in which that Mission Marker was Activated and remove it.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 12+ VPs."
       },
       {
-        name: "Supply Drop",
-        type: "Skirmish",
-        supply: 4,
-        escalation: "+1 Supply",
-        gameLength: 4,
+        name: "Supply Drop", type: "Skirmish", supply: 4, escalation: "+1", gameLength: 4,
         parameters: "All Mission Markers are Deactivated.\nStart of the Round (2-4): Randomly determine one Deactivated Mission Marker (1,2,5) and flip it to its Activated side.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: For each activated Controlled Mission Marker, gain VPs equal to the Game Round number in which that Mission Marker was Activated and remove it.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
@@ -438,219 +412,6 @@
       "Nasty Surprise": "The active Ground Unit loses the Burrowed Status.",
       "Feral Rage": "The active Unit's first Close Combat Weapon used gains PRECISION (2).",
       "Timing Push": "The active Zergling Unit Deploys from any table edge that is not a Player's Entry Edge. This action must end more than 10\" away from any Enemy model."
-    };
-
-    const ABILITY_MAP = {
-      "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Devastating Charge": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      
-      "Commander": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Phase Prism": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Hierarch's Stand": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Lightning Dash": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
-
-      "Charge": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Zealot)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "My Life for Aiur": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Leg Enhancements (Zealot)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Zealous Round": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
-      "We Stand as One": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-      
-      "One With the Shadows": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Prophetic Vision": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Sentenced to Death": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Void Prison": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Void Blink": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Zeratul)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Shadow Strike": { type: "ACTIVE", cost: "1 PE", phase: "COMBAT PHASE" },
-
-      "Improved Barrier": { type: "REACTION", cost: "0 PE", phase: "ANY PHASE" },
-      "Indomitable": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Shield Overcharge": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Fury Unyielding": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "For the Ancients": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Psionic Presence": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Psionic Transfer": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Resonating Glaives": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Guidance": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Path of Shadows (Watchers)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
-      "Nerazim Farsight": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      
-      "Structure": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Khalai Ingenuity": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Warp Conduit": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      
-      "Restoration": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Force Field": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Guardian Shield": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Solid-Field Projectors": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Hallucination": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
-      
-      "Squadron": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Blink": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Path of Shadows (Stalker)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
-      "Fury of the Nerazim": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Shield Overcharge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Leg Enhancements (Praetor)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Devastating Charge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Titan Killers": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Precognition": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-
-      "Rapid Ingress": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Ready for Pickup?": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Tactical Retreat": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Terran Tenacity": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Advanced Training": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Vehicle Plating": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Vehicle Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Go! Go! Go!": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Armed and Ready": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Let's Have a Blast!": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Strap in!": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Ready For Dust-off": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Infantry Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Infantry Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Field Repair": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Pound 'em Flat!": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "ComSat Station": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Scanner Sweep": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Additional Supply Depots": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Target Lock": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Devastating Charge (Goliath)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Ares-Class Targeting System": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Freedom Fighters": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Orders": { type: "ACTIVE", cost: "X CP", phase: "MOVEMENT PHASE" },
-      "Stimpack (Marine)": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Concussive Shells": { type: "REACTION", cost: "1 CP", phase: "ASSAULT PHASE" },
-      "Veteran of Tarsonis": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Kinetic Foam": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Laser Targeting Systems": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Combat Shield": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Slugthrower": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Grenades - Frag": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Life Support": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
-      "Restoration (Medic)": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
-      "Medpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Optical Flare": { type: "ACTIVE", cost: "2 CP", phase: "MOVEMENT PHASE" },
-      "Advanced Medic Facilities": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "A-13 Flash Grenade Launcher": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Stabilizer Medpacks": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Point Defense Laser": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Gliding": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Raiders Roll!": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Rapid Reinforcements": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Large": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Heavy Plating": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Point Blank": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Aftershock Rounds": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Mode Transformation": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Coordinated Strike": { type: "ACTIVE", cost: "0 CP", phase: "MOVEMENT PHASE" },
-      "Shaped Blast": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
-      "Smart Shells": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
-
-      "Dae'Uhl": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Mass Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Pylon Warp-In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Bound by the Khala": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Might Of The Nerazim": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Darkness Descends": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Ground Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Ground Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Zealous Charge": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Quick Strikes": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Ancient Pride": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
-      "Strategic Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Surveillance": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Gravitic Boosters": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
-      "Photon Overcharge": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Guardian Shell": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Plasma Shields": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Veil of Shadows": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Weapons of the Firstborn": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Personal Transport": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Anakh Su'n": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Warp In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Phase": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Warp Conduit": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      
-      "Wild Mutation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
-      "Zerg Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Omega Network": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Brood Instinct": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Rapid Burrowing": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-
-      "Burrow": { type: "ACTIVE", cost: "2 BM", phase: "ANY PHASE" },
-      "Roachling Infestation": { type: "ACTIVE", cost: "2 BM", phase: "MOVEMENT PHASE" },
-      "Regeneration": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Roach)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Ravager)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Tunneling Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Burrow Ambush": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Glial Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Hydriodic Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Squadron (Hydralisk)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Lunge": { type: "REACTION", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Ancillary Carapace": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Lurking": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Grooved Spines": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Crushing Grip": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Mutating Carapace": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Leaping Strike": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Kerrigan)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Raptor Strain": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Leap": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Adrenal Overload": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Kerrigan Swarm Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Detection": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Source of Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Omega Network (Unit)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Spawn Creep Tumor": { type: "ACTIVE", cost: "1 BM", phase: "ANY PHASE" },
-      "Transfusion": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
-      "Restoration (Queen)": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
-      "Psionic Link": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Devastating Charge (Queen)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Creep Speed": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Domineering Presence": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Metabolic Boost": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Adrenal Glands": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-
-      "Corrosive Bile": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Deep Tunnel": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Bloated Bile Ducts": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Potent Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Underdeveloped Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-
-      "Zergling Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Debilitating Saliva": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
-      "Devastating Charge (Swarmling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Vile)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Zergling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Speed on Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Living Glob of Tissue": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Creep Removal": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Spawn Larva": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Ravager Morph": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Carapace": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Extended Claws": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Lie in Wait": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Creep Spread": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Missile Attacks": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Predation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
-      "Malevolent Matriarch": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Ventral Sacs": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Excrete Creep": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Oversight Mode": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Pneumatized Carapace": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
-      "Nasty Surprise": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Feral Rage": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Timing Push": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" }
     };
 
     const WEAPON_MAP = {
@@ -1001,8 +762,8 @@
                             <span className="text-[9px] font-bold uppercase tracking-widest text-sky-400 mt-1">Supply</span>
                          </div>
                          <div className="bg-black/60 text-white flex flex-col items-center justify-center px-4 md:px-6 py-2 min-w-[100px] md:min-w-[120px]">
-                            <span className="font-black text-xl md:text-2xl leading-none whitespace-nowrap text-amber-300">{mission.escalation}</span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Per Round</span>
+                            <span className="font-black text-xl md:text-2xl leading-none whitespace-nowrap text-amber-300">{mission.escalation} Supply</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">per round</span>
                          </div>
                       </div>
                    </div>
@@ -1172,20 +933,48 @@
       );
     };
 
-    const RulesView = ({ theme }) => {
+    const RulesView = ({ theme, cloudUser }) => {
       const [searchQuery, setSearchQuery] = useState("");
-      const [customRules, setCustomRules] = useState(() => loadLocal('sc_customRules', []));
+      const [customRules, setCustomRules] = useState([]);
       const [newRuleTitle, setNewRuleTitle] = useState("");
       const [newRuleDesc, setNewRuleDesc] = useState("");
 
-      useEffect(() => { localStorage.setItem('sc_customRules', JSON.stringify(customRules)); }, [customRules]);
+      useEffect(() => {
+        if (!cloudUser || !window.fbDb) return;
+        const loadRules = async () => {
+            const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
+            try {
+                const snap = await window.fbHelpers.getDoc(docRef);
+                if (snap.exists()) {
+                    setCustomRules(JSON.parse(snap.data().rulesArray));
+                }
+            } catch(e) {}
+        };
+        loadRules();
+      }, [cloudUser]);
+
+      const saveCustomRules = async (rulesToSave) => {
+        if (!cloudUser || !window.fbDb) return;
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
+        try {
+            await window.fbHelpers.setDoc(docRef, { rulesArray: JSON.stringify(rulesToSave) });
+        } catch(e) {}
+      };
 
       const handleAddRule = (e) => {
         e.preventDefault();
         if (!newRuleTitle.trim() || !newRuleDesc.trim()) return;
-        setCustomRules(prev => [...prev, { title: newRuleTitle.trim(), desc: newRuleDesc.trim() }]);
+        const updatedRules = [...customRules, { title: newRuleTitle.trim(), desc: newRuleDesc.trim() }];
+        setCustomRules(updatedRules);
+        saveCustomRules(updatedRules);
         setNewRuleTitle("");
         setNewRuleDesc("");
+      };
+
+      const handleDeleteRule = (idx) => {
+        const updatedRules = customRules.filter((_, i) => i !== idx);
+        setCustomRules(updatedRules);
+        saveCustomRules(updatedRules);
       };
 
       const matchSearch = (text) => text.toLowerCase().includes(searchQuery.toLowerCase());
@@ -1222,7 +1011,7 @@
                             <div key={idx} className="bg-sky-950/20 border border-sky-900/50 p-4 rounded-lg shadow-md relative group">
                             <div className="flex justify-between items-start mb-1">
                                 <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">{r.title}</h3>
-                                <button onClick={() => setCustomRules(prev => prev.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
+                                <button onClick={() => handleDeleteRule(idx)} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
                             </div>
                             <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{r.desc}</p>
                             </div>
@@ -1235,13 +1024,14 @@
             <div className="xl:col-span-1">
                 <form onSubmit={handleAddRule} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
                 <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Add Custom Rule</h3>
+                {!cloudUser && <p className="text-xs text-rose-400 mb-2">Cloud Sync is offline. Your rules will not be saved permanently.</p>}
                 <div>
                     <input type="text" value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)} placeholder="Rule Title (e.g., Cover Mechanics)" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" />
                 </div>
                 <div>
                     <textarea value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)} placeholder="Rule details..." rows="5" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea>
                 </div>
-                <button type="submit" className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${theme.accent}`}>Save Rule</button>
+                <button type="submit" disabled={!cloudUser} className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${cloudUser ? theme.accent : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Save Rule</button>
                 </form>
             </div>
           </div>
@@ -1249,14 +1039,26 @@
       );
     };
 
-    const ArmyBuilderView = ({ theme, selectedFaction, isPlayMode, setIsPlayMode }) => {
-      const [scale, setScale] = useState(() => loadLocal('sc_scale', "Free Build"));
-      const [roster, setRoster] = useState(() => loadLocal('sc_roster', []).filter(u => u && u.name));
-      const [tacticalCards, setTacticalCards] = useState(() => loadLocal('sc_tacCards', []).filter(c => c && c.name));
-      const [matchData, setMatchData] = useState(() => loadLocal('sc_matchData', { round: 1, yourVP: 0, enemyVP: 0, mission: "Frontlines", enemyFaction: "Terran" }));
+    const ArmyBuilderView = ({ theme, selectedFaction, setSelectedFaction, isPlayMode, setIsPlayMode, cloudUser }) => {
+      const [scale, setScale] = useState("Free Build");
+      const [roster, setRoster] = useState([]);
+      const [tacticalCards, setTacticalCards] = useState([]);
+      const [matchData, setMatchData] = useState({ round: 1, yourVP: 0, enemyVP: 0, mission: "Frontlines", enemyFaction: "Terran" });
       
       const [activeModal, setActiveModal] = useState(null);
       const [configUnit, setConfigUnit] = useState(null);
+
+      const [showSaveModal, setShowSaveModal] = useState(false);
+      const [showLoadModal, setShowLoadModal] = useState(false);
+      const [rosterName, setRosterName] = useState("");
+      const [cloudRosters, setCloudRosters] = useState([]);
+      const [isCloudLoading, setIsCloudLoading] = useState(false);
+      const [toast, setToast] = useState(null);
+
+      const showToast = (msg, isError = false) => {
+          setToast({ msg, isError });
+          setTimeout(() => setToast(null), 3000);
+      };
 
       const activeFactionCard = tacticalCards.find(c => c.type === "Faction Card");
       const currentSubFaction = activeFactionCard ? activeFactionCard.subFaction : (selectedFaction === "Protoss" ? "Daelaam" : "Generic");
@@ -1268,7 +1070,7 @@
       const availableFactionCards = FACTION_CARDS.filter(c => c.faction === selectedFaction);
       
       const availableTacticalCards = TACTICAL_CARDS.filter(c => 
-        c.faction === selectedFaction && (!c.subFaction || c.subFaction === "Generic" || c.subFaction === currentSubFaction)
+        c.faction === selectedFaction && c.type === "Tactical Card" && (!c.subFaction || c.subFaction === "Generic" || c.subFaction === currentSubFaction)
       );
 
       useEffect(() => {
@@ -1276,16 +1078,78 @@
          setTacticalCards([]);
       }, [selectedFaction]);
 
-      useEffect(() => localStorage.setItem('sc_scale', JSON.stringify(scale)), [scale]);
-      useEffect(() => localStorage.setItem('sc_roster', JSON.stringify(roster)), [roster]);
-      useEffect(() => localStorage.setItem('sc_tacCards', JSON.stringify(tacticalCards)), [tacticalCards]);
-      useEffect(() => localStorage.setItem('sc_matchData', JSON.stringify(matchData)), [matchData]);
+      const saveRosterToCloud = async () => {
+          if (!cloudUser || !window.fbDb) return;
+          if (!rosterName.trim()) { showToast("Please enter a roster name.", true); return; }
+          
+          try {
+              const rosterData = {
+                  name: rosterName.trim(),
+                  faction: selectedFaction,
+                  scale: scale,
+                  roster: JSON.stringify(roster),
+                  tacticalCards: JSON.stringify(tacticalCards),
+                  matchData: JSON.stringify(matchData),
+                  createdAt: Date.now()
+              };
+              
+              const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'rosters');
+              await window.fbHelpers.addDoc(colRef, rosterData);
+              setShowSaveModal(false);
+              setRosterName("");
+              showToast(`Roster "${rosterData.name}" saved to cloud!`);
+          } catch (e) {
+              console.error("Save failed", e);
+              showToast("Failed to save roster to cloud.", true);
+          }
+      };
 
-      const resetAppData = () => {
-        if(window.confirm("Are you sure you want to clear all data?")) {
-           localStorage.clear();
-           window.location.reload();
-        }
+      const fetchCloudRosters = async () => {
+          if (!cloudUser || !window.fbDb) return;
+          setIsCloudLoading(true);
+          try {
+              const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'rosters');
+              const snap = await window.fbHelpers.getDocs(colRef);
+              let list = [];
+              snap.forEach(doc => {
+                  list.push({ id: doc.id, ...doc.data() });
+              });
+              list.sort((a, b) => b.createdAt - a.createdAt);
+              setCloudRosters(list);
+          } catch(e) {
+              console.error(e);
+              showToast("Failed to fetch cloud rosters.", true);
+          }
+          setIsCloudLoading(false);
+      };
+
+      const loadRosterFromCloud = (data) => {
+          setSelectedFaction(data.faction);
+          setScale(data.scale);
+          setRoster(JSON.parse(data.roster));
+          setTacticalCards(JSON.parse(data.tacticalCards));
+          setMatchData(JSON.parse(data.matchData));
+          setShowLoadModal(false);
+          showToast(`Loaded "${data.name}"`);
+      };
+
+      const deleteRosterFromCloud = async (id) => {
+          if (!cloudUser || !window.fbDb) return;
+          try {
+              const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'rosters', id);
+              await window.fbHelpers.deleteDoc(docRef);
+              setCloudRosters(prev => prev.filter(r => r.id !== id));
+              showToast("Roster deleted from cloud.");
+          } catch(e) {
+              console.error(e);
+              showToast("Failed to delete roster.", true);
+          }
+      };
+
+      const clearArmy = () => {
+         setRoster([]);
+         setTacticalCards([]);
+         setActiveModal(null);
       };
 
       const limits = ENGAGEMENT_SCALES[scale] || ENGAGEMENT_SCALES["Free Build"];
@@ -1307,6 +1171,42 @@
       const supplyPool = matchData.round === 5 ? Infinity : (activeMission.start + (matchData.round - 1) * activeMission.esc);
       const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
 
+      const parseSlots = (providesStr) => {
+        const slots = { Hero: 0, Core: 0, Elite: 0, Support: 0, Summoned: 999 };
+        if (!providesStr) return slots;
+        const matchHero = providesStr.match(/(\d+)x Hero/i);
+        if (matchHero) slots.Hero = parseInt(matchHero[1], 10);
+        const matchCore = providesStr.match(/(\d+)x Core/i);
+        if (matchCore) slots.Core = parseInt(matchCore[1], 10);
+        const matchElite = providesStr.match(/(\d+)x Elite/i);
+        if (matchElite) slots.Elite = parseInt(matchElite[1], 10);
+        const matchSupport = providesStr.match(/(\d+)x Support/i);
+        if (matchSupport) slots.Support = parseInt(matchSupport[1], 10);
+        return slots;
+      };
+
+      const grantedSlots = useMemo(() => {
+        const totals = { Hero: 0, Core: 0, Elite: 0, Support: 0, Summoned: 999 };
+        tacticalCards.forEach(card => {
+            const parsed = parseSlots(card.provides);
+            totals.Hero += parsed.Hero;
+            totals.Core += parsed.Core;
+            totals.Elite += parsed.Elite;
+            totals.Support += parsed.Support;
+        });
+        return totals;
+      }, [tacticalCards]);
+
+      const usedSlots = useMemo(() => {
+        const totals = { Hero: 0, Core: 0, Elite: 0, Support: 0, Summoned: 0 };
+        roster.forEach(unit => {
+            if (totals[unit.slot] !== undefined) totals[unit.slot] += 1;
+        });
+        return totals;
+      }, [roster]);
+
+      const hasSlotError = ['Hero', 'Core', 'Elite', 'Support'].some(s => usedSlots[s] > grantedSlots[s]);
+
       const SLOT_ORDER = { "Hero": 1, "Core": 2, "Elite": 3, "Support": 4, "Summoned": 5 };
       const sortedRoster = useMemo(() => {
         return [...roster].sort((a, b) => {
@@ -1327,7 +1227,7 @@
       const openRule = (key) => {
         const cleaned = key.trim();
         const ruleText = RULES_DICTIONARY[cleaned] || "Rule text available in full rulebook.";
-        setActiveModal({ title: cleaned, text: ruleText });
+        setActiveModal({ type: 'rule', title: cleaned, text: ruleText });
       };
 
       const addToRoster = (unit, compIndex, selectedUpgrades) => {
@@ -1474,9 +1374,23 @@
 
               <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/10 shrink-0">
                 <span className="font-orbitron text-xl font-black text-sky-400">Total: {currentMinerals} Min</span>
-                <div className="flex gap-2">
-                  <button onClick={onClose} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
-                  <button onClick={() => { addToRoster(unit, compIndex, selectedUpgrades); onClose(); }} className={`px-4 py-2 rounded font-bold ${theme.accent}`}>Add Unit</button>
+                <div className="flex gap-2 items-center">
+                  {(() => {
+                      const isSlotAvailable = usedSlots[unit.slot] < grantedSlots[unit.slot] || unit.slot === "Summoned";
+                      return (
+                         <>
+                            {!isSlotAvailable && <span className="text-[10px] uppercase font-bold text-rose-500 mr-2 text-right leading-tight">No {unit.slot}<br/>Slots</span>}
+                            <button onClick={onClose} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20 text-sm font-bold uppercase tracking-wider">Cancel</button>
+                            <button 
+                               disabled={!isSlotAvailable}
+                               onClick={() => { addToRoster(unit, compIndex, selectedUpgrades); onClose(); }} 
+                               className={`px-4 py-2 rounded font-bold text-sm uppercase tracking-wider transition-colors shadow-md ${!isSlotAvailable ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : theme.accent}`}
+                            >
+                               Add Unit
+                            </button>
+                         </>
+                      );
+                  })()}
                 </div>
               </div>
             </div>
@@ -1485,7 +1399,15 @@
       };
 
       return (
-        <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
+        <div className="flex-1 overflow-y-auto pb-24 md:pb-6 relative">
+          
+          {/* Toast Notification */}
+          {toast && (
+            <div className={`fixed top-4 right-4 z-[100] px-6 py-3 rounded shadow-2xl font-bold text-sm uppercase tracking-wider font-orbitron transition-all ${toast.isError ? 'bg-rose-600 text-white' : 'bg-emerald-500 text-black'}`}>
+               {toast.msg}
+            </div>
+          )}
+
           <div className="px-4 py-3 md:px-6 md:py-4 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-black/20 sticky top-0 z-20 backdrop-blur-md">
              <div className="flex items-center gap-4">
                 <h2 className={`text-xl md:text-2xl font-black uppercase font-orbitron drop-shadow-md ${theme.textPrimary}`}>Army Builder</h2>
@@ -1493,9 +1415,14 @@
              
              <div className="flex flex-wrap items-center gap-2 md:gap-4">
               {!isPlayMode && (
-                <button onClick={resetAppData} className="text-[10px] uppercase font-bold text-slate-500 hover:text-white px-3 py-1 rounded bg-black/50 border border-white/10 hidden md:block" title="Click if App crashes on load">
-                  Reset Data
-                </button>
+                <div className="flex gap-2 mr-2">
+                  <button onClick={() => { if(cloudUser) setShowSaveModal(true); else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 ${cloudUser ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser ? "Save to Cloud" : "Cloud offline"}>
+                    ☁️ Save
+                  </button>
+                  <button onClick={() => { if(cloudUser) { fetchCloudRosters(); setShowLoadModal(true); } else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 ${cloudUser ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser ? "Load from Cloud" : "Cloud offline"}>
+                    ☁️ Load
+                  </button>
+                </div>
               )}
               {!isPlayMode && (
                 <div className="flex gap-2">
@@ -1504,7 +1431,7 @@
                   </select>
                 </div>
               )}
-              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-4 md:px-6 py-1.5 md:py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg text-xs md:text-base ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
+              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-3 md:px-6 py-1.5 md:py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg text-[10px] md:text-base ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
                 {isPlayMode ? 'EXIT PLAY MODE' : 'ENTER PLAY MODE'}
               </button>
             </div>
@@ -1517,11 +1444,11 @@
                 
                 <div className="flex flex-col gap-4 mb-2">
                   <details className="group">
-                    <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
+                    <summary className="text-lg md:text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
                       <span>Faction Cards <span className="text-slate-400 text-xs ml-2">({availableFactionCards.length})</span></span>
                       <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
                       {availableFactionCards.map(card => {
                         const isAdded = tacticalCards.find(c => c.name === card.name);
                         return (
@@ -1541,11 +1468,11 @@
                   </details>
 
                   <details className="group">
-                    <summary className="text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
+                    <summary className="text-lg md:text-xl font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center hover:text-white transition-colors bg-white/5 p-3 rounded border border-white/10 shadow-sm">
                       <span>Tactical Cards <span className="text-slate-400 text-xs ml-2">({availableTacticalCards.length})</span></span>
                       <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                     </summary>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
                       {availableTacticalCards.map(card => {
                         const isAdded = tacticalCards.find(c => c.name === card.name);
                         return (
@@ -1584,6 +1511,32 @@
               {!isPlayMode && (
                 <div className={`flex flex-col gap-3 ${theme.panelBg} p-4 md:p-5 rounded-xl border ${theme.border}`}>
                   <h2 className="text-lg font-orbitron font-bold uppercase border-b border-white/10 pb-2">Army Stats</h2>
+                  
+                  {!activeFactionCard && (
+                     <div className="bg-amber-950/80 border border-amber-500 text-amber-300 px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-center shadow-inner">
+                        ⚠️ Draft a Faction Card to unlock Unit Slots
+                     </div>
+                  )}
+                  {hasSlotError && activeFactionCard && (
+                     <div className="bg-rose-950/80 border border-rose-500 text-rose-300 px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-center shadow-inner animate-pulse">
+                        ⚠️ Roster Invalid: Over Slot Limit
+                     </div>
+                  )}
+
+                  <div className="grid grid-cols-4 gap-2 mb-2">
+                     {['Hero', 'Core', 'Elite', 'Support'].map(slot => {
+                        const overLimit = usedSlots[slot] > grantedSlots[slot];
+                        return (
+                           <div key={slot} className={`flex flex-col items-center justify-center p-2 rounded border ${overLimit ? 'bg-rose-950/80 border-rose-500' : 'bg-black/40 border-white/10 shadow-inner'}`}>
+                              <span className={`font-orbitron font-black text-lg md:text-xl leading-none ${overLimit ? 'text-rose-400' : 'text-white'}`}>
+                                 {usedSlots[slot]} <span className="text-xs text-slate-500">/ {grantedSlots[slot]}</span>
+                              </span>
+                              <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-slate-400 mt-1">{slot}</span>
+                           </div>
+                        )
+                     })}
+                  </div>
+
                   <div className={`p-3 rounded flex justify-between items-center ${totalMinerals > limits.minerals ? 'bg-rose-950/80 border border-rose-500' : 'bg-black/50 border border-white/10'}`}>
                     <span className="text-sm font-bold uppercase tracking-wider text-slate-300">Minerals</span>
                     <span className={`font-orbitron text-xl font-black ${totalMinerals > limits.minerals ? 'text-rose-400' : 'text-sky-400'}`}>{totalMinerals} <span className="text-sm font-normal text-slate-400">/ {limits.minerals === Infinity ? '∞' : limits.minerals}</span></span>
@@ -1673,10 +1626,10 @@
                   <h2 className="text-xl font-orbitron font-bold uppercase">Active Roster</h2>
                   {!isPlayMode ? (
                      <div className="flex gap-2">
-                        <button onClick={() => { setRoster([]); setTacticalCards([]); }} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50 ml-2">Clear</button>
+                        <button onClick={() => setActiveModal({ type: 'clear' })} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50 ml-2">Clear</button>
                      </div>
                   ) : (
-                    <button onClick={() => setRoster([])} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50">Clear Army</button>
+                    <button onClick={() => setActiveModal({ type: 'clear' })} className="text-xs uppercase font-bold text-rose-400 hover:text-white px-3 py-1 bg-rose-950/40 rounded border border-rose-900/50">Clear Army</button>
                   )}
                 </div>
                 
@@ -1748,7 +1701,7 @@
                             <div className="flex-1 pr-2">
                               <h4 className="font-orbitron font-black text-xl uppercase tracking-wide text-white flex items-center gap-2">
                                 {unit.name}
-                                {!isPlayMode && <button onClick={(e) => { e.stopPropagation(); handleRemoveUnit(unit.rosterId); }} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
+                                {!isPlayMode && <button onClick={(e) => { e.stopPropagation(); setRoster(prev => prev.filter(u => u.rosterId !== unit.rosterId)); }} className="text-[10px] text-rose-500 hover:text-rose-300 bg-black/40 px-2 py-0.5 rounded border border-rose-900/50">✖</button>}
                               </h4>
                               <div className="flex flex-col gap-1 mt-1">
                                 <span className={`text-[10px] uppercase font-bold tracking-widest text-slate-400 block`}>{unit.tags}</span>
@@ -1821,7 +1774,68 @@
 
           {configUnit && <UnitConfigModal unit={configUnit} onClose={() => setConfigUnit(null)} />}
 
-          {activeModal && (
+          {/* Cloud Save Modal */}
+          {showSaveModal && (
+             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4">
+               <div className={`max-w-md w-full p-6 rounded-xl border border-sky-500/50 bg-[#0f172a] shadow-2xl`}>
+                 <h3 className="text-xl font-orbitron font-black uppercase mb-4 text-sky-400">Save Roster to Cloud</h3>
+                 <p className="text-sm text-slate-300 mb-4">Store your current army securely in your account. You can load it later from any device.</p>
+                 <input 
+                   type="text" 
+                   value={rosterName} 
+                   onChange={e => setRosterName(e.target.value)} 
+                   placeholder="Enter a name for this roster..." 
+                   className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 mb-6"
+                 />
+                 <div className="flex gap-3 justify-end">
+                   <button onClick={() => setShowSaveModal(false)} className="px-4 py-2 rounded font-bold text-sm bg-slate-800 text-white hover:bg-slate-700">Cancel</button>
+                   <button onClick={saveRosterToCloud} className="px-6 py-2 rounded font-bold text-sm bg-sky-600 text-white hover:bg-sky-500">Save List</button>
+                 </div>
+               </div>
+             </div>
+          )}
+
+          {/* Cloud Load Modal */}
+          {showLoadModal && (
+             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4">
+               <div className={`max-w-lg w-full p-6 rounded-xl border border-sky-500/50 bg-[#0f172a] shadow-2xl max-h-[80vh] flex flex-col`}>
+                 <h3 className="text-xl font-orbitron font-black uppercase mb-2 text-sky-400">Load Roster</h3>
+                 <p className="text-sm text-slate-400 mb-6 border-b border-white/10 pb-4">Select a saved roster to overwrite your current draft.</p>
+                 
+                 <div className="flex-1 overflow-y-auto pr-2 space-y-3 mb-6">
+                    {isCloudLoading ? (
+                       <div className="text-center py-8 text-sky-400 font-orbitron animate-pulse">Syncing with Command Center...</div>
+                    ) : cloudRosters.length === 0 ? (
+                       <div className="text-center py-8 text-slate-500 font-orbitron text-sm">No saved rosters found in the cloud.</div>
+                    ) : (
+                       cloudRosters.map(r => (
+                          <div key={r.id} className="bg-black/40 border border-white/10 p-3 rounded-lg flex items-center justify-between hover:border-sky-500/50 transition-colors cursor-pointer group" onClick={() => loadRosterFromCloud(r)}>
+                             <div>
+                                <h4 className="font-bold text-white uppercase font-orbitron text-sm">{r.name}</h4>
+                                <div className="flex gap-3 text-[10px] uppercase font-bold text-slate-500 mt-1">
+                                   <span>{r.faction}</span>
+                                   <span>{r.scale}</span>
+                                   <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+                                </div>
+                             </div>
+                             <div className="flex gap-2">
+                               <button onClick={(e) => { e.stopPropagation(); loadRosterFromCloud(r); }} className="px-3 py-1 rounded bg-sky-900/50 text-sky-400 border border-sky-900 text-xs font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity">Load</button>
+                               <button onClick={(e) => { e.stopPropagation(); deleteRosterFromCloud(r.id); }} className="px-3 py-1 rounded bg-rose-900/30 text-rose-500 border border-rose-900/50 text-xs font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-900/60">Trash</button>
+                             </div>
+                          </div>
+                       ))
+                    )}
+                 </div>
+
+                 <div className="flex justify-end pt-4 border-t border-white/10">
+                   <button onClick={() => setShowLoadModal(false)} className="px-4 py-2 rounded font-bold text-sm bg-slate-800 text-white hover:bg-slate-700">Close</button>
+                 </div>
+               </div>
+             </div>
+          )}
+
+          {/* Dynamic Modals */}
+          {activeModal && activeModal.type === 'rule' && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
               <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`} onClick={e => e.stopPropagation()}>
                 <h3 className={`text-lg font-orbitron font-black uppercase mb-3 ${theme.textPrimary}`}>
@@ -1832,6 +1846,20 @@
               </div>
             </div>
           )}
+
+          {activeModal && activeModal.type === 'clear' && (
+             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
+               <div className={`max-w-sm w-full p-6 rounded-xl border border-rose-500/50 bg-[#0f172a] shadow-2xl text-center`} onClick={e => e.stopPropagation()}>
+                 <div className="text-4xl mb-4">⚠️</div>
+                 <h3 className={`text-xl font-orbitron font-black uppercase mb-2 text-rose-400`}>Clear Army Draft</h3>
+                 <p className="text-sm leading-relaxed text-slate-300 mb-6">Are you sure you want to clear your current roster and hand? Unsaved changes will be lost.</p>
+                 <div className="flex gap-3 justify-center">
+                    <button onClick={() => setActiveModal(null)} className={`px-4 py-2 rounded text-sm font-bold uppercase tracking-widest bg-slate-800 text-white hover:bg-slate-700`}>Cancel</button>
+                    <button onClick={clearArmy} className={`px-4 py-2 rounded text-sm font-bold uppercase tracking-widest bg-rose-600 text-white hover:bg-rose-500`}>Clear Army</button>
+                 </div>
+               </div>
+             </div>
+          )}
         </div>
       );
     };
@@ -1840,6 +1868,35 @@
       const [faction, setFaction] = useState("Protoss");
       const [activeTab, setActiveTab] = useState("builder");
       const [isPlayMode, setIsPlayMode] = useState(false);
+      const [cloudUser, setCloudUser] = useState(null);
+
+      useEffect(() => {
+          const initAuth = async () => {
+              const { fbAuth, fbHelpers } = window;
+              if (!fbAuth) return;
+              const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+              try {
+                  if (token) {
+                      await fbHelpers.signInWithCustomToken(fbAuth, token);
+                  } else {
+                      await fbHelpers.signInAnonymously(fbAuth);
+                  }
+              } catch (e) {
+                  console.error("Auth error", e);
+              }
+              
+              fbHelpers.onAuthStateChanged(fbAuth, (u) => {
+                  setCloudUser(u);
+              });
+          };
+
+          if (window.fbDb && window.fbAuth) {
+              initAuth();
+          } else {
+              window.addEventListener('firebase-ready', initAuth);
+              return () => window.removeEventListener('firebase-ready', initAuth);
+          }
+      }, []);
 
       const theme = THEMES[faction];
 
@@ -1869,6 +1926,10 @@
                  </button>
                </div>
             </div>
+            <div className="p-4 border-t border-white/10 flex items-center gap-3">
+               <div className={`w-2 h-2 rounded-full ${cloudUser ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-rose-500 animate-pulse'}`}></div>
+               <span className="text-xs uppercase font-bold tracking-widest text-slate-400">{cloudUser ? 'Cloud Synced' : 'Offline Mode'}</span>
+            </div>
           </div>
 
           {/* MAIN CONTENT AREA */}
@@ -1885,10 +1946,10 @@
               </div>
             )}
             
-            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} />}
+            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} setSelectedFaction={setFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} cloudUser={cloudUser} />}
             {activeTab === "missions" && <MissionsView theme={theme} />}
             {activeTab === "keywords" && <KeywordsView theme={theme} />}
-            {activeTab === "rules" && <RulesView theme={theme} />}
+            {activeTab === "rules" && <RulesView theme={theme} cloudUser={cloudUser} />}
           </div>
 
           {/* MOBILE BOTTOM APP BAR */}
