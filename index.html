@@ -84,7 +84,8 @@
       "Artefact Hunt": { start: 5, esc: 2 },
       "Divide and Conquer": { start: 8, esc: 2 },
       "Gather the Resources": { start: 6, esc: 2 },
-      "Supply Drop": { start: 6, esc: 2 }
+      "Supply Drop": { start: 6, esc: 2 },
+      "Fire in the Sky": { start: 5, esc: 3 }
     };
 
     const MISSION_CARDS = [
@@ -159,6 +160,18 @@
         parameters: "All Mission Markers are Deactivated.\nStart of the Round (2-4): Randomly determine one Deactivated Mission Marker (1,2,5) and flip it to its Activated side.",
         scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: For each activated Controlled Mission Marker, gain VPs equal to the Game Round number in which that Mission Marker was Activated and remove it.",
         additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
+      },
+      {
+        name: "Fire in the Sky", type: "Standard", supply: 5, escalation: "+3 Supply", gameLength: 5,
+        parameters: "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.",
+        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP",
+        additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
+      },
+      {
+        name: "Fire in the Sky", type: "Skirmish", supply: 3, escalation: "+2 Supply", gameLength: 5,
+        parameters: "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.",
+        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP",
+        additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
       }
     ];
 
@@ -1262,6 +1275,7 @@
       
       const [activeModal, setActiveModal] = useState(null);
       const [configUnitData, setConfigUnitData] = useState(null);
+      const [showMissionDetails, setShowMissionDetails] = useState(false);
 
       const [showSaveModal, setShowSaveModal] = useState(false);
       const [showLoadModal, setShowLoadModal] = useState(false);
@@ -1389,8 +1403,12 @@
       const totalSupply = roster.reduce((sum, unit) => sum + getUnitSupply(unit), 0);
       const activeSupply = roster.filter(u => u.deployed).reduce((sum, unit) => sum + getUnitSupply(unit), 0);
       
-      const activeMission = MISSIONS_DATABASE[matchData.mission] || MISSIONS_DATABASE["Frontlines"];
-      const supplyPool = matchData.round === 5 ? Infinity : (activeMission.start + (matchData.round - 1) * activeMission.esc);
+      const activeMissionType = scale === "Skirmish" ? "Skirmish" : "Standard";
+      let activeMissionCard = MISSION_CARDS.find(m => m.name === matchData.mission && m.type === activeMissionType);
+      if (!activeMissionCard) activeMissionCard = MISSION_CARDS.find(m => m.name === matchData.mission) || MISSION_CARDS[0];
+
+      const escValue = parseInt((activeMissionCard.escalation.match(/\d+/) || [0])[0], 10) || 0;
+      const supplyPool = matchData.round > activeMissionCard.gameLength ? Infinity : (activeMissionCard.supply + (matchData.round - 1) * escValue);
       const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
 
       const parseSlots = (providesStr) => {
@@ -1644,7 +1662,6 @@
                 </div>
                 <div className="flex gap-2 items-center">
                   {(() => {
-                      const isSlotAvailable = editId ? true : (usedSlots[unit.slot] < grantedSlots[unit.slot] || unit.slot === "Summoned");
                       return (
                          <>
                             {!isSlotAvailable && <span className="text-[10px] uppercase font-bold text-rose-500 mr-2 text-right leading-tight">No {unit.slot}<br/>Slots</span>}
@@ -1699,7 +1716,7 @@
                   </select>
                 </div>
               )}
-              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-3 md:px-6 py-1.5 md:py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg text-[10px] md:text-base ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
+              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-4 md:px-6 py-1.5 md:py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg text-xs md:text-base ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
                 {isPlayMode ? 'EXIT PLAY MODE' : 'ENTER PLAY MODE'}
               </button>
             </div>
@@ -1826,15 +1843,58 @@
               )}
 
               {isPlayMode && (
+                <div className={`flex flex-col ${theme.panelBg} p-4 md:p-5 rounded-xl border ${theme.border} shadow-xl mb-4`}>
+                  <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowMissionDetails(!showMissionDetails)}>
+                     <div className="flex items-center gap-3">
+                        <h2 className="text-lg md:text-xl font-orbitron font-bold uppercase text-white">Mission: {activeMissionCard.name}</h2>
+                        <span className="bg-white/10 text-slate-300 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-widest hidden sm:block">{activeMissionCard.type} Level</span>
+                     </div>
+                     <span className="text-slate-400">{showMissionDetails ? '▼' : '▶'}</span>
+                  </div>
+                  
+                  {showMissionDetails && (
+                     <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+                        <div>
+                           <label className="text-xs uppercase font-bold tracking-widest text-slate-400 mb-1 block">Select Active Mission</label>
+                           <select 
+                             value={matchData.mission} 
+                             onChange={(e) => updateMatch('mission', e.target.value)}
+                             className="w-full md:w-1/2 bg-black/60 border border-white/20 rounded p-2 text-sm text-white outline-none focus:border-sky-500"
+                           >
+                             {[...new Set(MISSION_CARDS.map(m => m.name))].map(name => (
+                               <option key={name} value={name}>{name}</option>
+                             ))}
+                           </select>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                           <div className="bg-black/40 border border-white/10 rounded p-3">
+                             <h4 className="font-orbitron font-bold text-sky-400 uppercase mb-2 text-xs border-b border-white/10 pb-1">Parameters</h4>
+                             <p className="text-sm text-slate-300 whitespace-pre-wrap leading-tight">{activeMissionCard.parameters}</p>
+                           </div>
+                           <div className="bg-black/40 border border-white/10 rounded p-3">
+                             <h4 className="font-orbitron font-bold text-sky-400 uppercase mb-2 text-xs border-b border-white/10 pb-1">Scoring Conditions</h4>
+                             <p className="text-sm text-slate-300 whitespace-pre-wrap leading-tight">{activeMissionCard.scoring}</p>
+                           </div>
+                           <div className="bg-black/40 border border-white/10 rounded p-3">
+                             <h4 className="font-orbitron font-bold text-sky-400 uppercase mb-2 text-xs border-b border-white/10 pb-1">Additional Conditions</h4>
+                             <p className="text-sm text-slate-300 whitespace-pre-wrap leading-tight">{activeMissionCard.additional}</p>
+                           </div>
+                        </div>
+                     </div>
+                  )}
+                </div>
+              )}
+
+              {isPlayMode && (
                 <div className={`p-4 md:p-5 rounded-xl border ${theme.border} ${theme.panelBg} grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 shadow-xl`}>
                   <div className="flex flex-col gap-3 bg-black/40 border border-white/10 rounded-lg p-4 shadow-inner">
                      <div className="flex justify-between items-center">
                         <span className="text-xs uppercase font-bold tracking-widest text-slate-400">Round</span>
-                        <span className="text-2xl font-orbitron font-black text-white">{matchData.round}<span className="text-slate-500 text-sm">/5</span></span>
+                        <span className="text-2xl font-orbitron font-black text-white">{matchData.round}<span className="text-slate-500 text-sm">/{activeMissionCard.gameLength}</span></span>
                      </div>
                      <div className="flex gap-2 w-full mt-2">
                        <button onClick={() => updateMatch('round', Math.max(1, matchData.round - 1))} className="w-10 rounded bg-white/10 hover:bg-white/20 font-bold flex items-center justify-center text-slate-300 transition-colors">◁</button>
-                       <button onClick={() => updateMatch('round', Math.min(5, matchData.round + 1))} className={`flex-1 py-2 rounded font-bold text-sm uppercase tracking-wider shadow-md ${theme.accent}`}>Advance Round ➔</button>
+                       <button onClick={() => updateMatch('round', Math.min(activeMissionCard.gameLength, matchData.round + 1))} className={`flex-1 py-2 rounded font-bold text-sm uppercase tracking-wider shadow-md ${theme.accent}`}>Advance Round ➔</button>
                      </div>
                   </div>
 
