@@ -418,219 +418,6 @@
       "Timing Push": "The active Zergling Unit Deploys from any table edge that is not a Player's Entry Edge. This action must end more than 10\" away from any Enemy model."
     };
 
-    const ABILITY_MAP = {
-      "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Devastating Charge": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      
-      "Commander": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Phase Prism": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Hierarch's Stand": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Lightning Dash": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
-
-      "Charge": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Zealot)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "My Life for Aiur": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Leg Enhancements (Zealot)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Zealous Round": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
-      "We Stand as One": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-      
-      "One With the Shadows": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Prophetic Vision": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Sentenced to Death": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Void Prison": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Void Blink": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Zeratul)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Shadow Strike": { type: "ACTIVE", cost: "1 PE", phase: "COMBAT PHASE" },
-
-      "Improved Barrier": { type: "REACTION", cost: "0 PE", phase: "ANY PHASE" },
-      "Indomitable": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Shield Overcharge": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Fury Unyielding": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "For the Ancients": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Psionic Presence": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Psionic Transfer": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Resonating Glaives": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
-      "Guidance": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Path of Shadows (Watchers)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
-      "Nerazim Farsight": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      
-      "Structure": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Khalai Ingenuity": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Warp Conduit": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      
-      "Restoration": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
-      "Force Field": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Guardian Shield": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Solid-Field Projectors": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Hallucination": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
-      
-      "Squadron": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Blink": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Path of Shadows (Stalker)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
-      "Fury of the Nerazim": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Shield Overcharge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Leg Enhancements (Praetor)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
-      "Devastating Charge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Titan Killers": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Precognition": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-
-      "Rapid Ingress": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Ready for Pickup?": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Tactical Retreat": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Terran Tenacity": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Advanced Training": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Vehicle Plating": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Vehicle Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Go! Go! Go!": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Armed and Ready": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Let's Have a Blast!": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Strap in!": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Ready For Dust-off": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Infantry Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Infantry Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Field Repair": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Pound 'em Flat!": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "ComSat Station": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Scanner Sweep": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Additional Supply Depots": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Target Lock": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Devastating Charge (Goliath)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Ares-Class Targeting System": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Freedom Fighters": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Orders": { type: "ACTIVE", cost: "X CP", phase: "MOVEMENT PHASE" },
-      "Stimpack (Marine)": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Concussive Shells": { type: "REACTION", cost: "1 CP", phase: "ASSAULT PHASE" },
-      "Veteran of Tarsonis": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Kinetic Foam": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Laser Targeting Systems": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Combat Shield": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Slugthrower": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Grenades - Frag": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Life Support": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
-      "Restoration (Medic)": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
-      "Medpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Optical Flare": { type: "ACTIVE", cost: "2 CP", phase: "MOVEMENT PHASE" },
-      "Advanced Medic Facilities": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "A-13 Flash Grenade Launcher": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Stabilizer Medpacks": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Point Defense Laser": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Gliding": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Raiders Roll!": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Rapid Reinforcements": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Large": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Heavy Plating": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Point Blank": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Aftershock Rounds": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Mode Transformation": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
-      "Coordinated Strike": { type: "ACTIVE", cost: "0 CP", phase: "MOVEMENT PHASE" },
-      "Shaped Blast": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
-      "Smart Shells": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
-
-      "Dae'Uhl": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Mass Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Pylon Warp-In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Bound by the Khala": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Might Of The Nerazim": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Darkness Descends": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Ground Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Ground Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Zealous Charge": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Quick Strikes": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Ancient Pride": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
-      "Strategic Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Surveillance": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Gravitic Boosters": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
-      "Photon Overcharge": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Guardian Shell": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Plasma Shields": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Veil of Shadows": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Weapons of the Firstborn": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Personal Transport": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Anakh Su'n": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Warp In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Phase": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Warp Conduit": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      
-      "Wild Mutation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
-      "Zerg Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Omega Network": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Brood Instinct": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Rapid Burrowing": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-
-      "Burrow": { type: "ACTIVE", cost: "2 BM", phase: "ANY PHASE" },
-      "Roachling Infestation": { type: "ACTIVE", cost: "2 BM", phase: "MOVEMENT PHASE" },
-      "Regeneration": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Roach)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Ravager)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Tunneling Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Burrow Ambush": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Glial Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Hydriodic Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Squadron (Hydralisk)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Lunge": { type: "REACTION", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Ancillary Carapace": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Lurking": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Grooved Spines": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Crushing Grip": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Mutating Carapace": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Leaping Strike": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Kerrigan)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Raptor Strain": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Leap": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Adrenal Overload": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Kerrigan Swarm Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Detection": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Source of Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Omega Network (Unit)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Spawn Creep Tumor": { type: "ACTIVE", cost: "1 BM", phase: "ANY PHASE" },
-      "Transfusion": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
-      "Restoration (Queen)": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
-      "Psionic Link": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Devastating Charge (Queen)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Creep Speed": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Domineering Presence": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Metabolic Boost": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Adrenal Glands": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
-
-      "Corrosive Bile": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Deep Tunnel": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Bloated Bile Ducts": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Potent Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Underdeveloped Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-
-      "Zergling Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
-      "Debilitating Saliva": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
-      "Devastating Charge (Swarmling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Vile)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Devastating Charge (Zergling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-
-      "Speed on Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Living Glob of Tissue": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Creep Removal": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
-      "Spawn Larva": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Ravager Morph": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Carapace": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
-      "Extended Claws": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Lie in Wait": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Creep Spread": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Missile Attacks": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Predation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
-      "Malevolent Matriarch": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Ventral Sacs": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Excrete Creep": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Oversight Mode": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
-      "Pneumatized Carapace": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
-      "Nasty Surprise": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
-      "Feral Rage": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
-      "Timing Push": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" }
-    };
-
     const WEAPON_MAP = {
       "Glaive Strike": { name: "Glaive Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PIERCE Light (2)", phase: "COMBAT PHASE" },
       "Left Phase Disruptor": { name: "Left Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3)", phase: "ASSAULT PHASE" },
@@ -951,317 +738,153 @@
       );
     };
 
-    const MissionsView = ({ theme }) => {
-      const [filter, setFilter] = useState("All");
+    const UNNView = ({ theme, cloudUser }) => {
+      const [posts, setPosts] = useState([]);
+      const [adminUid, setAdminUid] = useState(null);
+      const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
-      const filteredMissions = MISSION_CARDS.filter(m => filter === "All" || m.type === filter);
-
-      return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
-            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Mission Cards</h2>
-            
-            <div className="flex bg-black/60 border border-white/20 rounded-lg overflow-hidden shadow-inner p-1 w-full md:w-auto">
-               {["All", "Standard", "Skirmish"].map(f => (
-                 <button 
-                   key={f}
-                   onClick={() => setFilter(f)}
-                   className={`flex-1 md:flex-none px-4 py-2 text-sm font-bold uppercase transition-colors rounded ${filter === f ? theme.accent : 'text-slate-400 hover:text-white'}`}
-                 >
-                   {f}
-                 </button>
-               ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8 pb-10">
-             {filteredMissions.map((mission, idx) => (
-                <div key={idx} className="bg-slate-900 border border-sky-500/30 rounded-xl overflow-hidden flex flex-col relative text-slate-200 shadow-[0_0_20px_rgba(14,165,233,0.1)] h-full">
-                   
-                   {/* Card Header */}
-                   <div className="bg-gradient-to-r from-sky-950 to-slate-900 text-white flex justify-between items-stretch border-b border-sky-500/30 relative z-10">
-                      <div className="p-3 md:p-4 pl-5 flex flex-col justify-center flex-1">
-                         <h3 className="font-orbitron font-black text-2xl md:text-3xl uppercase tracking-wide text-sky-400 drop-shadow-md leading-tight">{mission.name}</h3>
-                         {mission.type === "Skirmish" && <div className="font-orbitron font-bold text-lg text-amber-400 mt-1">(SKIRMISH)</div>}
-                      </div>
-                      <div className="flex shrink-0 border-l border-sky-500/30">
-                         <div className="bg-sky-900/40 text-sky-300 flex flex-col items-center justify-center px-4 md:px-6 py-2 border-r border-sky-500/30 min-w-[70px] md:min-w-[90px] backdrop-blur-sm">
-                            <span className="font-black text-3xl md:text-4xl leading-none -mb-1">{mission.supply}</span>
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-sky-400 mt-1">Supply</span>
-                         </div>
-                         <div className="bg-black/60 text-white flex flex-col items-center justify-center px-4 md:px-6 py-2 min-w-[100px] md:min-w-[120px]">
-                            <span className="font-black text-xl md:text-2xl leading-none whitespace-nowrap text-amber-300">{mission.escalation}</span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">per round</span>
-                         </div>
-                      </div>
-                   </div>
-
-                   {/* Game Length flag */}
-                   <div className="absolute top-[75px] md:top-[85px] right-2 md:right-4 z-20 drop-shadow-lg">
-                     <div className="bg-amber-500 text-black font-black text-xs md:text-sm px-6 py-1.5 uppercase tracking-widest border border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.5)]" style={{ clipPath: 'polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%)' }}>
-                        Game Length: {mission.gameLength}
-                     </div>
-                   </div>
-
-                   {/* Card Body */}
-                   <div className="p-4 md:p-6 pt-10 md:pt-12 flex-1 flex flex-col gap-6 md:gap-7">
-                      
-                      {/* Mission Parameters */}
-                      <div className="bg-black/40 border border-white/10 rounded-lg p-4 pt-6 relative shadow-inner">
-                         <div className="absolute -top-3 left-4 bg-sky-900 text-sky-100 px-3 py-0.5 rounded shadow-md border border-sky-500/50">
-                            <span className="text-[10px] font-black uppercase tracking-wider">Mission Parameters</span>
-                         </div>
-                         <div className="text-sm md:text-base text-slate-300 whitespace-pre-wrap leading-relaxed">
-                            {mission.parameters}
-                         </div>
-                      </div>
-
-                      {/* Scoring Conditions */}
-                      <div className="bg-black/40 border border-white/10 rounded-lg p-4 pt-6 relative shadow-inner">
-                         <div className="absolute -top-3 left-4 bg-sky-900 text-sky-100 px-3 py-0.5 rounded shadow-md border border-sky-500/50">
-                            <span className="text-[10px] font-black uppercase tracking-wider">Scoring Conditions</span>
-                         </div>
-                         <div className="text-sm md:text-base text-slate-300 whitespace-pre-wrap leading-relaxed">
-                            {mission.scoring}
-                         </div>
-                      </div>
-
-                      {/* Additional Conditions */}
-                      <div className="bg-black/40 border border-white/10 rounded-lg p-4 pt-6 relative shadow-inner mt-auto">
-                         <div className="absolute -top-3 left-4 bg-sky-900 text-sky-100 px-3 py-0.5 rounded shadow-md border border-sky-500/50">
-                            <span className="text-[10px] font-black uppercase tracking-wider">Additional Conditions</span>
-                         </div>
-                         <div className="text-sm md:text-base text-slate-300 whitespace-pre-wrap leading-relaxed">
-                            {mission.additional}
-                         </div>
-                      </div>
-
-                   </div>
-                   
-                   {/* Footer */}
-                   <div className="bg-black/60 border-t border-sky-500/20 px-4 py-2 flex justify-between items-center text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider z-10 relative mt-auto">
-                      <span>Custom Mission Datapad</span>
-                      <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded">{mission.type} Level</span>
-                   </div>
-                </div>
-             ))}
-          </div>
-        </div>
-      );
-    };
-
-    const KeywordsView = ({ theme }) => {
-      const [searchQuery, setSearchQuery] = useState("");
-
-      const getCategory = (ruleName) => {
-        const lowerRule = ruleName.toLowerCase();
-        const weaponKeys = ['armoured', 'light', 'anti-evade', 'precision', 'pierce', 'indirect fire', 'sidearm', 'long range', 'instant', 'critical hit', 'burst fire', 'locked in', 'pinpoint', 'concentrated fire'];
-        if (weaponKeys.some(k => lowerRule.includes(k))) return 'weapons';
-        
-        let usedByProtoss = false, usedByTerran = false, usedByZerg = false;
-        
-        UNITS_DATABASE.forEach(u => {
-           if (u.abilities && u.abilities.includes(ruleName)) {
-               if(u.faction === 'Protoss') usedByProtoss = true;
-               if(u.faction === 'Terran') usedByTerran = true;
-               if(u.faction === 'Zerg') usedByZerg = true;
-           }
-        });
-        
-        TACTICAL_CARDS.forEach(c => {
-           if (c.abilities && c.abilities.includes(ruleName)) {
-               if(c.faction === 'Protoss') usedByProtoss = true;
-               if(c.faction === 'Terran') usedByTerran = true;
-               if(c.faction === 'Zerg') usedByZerg = true;
-           }
-        });
-        
-        if (usedByProtoss && !usedByTerran && !usedByZerg) return 'protoss';
-        if (!usedByProtoss && usedByTerran && !usedByZerg) return 'terran';
-        if (!usedByProtoss && !usedByTerran && usedByZerg) return 'zerg';
-        
-        if (lowerRule.includes('protoss') || lowerRule.includes('khala') || lowerRule.includes('nerazim') || lowerRule.includes('psionic')) return 'protoss';
-        if (lowerRule.includes('terran') || lowerRule.includes('medic') || lowerRule.includes('marine')) return 'terran';
-        if (lowerRule.includes('zerg') || lowerRule.includes('creep') || lowerRule.includes('burrow')) return 'zerg';
-
-        return 'mechanics';
-      };
-
-      const sortedKeywords = useMemo(() => {
-        return Object.entries(RULES_DICTIONARY).sort((a, b) => a[0].localeCompare(b[0]));
-      }, []);
-
-      const categorizedData = useMemo(() => {
-        const data = { weapons: [], mechanics: [], protoss: [], terran: [], zerg: [] };
-        sortedKeywords.forEach(([key, desc]) => {
-            const cat = getCategory(key);
-            data[cat].push({ key, desc });
-        });
-        return data;
-      }, [sortedKeywords]);
-
-      const matchSearch = (text) => text.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const filteredData = {
-        weapons: categorizedData.weapons.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
-        mechanics: categorizedData.mechanics.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
-        terran: categorizedData.terran.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
-        protoss: categorizedData.protoss.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
-        zerg: categorizedData.zerg.filter(r => matchSearch(r.key) || matchSearch(r.desc))
-      };
-
-      const RuleBlock = ({ title, data, icon, color }) => {
-        if (data.length === 0) return null;
-        return (
-          <div className="mb-10">
-             <h2 className={`text-2xl font-black uppercase font-orbitron mb-4 border-b border-white/10 pb-2 ${color} flex items-center gap-3`}><span className="text-3xl">{icon}</span> {title}</h2>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {data.map(r => (
-                  <div key={r.key} className="bg-black/40 border border-white/10 p-4 rounded-lg shadow-md hover:border-white/30 transition-colors">
-                    <h3 className="font-orbitron font-bold text-sm text-white uppercase mb-2">{r.key}</h3>
-                    <p className="text-xs text-slate-300 leading-relaxed">{r.desc}</p>
-                  </div>
-                ))}
-             </div>
-          </div>
-        );
-      };
-
-      return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
-            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Keywords Library</h2>
-            
-            <div className="flex-1 w-full max-w-md relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search keywords or abilities..."
-                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-             {Object.values(filteredData).every(arr => arr.length === 0) && (
-                 <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
-                    No keywords found.
-                 </div>
-             )}
-             
-             <RuleBlock title="Weapon Traits" data={filteredData.weapons} icon="🎯" color="text-rose-400" />
-             <RuleBlock title="Universal Mechanics" data={filteredData.mechanics} icon="⚙️" color="text-slate-300" />
-             <RuleBlock title="Terran Abilities" data={filteredData.terran} icon="🦅" color="text-blue-400" />
-             <RuleBlock title="Protoss Abilities" data={filteredData.protoss} icon="💠" color="text-amber-400" />
-             <RuleBlock title="Zerg Abilities" data={filteredData.zerg} icon="🪲" color="text-fuchsia-400" />
-          </div>
-        </div>
-      );
-    };
-
-    const RulesView = ({ theme, cloudUser }) => {
-      const [searchQuery, setSearchQuery] = useState("");
-      const [customRules, setCustomRules] = useState([]);
-      const [newRuleTitle, setNewRuleTitle] = useState("");
-      const [newRuleDesc, setNewRuleDesc] = useState("");
+      const [newTitle, setNewTitle] = useState("");
+      const [newCategory, setNewCategory] = useState("Game News");
+      const [newContent, setNewContent] = useState("");
 
       useEffect(() => {
         if (!cloudUser || !window.fbDb) return;
-        const loadRules = async () => {
-            const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
-            try {
-                const snap = await window.fbHelpers.getDoc(docRef);
-                if (snap.exists()) {
-                    setCustomRules(JSON.parse(snap.data().rulesArray));
-                }
-            } catch(e) {}
+        
+        const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
+        const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setAdminUid(docSnap.data().uid);
+          } else {
+            setAdminUid(null);
+          }
+          setIsCheckingAdmin(false);
+        }, (err) => console.error(err));
+
+        const postsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts');
+        const unsubPosts = window.fbHelpers.onSnapshot(postsRef, (snap) => {
+          const fetched = [];
+          snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
+          fetched.sort((a, b) => b.createdAt - a.createdAt);
+          setPosts(fetched);
+        }, (err) => console.error(err));
+
+        return () => {
+          unsubAdmin();
+          unsubPosts();
         };
-        loadRules();
       }, [cloudUser]);
 
-      const saveCustomRules = async (rulesToSave) => {
+      const claimAdmin = async () => {
         if (!cloudUser || !window.fbDb) return;
-        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
-        try {
-            await window.fbHelpers.setDoc(docRef, { rulesArray: JSON.stringify(rulesToSave) });
-        } catch(e) {}
+        const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
+        await window.fbHelpers.setDoc(adminRef, { uid: cloudUser.uid });
       };
 
-      const handleAddRule = (e) => {
+      const handleAddPost = async (e) => {
         e.preventDefault();
-        if (!newRuleTitle.trim() || !newRuleDesc.trim()) return;
-        const updatedRules = [...customRules, { title: newRuleTitle.trim(), desc: newRuleDesc.trim() }];
-        setCustomRules(updatedRules);
-        saveCustomRules(updatedRules);
-        setNewRuleTitle("");
-        setNewRuleDesc("");
+        if (!newTitle.trim() || !newContent.trim() || !cloudUser || !window.fbDb) return;
+        
+        const newPost = {
+          title: newTitle.trim(),
+          category: newCategory,
+          author: "UNN Command",
+          content: newContent.trim(),
+          date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+          createdAt: Date.now()
+        };
+
+        const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts');
+        await window.fbHelpers.addDoc(colRef, newPost);
+        
+        setNewTitle("");
+        setNewContent("");
       };
 
-      const handleDeleteRule = (idx) => {
-        const updatedRules = customRules.filter((_, i) => i !== idx);
-        setCustomRules(updatedRules);
-        saveCustomRules(updatedRules);
+      const handleDeletePost = async (id) => {
+        if (!cloudUser || !window.fbDb) return;
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts', id);
+        await window.fbHelpers.deleteDoc(docRef);
       };
 
-      const matchSearch = (text) => text.toLowerCase().includes(searchQuery.toLowerCase());
-      const filteredCustom = customRules.filter(r => matchSearch(r.title) || matchSearch(r.desc));
+      const isAdmin = cloudUser && adminUid === cloudUser.uid;
+      const canClaim = !isCheckingAdmin && !adminUid && cloudUser;
 
       return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-5xl mx-auto w-full pb-24 md:pb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
-            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Game Rules</h2>
+            <h2 className={`text-3xl font-black uppercase font-orbitron flex items-center gap-3 ${theme.textPrimary}`}>
+              <span className="text-4xl">📡</span> Universal News Network
+            </h2>
             
-            <div className="flex-1 w-full max-w-md relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search rules..."
-                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner"
-              />
-            </div>
+            {canClaim && (
+              <button onClick={claimAdmin} className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg animate-pulse">
+                 Claim Admin Rights
+              </button>
+            )}
+            {isAdmin && (
+              <span className="text-xs uppercase font-bold text-emerald-400 tracking-widest border border-emerald-500/50 bg-emerald-900/30 px-3 py-1 rounded">Admin Mode Active</span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className="xl:col-span-2 space-y-6">
-                <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
-                    Core Rulebook Data Not Yet Assimilated.<br/><span className="text-xs text-slate-600">Awaiting transmission...</span>
-                </div>
-
-                {filteredCustom.length > 0 && (
-                    <div>
-                        <h2 className={`text-xl font-black uppercase font-orbitron mb-4 border-b border-white/10 pb-2 text-sky-300`}>Custom Rules & Notes</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {filteredCustom.map((r, idx) => (
-                            <div key={idx} className="bg-sky-950/20 border border-sky-900/50 p-4 rounded-lg shadow-md relative group">
-                            <div className="flex justify-between items-start mb-1">
-                                <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">{r.title}</h3>
-                                <button onClick={() => handleDeleteRule(idx)} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
-                            </div>
-                            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{r.desc}</p>
-                            </div>
-                        ))}
-                        </div>
+            <div className={`space-y-6 ${isAdmin ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
+              {posts.length === 0 && (
+                 <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
+                    UNN Broadcast System Online.<br/><span className="text-xs text-slate-600">Awaiting transmissions...</span>
+                 </div>
+              )}
+              
+              {posts.map(post => (
+                <div key={post.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden shadow-lg transition-transform hover:border-white/20 relative group">
+                  <div className="bg-gradient-to-r from-slate-900 to-black p-4 md:p-5 border-b border-white/10">
+                    <div className="flex justify-between items-start gap-4 flex-wrap mb-2">
+                      <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide">{post.title}</h3>
+                      <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest shrink-0">
+                        {post.category}
+                      </span>
                     </div>
-                )}
+                    <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-500">
+                      <span>{post.date}</span>
+                      <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
+                      <span>By: <span className="text-slate-300">{post.author}</span></span>
+                    </div>
+                  </div>
+                  <div className="p-4 md:p-5">
+                    <p className="text-sm md:text-base text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {post.content}
+                    </p>
+                  </div>
+                  {isAdmin && (
+                     <button onClick={() => handleDeletePost(post.id)} className="absolute top-4 right-4 bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                        Delete
+                     </button>
+                  )}
+                </div>
+              ))}
             </div>
 
-            <div className="xl:col-span-1">
-                <form onSubmit={handleAddRule} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
-                <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Add Custom Rule</h3>
-                {!cloudUser && <p className="text-xs text-rose-400 mb-2">Cloud Sync is offline. Your rules will not be saved permanently.</p>}
-                <div>
-                    <input type="text" value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)} placeholder="Rule Title (e.g., Cover Mechanics)" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" />
-                </div>
-                <div>
-                    <textarea value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)} placeholder="Rule details..." rows="5" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea>
-                </div>
-                <button type="submit" disabled={!cloudUser} className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${cloudUser ? theme.accent : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Save Rule</button>
+            {isAdmin && (
+              <div className="xl:col-span-1">
+                <form onSubmit={handleAddPost} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
+                  <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Publish Broadcast</h3>
+                  <div>
+                      <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Headline..." className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" />
+                  </div>
+                  <div>
+                      <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500">
+                         <option value="Game News">Game News</option>
+                         <option value="App Update">App Update</option>
+                         <option value="Content Update">Content Update</option>
+                         <option value="Intel Report">Intel Report</option>
+                      </select>
+                  </div>
+                  <div>
+                      <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Message content..." rows="8" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea>
+                  </div>
+                  <button type="submit" className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${theme.accent}`}>Broadcast to UNN</button>
                 </form>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -1408,7 +1031,7 @@
       if (!activeMissionCard) activeMissionCard = MISSION_CARDS.find(m => m.name === matchData.mission) || MISSION_CARDS[0];
 
       const escValue = parseInt((activeMissionCard.escalation.match(/\d+/) || [0])[0], 10) || 0;
-      const supplyPool = matchData.round > activeMissionCard.gameLength ? Infinity : (activeMissionCard.supply + (matchData.round - 1) * escValue);
+      const supplyPool = matchData.round >= activeMissionCard.gameLength ? Infinity : (activeMissionCard.supply + (matchData.round - 1) * escValue);
       const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
 
       const parseSlots = (providesStr) => {
@@ -1716,7 +1339,7 @@
                   </select>
                 </div>
               )}
-              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-4 md:px-6 py-1.5 md:py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg text-xs md:text-base ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
+              <button onClick={() => setIsPlayMode(!isPlayMode)} className={`px-3 md:px-6 py-1.5 md:py-2 font-orbitron rounded font-black tracking-widest uppercase transition-all shadow-lg text-[10px] md:text-base ${isPlayMode ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/10 hover:bg-white/20'}`}>
                 {isPlayMode ? 'EXIT PLAY MODE' : 'ENTER PLAY MODE'}
               </button>
             </div>
@@ -2207,6 +1830,11 @@
       const [activeTab, setActiveTab] = useState("builder");
       const [isPlayMode, setIsPlayMode] = useState(false);
       const [cloudUser, setCloudUser] = useState(null);
+      const [isGuest, setIsGuest] = useState(false);
+      
+      const [profile, setProfile] = useState({ displayName: '' });
+      const [showProfileModal, setShowProfileModal] = useState(false);
+      const [editName, setEditName] = useState("");
 
       useEffect(() => {
           const initAuth = async () => {
@@ -2216,8 +1844,10 @@
               try {
                   if (token) {
                       await fbHelpers.signInWithCustomToken(fbAuth, token);
+                      setIsGuest(false);
                   } else {
                       await fbHelpers.signInAnonymously(fbAuth);
+                      setIsGuest(true);
                   }
               } catch (e) {
                   console.error("Auth error", e);
@@ -2235,6 +1865,24 @@
               return () => window.removeEventListener('firebase-ready', initAuth);
           }
       }, []);
+
+      useEffect(() => {
+          if (!cloudUser || !window.fbDb) return;
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+          const unsub = window.fbHelpers.onSnapshot(docRef, (snap) => {
+              if (snap.exists()) {
+                  setProfile(snap.data());
+              }
+          });
+          return () => unsub();
+      }, [cloudUser]);
+
+      const handleSaveProfile = async () => {
+          if (!cloudUser || !window.fbDb) return;
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+          await window.fbHelpers.setDoc(docRef, { displayName: editName.trim() }, { merge: true });
+          setShowProfileModal(false);
+      };
 
       const theme = THEMES[faction];
 
@@ -2262,11 +1910,22 @@
                  <button onClick={() => setActiveTab("rules")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "rules" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
                     <span className="text-lg">📖</span> Game Rules
                  </button>
+                 <button onClick={() => setActiveTab("unn")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all ${activeTab === "unn" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                    <span className="text-lg">📡</span> News
+                 </button>
                </div>
             </div>
-            <div className="p-4 border-t border-white/10 flex items-center gap-3">
-               <div className={`w-2 h-2 rounded-full ${cloudUser ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-rose-500 animate-pulse'}`}></div>
-               <span className="text-xs uppercase font-bold tracking-widest text-slate-400">{cloudUser ? 'Cloud Synced' : 'Offline Mode'}</span>
+            <div 
+               className="p-4 border-t border-white/10 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors"
+               onClick={() => { if(cloudUser && !isGuest) { setEditName(profile.displayName || ''); setShowProfileModal(true); } else if (isGuest) { alert("Profile editing is disabled in Guest Mode. Please log in."); } }}
+               title={cloudUser ? (isGuest ? "Guest Mode - Profiles Disabled" : "Edit Commander Profile") : "Cloud Offline"}
+            >
+               <div className={`w-2 h-2 rounded-full ${cloudUser ? (isGuest ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]') : 'bg-rose-500 animate-pulse'}`}></div>
+               <div className="flex flex-col">
+                  <span className={`text-xs uppercase font-bold tracking-widest ${isGuest ? 'text-amber-400' : 'text-slate-400'}`}>{cloudUser ? (isGuest ? 'Guest Session' : 'Account Synced') : 'Offline Mode'}</span>
+                  {cloudUser && !isGuest && <span className="text-[10px] text-sky-400 font-bold tracking-wider mt-0.5">{profile.displayName ? `Cmdr. ${profile.displayName}` : 'Set Commander Name'}</span>}
+                  {cloudUser && isGuest && <span className="text-[10px] text-amber-200/50 font-bold tracking-wider mt-0.5">Unregistered User</span>}
+               </div>
             </div>
           </div>
 
@@ -2288,6 +1947,7 @@
             {activeTab === "missions" && <MissionsView theme={theme} />}
             {activeTab === "keywords" && <KeywordsView theme={theme} />}
             {activeTab === "rules" && <RulesView theme={theme} cloudUser={cloudUser} />}
+            {activeTab === "unn" && <UNNView theme={theme} cloudUser={cloudUser} />}
           </div>
 
           {/* MOBILE BOTTOM APP BAR */}
@@ -2308,7 +1968,33 @@
                 <span className="text-xl mb-1">📖</span>
                 <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Rules</span>
              </button>
+             <button onClick={() => setActiveTab("unn")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "unn" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+                <span className="text-xl mb-1">📡</span>
+                <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">News</span>
+             </button>
           </div>
+
+          {/* Profile Modal */}
+          {showProfileModal && (
+             <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+               <div className="max-w-sm w-full p-6 rounded-xl border border-sky-500/50 bg-[#0f172a] shadow-2xl">
+                 <h3 className="text-xl font-orbitron font-black uppercase mb-2 text-sky-400">Commander Profile</h3>
+                 <p className="text-sm text-slate-300 mb-4">Set your global Commander Name. This will be used for commenting on UNN broadcasts and future multiplayer matchmaking.</p>
+                 <input 
+                   type="text" 
+                   value={editName} 
+                   onChange={e => setEditName(e.target.value)} 
+                   placeholder="Enter Commander Name..." 
+                   maxLength={20}
+                   className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 mb-6 font-orbitron uppercase tracking-wider"
+                 />
+                 <div className="flex gap-3 justify-end">
+                   <button onClick={() => setShowProfileModal(false)} className="px-4 py-2 rounded font-bold text-sm bg-slate-800 text-white hover:bg-slate-700 uppercase tracking-widest">Cancel</button>
+                   <button onClick={handleSaveProfile} className="px-6 py-2 rounded font-bold text-sm bg-sky-600 text-white hover:bg-sky-500 uppercase tracking-widest">Save Profile</button>
+                 </div>
+               </div>
+             </div>
+          )}
 
         </div>
       );
