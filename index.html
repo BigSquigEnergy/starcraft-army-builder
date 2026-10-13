@@ -414,6 +414,219 @@
       "Timing Push": "The active Zergling Unit Deploys from any table edge that is not a Player's Entry Edge. This action must end more than 10\" away from any Enemy model."
     };
 
+    const ABILITY_MAP = {
+      "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
+      "Devastating Charge": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      
+      "Commander": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Phase Prism": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Hierarch's Stand": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Lightning Dash": { type: "REACTION", cost: "1 PE", phase: "ASSAULT PHASE" },
+
+      "Charge": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Zealot)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "My Life for Aiur": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Leg Enhancements (Zealot)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Zealous Round": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
+      "We Stand as One": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
+      
+      "One With the Shadows": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Prophetic Vision": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
+      "Sentenced to Death": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Void Prison": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Void Blink": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Zeratul)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Shadow Strike": { type: "ACTIVE", cost: "1 PE", phase: "COMBAT PHASE" },
+
+      "Improved Barrier": { type: "REACTION", cost: "0 PE", phase: "ANY PHASE" },
+      "Indomitable": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Shield Overcharge": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
+      "Fury Unyielding": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "For the Ancients": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Psionic Presence": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Psionic Transfer": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Resonating Glaives": { type: "ACTIVE", cost: "1 PE", phase: "ASSAULT PHASE" },
+      "Guidance": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Path of Shadows (Watchers)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
+      "Nerazim Farsight": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      
+      "Structure": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Khalai Ingenuity": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Warp Conduit": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      
+      "Restoration": { type: "REACTION", cost: "1 PE", phase: "ANY PHASE" },
+      "Force Field": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Guardian Shield": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Solid-Field Projectors": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Hallucination": { type: "REACTION", cost: "0 PE", phase: "ASSAULT PHASE" },
+      
+      "Squadron": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Blink": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Path of Shadows (Stalker)": { type: "ACTIVE", cost: "1 PE", phase: "ANY PHASE" },
+      "Fury of the Nerazim": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Shield Overcharge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Leg Enhancements (Praetor)": { type: "ACTIVE", cost: "1 PE", phase: "MOVEMENT PHASE" },
+      "Devastating Charge (Praetor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Titan Killers": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
+      "Precognition": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
+
+      "Rapid Ingress": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Ready for Pickup?": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Tactical Retreat": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Terran Tenacity": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Advanced Training": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Vehicle Plating": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Vehicle Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Go! Go! Go!": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Armed and Ready": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Let's Have a Blast!": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Strap in!": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Ready For Dust-off": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Infantry Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Infantry Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Field Repair": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Pound 'em Flat!": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "ComSat Station": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Scanner Sweep": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Additional Supply Depots": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Target Lock": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
+      "Devastating Charge (Goliath)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Ares-Class Targeting System": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Freedom Fighters": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Orders": { type: "ACTIVE", cost: "X CP", phase: "MOVEMENT PHASE" },
+      "Stimpack (Marine)": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
+      "Concussive Shells": { type: "REACTION", cost: "1 CP", phase: "ASSAULT PHASE" },
+      "Veteran of Tarsonis": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Kinetic Foam": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Laser Targeting Systems": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Combat Shield": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
+      "Slugthrower": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Grenades - Frag": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Life Support": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
+      "Restoration (Medic)": { type: "REACTION", cost: "1 CP", phase: "ANY PHASE" },
+      "Medpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
+      "Optical Flare": { type: "ACTIVE", cost: "2 CP", phase: "MOVEMENT PHASE" },
+      "Advanced Medic Facilities": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "A-13 Flash Grenade Launcher": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Stabilizer Medpacks": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Point Defense Laser": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Gliding": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Raiders Roll!": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Rapid Reinforcements": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Large": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Heavy Plating": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Point Blank": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Aftershock Rounds": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Mode Transformation": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
+      "Coordinated Strike": { type: "ACTIVE", cost: "0 CP", phase: "MOVEMENT PHASE" },
+      "Shaped Blast": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
+      "Smart Shells": { type: "REACTION", cost: "0 CP", phase: "ASSAULT PHASE" },
+
+      "Dae'Uhl": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Mass Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Pylon Warp-In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Bound by the Khala": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Might Of The Nerazim": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Darkness Descends": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Ground Armor": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Ground Weapons": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Zealous Charge": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Quick Strikes": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
+      "Ancient Pride": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
+      "Strategic Recall": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Surveillance": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Gravitic Boosters": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
+      "Photon Overcharge": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Guardian Shell": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Plasma Shields": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Veil of Shadows": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Weapons of the Firstborn": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Personal Transport": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Anakh Su'n": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Warp In": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Phase": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Warp Conduit": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      
+      "Wild Mutation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
+      "Zerg Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Omega Network": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Brood Instinct": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Rapid Burrowing": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+
+      "Burrow": { type: "ACTIVE", cost: "2 BM", phase: "ANY PHASE" },
+      "Roachling Infestation": { type: "ACTIVE", cost: "2 BM", phase: "MOVEMENT PHASE" },
+      "Regeneration": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Roach)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Ravager)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Tunneling Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Burrow Ambush": { type: "PASSIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Glial Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Hydriodic Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Squadron (Hydralisk)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Lunge": { type: "REACTION", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Ancillary Carapace": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Lurking": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Grooved Spines": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Crushing Grip": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Mutating Carapace": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Leaping Strike": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Kerrigan)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Raptor Strain": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Leap": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Adrenal Overload": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Kerrigan Swarm Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Detection": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Source of Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Omega Network (Unit)": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Spawn Creep Tumor": { type: "ACTIVE", cost: "1 BM", phase: "ANY PHASE" },
+      "Transfusion": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
+      "Restoration (Queen)": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
+      "Psionic Link": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Devastating Charge (Queen)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Creep Speed": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Domineering Presence": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Metabolic Boost": { type: "ACTIVE", cost: "1 BM", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Raptor)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Adrenal Glands": { type: "PASSIVE", cost: "-", phase: "COMBAT PHASE" },
+
+      "Corrosive Bile": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Deep Tunnel": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Bloated Bile Ducts": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Potent Bile": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Underdeveloped Claws": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+
+      "Zergling Reconstitution": { type: "ACTIVE", cost: "1 BM", phase: "MOVEMENT PHASE" },
+      "Debilitating Saliva": { type: "REACTION", cost: "1 BM", phase: "ANY PHASE" },
+      "Devastating Charge (Swarmling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Vile)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Zergling)": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+
+      "Speed on Creep": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Living Glob of Tissue": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Creep Removal": { type: "PASSIVE", cost: "-", phase: "ANY PHASE" },
+      "Spawn Larva": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Ravager Morph": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Carapace": { type: "REACTION", cost: "-", phase: "ANY PHASE" },
+      "Extended Claws": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Lie in Wait": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Creep Spread": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Missile Attacks": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Predation": { type: "ACTIVE", cost: "-", phase: "ANY PHASE" },
+      "Malevolent Matriarch": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Ventral Sacs": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Excrete Creep": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Oversight Mode": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" },
+      "Pneumatized Carapace": { type: "REACTION", cost: "-", phase: "ASSAULT PHASE" },
+      "Nasty Surprise": { type: "ACTIVE", cost: "-", phase: "ASSAULT PHASE" },
+      "Feral Rage": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
+      "Timing Push": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" }
+    };
+
     const WEAPON_MAP = {
       "Glaive Strike": { name: "Glaive Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PIERCE Light (2)", phase: "COMBAT PHASE" },
       "Left Phase Disruptor": { name: "Left Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3)", phase: "ASSAULT PHASE" },
@@ -597,9 +810,9 @@
       );
     };
 
-    const TacticalCardUI = ({ card, isAdded, onToggle, theme, defaultOpen = false }) => {
+    const TacticalCardUI = ({ card, count = 0, isUnique = true, onAdd, onRemove, theme, defaultOpen = false }) => {
       const [isOpen, setIsOpen] = useState(defaultOpen);
-      useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
+      const isAdded = count > 0;
 
       return (
         <div className={`relative rounded-xl border flex flex-col overflow-hidden text-left transition-all hover:scale-[1.02] shadow-md shrink-0 w-full h-full ${isAdded ? theme.border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] ring-1 ring-white/10' : 'border-white/10 opacity-75 hover:opacity-100 bg-black/80'}`}>
@@ -615,13 +828,25 @@
                 {card.vespene > 0 && <span className={`font-mono text-sm font-black bg-black/40 px-2 py-0.5 rounded shadow-inner border border-black/20 ${isAdded ? 'text-emerald-400' : 'text-emerald-500'}`}>{card.vespene} Gas</span>}
                 <span className={`text-xs ${isAdded ? 'text-stone-800' : 'text-slate-400'}`}>{isOpen ? '▼' : '▶'}</span>
               </div>
-              {onToggle && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onToggle(); }}
-                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors shadow-sm ${isAdded ? 'bg-rose-600 text-white border-rose-700 hover:bg-rose-500' : 'bg-black/50 text-slate-200 border-white/20 hover:bg-black/80 hover:text-white'}`}
-                >
-                  {isAdded ? 'Drop Card' : 'Draft Card'}
-                </button>
+              
+              {/* Interaction Area */}
+              {onAdd && onRemove && (
+                 <div onClick={(e) => e.stopPropagation()}>
+                    {isUnique ? (
+                       <button 
+                         onClick={isAdded ? onRemove : onAdd}
+                         className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors shadow-sm ${isAdded ? 'bg-rose-600 text-white border-rose-700 hover:bg-rose-500' : 'bg-black/50 text-slate-200 border-white/20 hover:bg-black/80 hover:text-white'}`}
+                       >
+                         {isAdded ? 'Drop Card' : 'Draft Card'}
+                       </button>
+                    ) : (
+                       <div className="flex items-center gap-2 bg-black/40 rounded border border-white/20 p-0.5 shadow-inner">
+                          <button onClick={onRemove} disabled={count === 0} className={`w-6 h-6 flex items-center justify-center font-bold rounded ${count > 0 ? 'bg-rose-600/80 text-white hover:bg-rose-500' : 'text-slate-500 opacity-50 cursor-not-allowed'}`}>-</button>
+                          <span className={`font-bold text-xs w-3 text-center ${count > 0 ? 'text-white' : 'text-slate-400'}`}>{count}</span>
+                          <button onClick={onAdd} className="w-6 h-6 flex items-center justify-center font-bold rounded bg-sky-600/80 text-white hover:bg-sky-500">+</button>
+                       </div>
+                    )}
+                 </div>
               )}
             </div>
           </div>
@@ -1450,17 +1675,12 @@
                     </summary>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
                       {availableFactionCards.map(card => {
-                        const isAdded = tacticalCards.find(c => c.name === card.name);
+                        const isAdded = tacticalCards.some(c => c.name === card.name);
                         return (
                           <TacticalCardUI 
-                            key={card.name} card={card} isAdded={isAdded} theme={theme}
-                            onToggle={() => {
-                              if (isAdded) {
-                                setTacticalCards(prev => prev.filter(c => c.name !== card.name));
-                              } else {
-                                setTacticalCards(prev => [...prev.filter(c => c.type !== "Faction Card"), card]);
-                              }
-                            }} 
+                            key={card.name} card={card} count={isAdded ? 1 : 0} isUnique={true} theme={theme}
+                            onAdd={() => setTacticalCards(prev => [...prev.filter(c => c.type !== "Faction Card"), { ...card, rosterId: Date.now() + Math.random() }])}
+                            onRemove={() => setTacticalCards(prev => prev.filter(c => c.name !== card.name))}
                           />
                         )
                       })}
@@ -1474,17 +1694,27 @@
                     </summary>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto pr-2 mt-4 pb-2">
                       {availableTacticalCards.map(card => {
-                        const isAdded = tacticalCards.find(c => c.name === card.name);
+                        const count = tacticalCards.filter(c => c.name === card.name).length;
+                        const isUnique = card.tags && card.tags.includes("Unique");
                         return (
                           <TacticalCardUI 
-                            key={card.name} card={card} isAdded={isAdded} theme={theme}
-                            onToggle={() => {
-                              if (isAdded) {
-                                setTacticalCards(prev => prev.filter(c => c.name !== card.name));
-                              } else {
-                                setTacticalCards(prev => [...prev, card]);
-                              }
-                            }} 
+                            key={card.name} card={card} count={count} isUnique={isUnique} theme={theme}
+                            onAdd={() => {
+                              if (isUnique && count >= 1) return;
+                              setTacticalCards(prev => [...prev, { ...card, rosterId: Date.now() + Math.random() }]);
+                            }}
+                            onRemove={() => {
+                              setTacticalCards(prev => {
+                                const newArr = [...prev];
+                                for (let i = newArr.length - 1; i >= 0; i--) {
+                                  if (newArr[i].name === card.name) {
+                                    newArr.splice(i, 1);
+                                    break;
+                                  }
+                                }
+                                return newArr;
+                              });
+                            }}
                           />
                         )
                       })}
@@ -1613,8 +1843,8 @@
                   <h2 className="text-xl font-orbitron font-bold uppercase border-b border-white/10 pb-2 mb-4">Command Hand</h2>
                   <div className="flex overflow-x-auto gap-4 pb-4 snap-x">
                     {tacticalCards.map((card, idx) => (
-                      <div key={`play-card-${idx}`} className="w-72 md:w-[300px] shrink-0 snap-start">
-                        <TacticalCardUI card={card} isAdded={true} theme={theme} onToggle={null} defaultOpen={true} />
+                      <div key={`play-card-${card.rosterId || idx}`} className="w-72 md:w-[300px] shrink-0 snap-start">
+                        <TacticalCardUI card={card} count={1} isUnique={true} theme={theme} defaultOpen={true} />
                       </div>
                     ))}
                   </div>
