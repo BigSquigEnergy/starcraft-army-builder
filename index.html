@@ -2098,10 +2098,11 @@ const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defa
 
       const handleGoogleLogin = async () => {
         if (!window.fbHelpers || !window.fbAuth) return;
-        const { fbAuth, GoogleAuthProvider, signInWithPopup } = window.fbHelpers;
+        const { GoogleAuthProvider, signInWithPopup } = window.fbHelpers;
         const provider = new GoogleAuthProvider();
         try {
-          const result = await signInWithPopup(fbAuth, provider);
+          // Use window.fbAuth directly instead of trying to destructure it incorrectly
+          const result = await signInWithPopup(window.fbAuth, provider);
           setCloudUser(result.user);
           setIsGuest(false);
         } catch (e) {
