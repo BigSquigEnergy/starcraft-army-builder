@@ -55,17 +55,24 @@
       window.fbAuth = firebase.auth();
       window.fbAppId = firebaseConfig.projectId;
 
-      // Compatibility layer to support modular React code
+   // Compatibility layer to support modular React code
       window.fbHelpers = {
         doc: (db, ...paths) => db.doc(paths.join('/')),
         collection: (db, ...paths) => db.collection(paths.join('/')),
-        getDoc: (ref) => ref.get(),
+        getDoc: (ref) => ref.get().then(snap => ({
+            exists: () => snap.exists,
+            data: () => snap.data(),
+            id: snap.id
+        })),
         getDocs: (ref) => ref.get(),
         addDoc: (ref, data) => ref.add(data),
         setDoc: (ref, data, opts) => ref.set(data, opts),
         updateDoc: (ref, data) => ref.update(data),
         deleteDoc: (ref) => ref.delete(),
-        onSnapshot: (ref, cb, err) => ref.onSnapshot(cb, err),
+        onSnapshot: (ref, cb, err) => ref.onSnapshot(snap => {
+            if (snap.docs) return cb(snap); // Collection snapshot
+            return cb({ exists: () => snap.exists, data: () => snap.data(), id: snap.id }); // Document snapshot
+        }, err),
         signInAnonymously: (auth) => auth.signInAnonymously(),
         onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb),
         GoogleAuthProvider: firebase.auth.GoogleAuthProvider,
