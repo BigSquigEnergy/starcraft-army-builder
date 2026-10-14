@@ -2106,7 +2106,7 @@ const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defa
           setIsGuest(false);
         } catch (e) {
           console.error("Google Login Error", e);
-          alert("Login failed. Check your Firebase Authorized Domains configuration.");
+          alert("FIREBASE ERROR: " + e.message);
         }
       };
 
