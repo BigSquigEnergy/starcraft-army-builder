@@ -54,7 +54,6 @@
       window.fbAuth = firebase.auth();
       window.fbAppId = firebaseConfig.projectId;
 
-      // Bulletproof Compatibility layer
       window.fbHelpers = {
         doc: (db, ...paths) => db.doc(paths.join('/')),
         collection: (db, ...paths) => db.collection(paths.join('/')),
@@ -69,12 +68,8 @@
         updateDoc: (ref, data) => ref.update(data),
         deleteDoc: (ref) => ref.delete(),
         onSnapshot: (ref, cb, err) => ref.onSnapshot(snap => {
-            if (snap.forEach) return cb(snap); // It is a Collection
-            return cb({ 
-                exists: () => Boolean(snap.exists), 
-                data: () => snap.data() || {}, 
-                id: snap.id 
-            }); // It is a Document
+            if (snap.forEach) return cb(snap);
+            return cb({ exists: () => Boolean(snap.exists), data: () => snap.data() || {}, id: snap.id });
         }, err),
         signInAnonymously: (auth) => auth.signInAnonymously(),
         onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb),
@@ -357,7 +352,7 @@
       "Plasma Discharge": { name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }
     };
 
-const FACTION_CARDS = [
+    const FACTION_CARDS = [
       { faction: "Protoss", subFaction: "Daelaam", name: "Daelaam", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Dae'Uhl", "Mass Recall"] },
       { faction: "Protoss", subFaction: "Khalai", name: "Khalai", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 2x Elite, 3x Core Slot", abilities: ["Pylon Warp-In", "Bound by the Khala"] },
       { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 3x Elite, 2x Core Slot", abilities: ["Might Of The Nerazim", "Darkness Descends"] },
@@ -1614,6 +1609,192 @@ const FACTION_CARDS = [
               </div>
             </div>
           )}
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [faction, setFaction] = useState("Protoss");
+      const [activeTab, setActiveTab] = useState("builder");
+      const [isPlayMode, setIsPlayMode] = useState(false);
+      const [cloudUser, setCloudUser] = useState(null);
+      const [isGuest, setIsGuest] = useState(true);
+      const [profile, setProfile] = useState({ displayName: '' });
+      const [showProfileModal, setShowProfileModal] = useState(false);
+      const [editName, setEditName] = useState("");
+
+      useEffect(() => {
+        const setupAuth = () => {
+          if (!window.fbAuth || !window.fbHelpers) return;
+          window.fbHelpers.onAuthStateChanged(window.fbAuth, (u) => {
+            if (u) {
+              setCloudUser(u);
+              setIsGuest(u.isAnonymous);
+            } else {
+              window.fbHelpers.signInAnonymously(window.fbAuth).catch((e) => console.warn(e));
+            }
+          });
+        };
+
+        if (window.fbAuth) {
+          setupAuth();
+        } else {
+          window.addEventListener('firebase-ready', setupAuth);
+          return () => window.removeEventListener('firebase-ready', setupAuth);
+        }
+      }, []);
+
+      useEffect(() => {
+        if (!cloudUser || !window.fbDb || !window.fbHelpers) return;
+        try {
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+          const unsub = window.fbHelpers.onSnapshot(docRef, (snap) => {
+            if (snap.exists()) setProfile(snap.data());
+          }, (err) => console.warn(err));
+          return () => unsub();
+        } catch (e) {
+          console.warn("Profile fetch skipped:", e);
+        }
+      }, [cloudUser]);
+
+      const handleSaveProfile = async () => {
+        if (!cloudUser || !window.fbDb || !window.fbHelpers) return;
+        try {
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+          await window.fbHelpers.setDoc(docRef, { displayName: editName.trim() }, { merge: true });
+          setShowProfileModal(false);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      const handleGoogleLogin = async () => {
+        if (!window.fbHelpers || !window.fbAuth) return;
+        const { GoogleAuthProvider, signInWithPopup } = window.fbHelpers;
+        const provider = new GoogleAuthProvider();
+        try {
+          const result = await signInWithPopup(window.fbAuth, provider);
+          setCloudUser(result.user);
+          setIsGuest(false);
+        } catch (e) {
+          console.error("Google Login Error", e);
+          alert("Login failed. Check your Firebase Authorized Domains configuration.");
+        }
+      };
+
+      const theme = THEMES[faction];
+
+      return (
+        <div className={`flex h-screen w-full ${theme.bg} text-slate-100 overflow-hidden font-rajdhani transition-colors duration-500`}>
+          {/* DESKTOP SIDEBAR */}
+          <div className="hidden md:flex w-64 flex-shrink-0 bg-[#0a0a0a] border-r border-white/10 flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+            <div className="p-5 border-b border-white/10 text-center bg-black/50">
+              <h1 className="text-xl font-black uppercase font-orbitron tracking-widest bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-500 drop-shadow">Command Center</h1>
+            </div>
+            <div className="flex-1 overflow-y-auto py-4 px-4">
+              <div className="space-y-1 mb-6 border-b border-white/10 pb-4">
+                <button onClick={() => setActiveTab("builder")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "builder" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                  <span className="text-lg shrink-0">⚔️</span> <span>Army Roster</span>
+                </button>
+                <button onClick={() => setActiveTab("missions")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "missions" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                  <span className="text-lg shrink-0">🎯</span> <span>Missions</span>
+                </button>
+                <button onClick={() => setActiveTab("keywords")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "keywords" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                  <span className="text-lg shrink-0">🔍</span> <span>Keywords</span>
+                </button>
+                <button onClick={() => setActiveTab("rules")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "rules" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                  <span className="text-lg shrink-0">📖</span> <span>Game Rules</span>
+                </button>
+                <button onClick={() => setActiveTab("unn")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold uppercase transition-all text-left leading-tight ${activeTab === "unn" ? theme.accentSecondary + ' shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
+                  <span className="text-lg shrink-0">📡</span> <span>Universal News Network</span>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 border-t border-white/10 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => { setEditName(profile.displayName || ''); setShowProfileModal(true); }}>
+              <div className={`w-2 h-2 rounded-full ${cloudUser ? (isGuest ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]') : 'bg-rose-500 animate-pulse'}`}></div>
+              <div className="flex flex-col">
+                <span className={`text-xs uppercase font-bold tracking-widest ${isGuest ? 'text-amber-400' : 'text-slate-400'}`}>{cloudUser ? (isGuest ? 'Guest Session' : 'Account Synced') : 'Offline Mode'}</span>
+                {cloudUser && !isGuest && <span className="text-[10px] text-sky-400 font-bold tracking-wider mt-0.5">{profile.displayName ? `Cmdr. ${profile.displayName}` : 'Set Commander Name'}</span>}
+                {cloudUser && isGuest && <span className="text-[10px] text-amber-200/50 font-bold tracking-wider mt-0.5 hover:text-amber-200 transition-colors">Click to Log In</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* MAIN CONTENT AREA */}
+          <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-br from-transparent to-black/40 pb-16 md:pb-0">
+            {!isPlayMode && activeTab === "builder" && (
+              <div className="w-full flex flex-wrap justify-center gap-3 md:gap-6 p-3 md:p-4 border-b border-white/10 bg-black/60 z-30 shadow-lg shrink-0">
+                {Object.keys(THEMES).map(f => (
+                  <button key={f} onClick={() => setFaction(f)} className={`relative flex-1 max-w-[12rem] h-12 md:h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${faction === f ? THEMES[f].border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'}`}>
+                    <div className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${faction === f ? 'opacity-100' : 'opacity-80'}`} style={{ backgroundImage: `url('${f.toLowerCase()}.jpg')` }}></div>
+                    <div className="absolute inset-0 bg-black/20"></div>
+                    <div className={`absolute inset-0 flex items-center justify-center font-orbitron font-black text-sm md:text-xl tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase ${faction === f ? 'text-white' : 'text-slate-400'}`}>{f}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} setSelectedFaction={setFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} cloudUser={cloudUser} />}
+            {activeTab === "missions" && <MissionsView theme={theme} />}
+            {activeTab === "keywords" && <KeywordsView theme={theme} />}
+            {activeTab === "rules" && <RulesView theme={theme} cloudUser={cloudUser} />}
+            {activeTab === "unn" && <UNNView theme={theme} cloudUser={cloudUser} isGuest={isGuest} />}
+          </div>
+
+          {/* MOBILE BOTTOM APP BAR */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0a] border-t border-white/10 flex justify-around items-center px-1 pt-2 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.5)] z-50">
+            <button onClick={() => setActiveTab("builder")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "builder" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+              <span className="text-xl mb-1">⚔️</span>
+              <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Roster</span>
+            </button>
+            <button onClick={() => setActiveTab("missions")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "missions" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+              <span className="text-xl mb-1">🎯</span>
+              <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Missions</span>
+            </button>
+            <button onClick={() => setActiveTab("keywords")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "keywords" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+              <span className="text-xl mb-1">🔍</span>
+              <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Keywords</span>
+            </button>
+            <button onClick={() => setActiveTab("rules")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "rules" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+              <span className="text-xl mb-1">📖</span>
+              <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">Rules</span>
+            </button>
+            <button onClick={() => setActiveTab("unn")} className={`flex flex-col items-center p-2 transition-colors ${activeTab === "unn" ? theme.textPrimary : 'text-slate-500 hover:text-slate-300'}`}>
+              <span className="text-xl mb-1">📡</span>
+              <span className="text-[10px] font-orbitron font-bold uppercase tracking-wider">News</span>
+            </button>
+          </div>
+
+          {/* Profile Modal */}
+          {showProfileModal && (
+            <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+              <div className="max-w-sm w-full p-6 rounded-xl border border-sky-500/50 bg-[#0f172a] shadow-2xl">
+                <h3 className="text-xl font-orbitron font-black uppercase mb-2 text-sky-400">Commander Profile</h3>
+                {isGuest ? (
+                  <>
+                    <p className="text-sm text-slate-300 mb-6">You are currently using a temporary Guest Session. To claim an Admin role, set a global Commander Name, and sync your armies across devices, link your account securely.</p>
+                    <div className="flex flex-col gap-3">
+                      <button onClick={handleGoogleLogin} className="w-full py-3 rounded font-bold text-sm bg-white text-slate-900 hover:bg-slate-200 uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        Sign In with Google
+                      </button>
+                      <button onClick={() => setShowProfileModal(false)} className="w-full py-2 rounded font-bold text-sm bg-slate-800 text-white hover:bg-slate-700 uppercase tracking-widest mt-2 border border-white/10">Close</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-300 mb-4">Set your global Commander Name. This will be used for commenting on UNN broadcasts and multiplayer matchmaking.</p>
+                    <input type="text" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Enter Commander Name..." maxLength={20} className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 mb-6 font-orbitron uppercase tracking-wider" />
+                    <div className="flex gap-3 justify-end">
+                      <button onClick={() => setShowProfileModal(false)} className="px-4 py-2 rounded font-bold text-sm bg-slate-800 text-white hover:bg-slate-700 uppercase tracking-widest">Cancel</button>
+                      <button onClick={handleSaveProfile} className="px-6 py-2 rounded font-bold text-sm bg-sky-600 text-white hover:bg-sky-500 uppercase tracking-widest">Save Profile</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
         </div>
       );
     };
