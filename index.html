@@ -20,48 +20,23 @@
       background-attachment: fixed;
     }
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
-    
-    .hex-bg {
-      background-color: rgba(15, 23, 42, 0.7);
-      background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 34.641l10-5.773v-11.547l-10-5.774-10 5.774v11.547l10 5.773zM20 36.95l-12-6.928v-13.856l12-6.928 12 6.928v13.856l-12 6.928z' fill='%231e293b' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
-    }
-
-    .stat-box {
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    }
-    
-    .tech-border {
-      position: relative;
-    }
-    .tech-border::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.5), transparent);
-    }
-
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
-
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <!-- Firebase Cloud Integration -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <!-- Firebase Compat Scripts for local file:// execution -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    window.fbHelpers = { doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup };
-
-    // YOUR REAL FIREBASE KEYS
+  <script>
+    // Your exact Firebase keys
     const firebaseConfig = {
       apiKey: "AIzaSyB6PA1A2WWMt2IfTbt1t2dYZ6IgNWOVxUY",
       authDomain: "starcraft-tmg-aus.firebaseapp.com",
@@ -73,17 +48,35 @@
     };
 
     try {
-      window.fbApp = initializeApp(firebaseConfig);
-      window.fbDb = getFirestore(window.fbApp);
-      window.fbAuth = getAuth(window.fbApp);
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      window.fbDb = firebase.firestore();
+      window.fbAuth = firebase.auth();
       window.fbAppId = firebaseConfig.projectId;
-      window.dispatchEvent(new Event('firebase-ready'));
+
+      // Compatibility layer to support modular React code
+      window.fbHelpers = {
+        doc: (db, ...paths) => db.doc(paths.join('/')),
+        collection: (db, ...paths) => db.collection(paths.join('/')),
+        getDoc: (ref) => ref.get(),
+        getDocs: (ref) => ref.get(),
+        addDoc: (ref, data) => ref.add(data),
+        setDoc: (ref, data, opts) => ref.set(data, opts),
+        updateDoc: (ref, data) => ref.update(data),
+        deleteDoc: (ref) => ref.delete(),
+        onSnapshot: (ref, cb, err) => ref.onSnapshot(cb, err),
+        signInAnonymously: (auth) => auth.signInAnonymously(),
+        onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb),
+        GoogleAuthProvider: firebase.auth.GoogleAuthProvider,
+        signInWithPopup: (auth, provider) => auth.signInWithPopup(provider)
+      };
+      setTimeout(() => window.dispatchEvent(new Event('firebase-ready')), 50);
     } catch (e) {
-      console.error("Firebase init failed", e);
+      console.error("Firebase init failed:", e);
     }
   </script>
 
-  <!-- React Logic & Databases -->
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
@@ -98,112 +91,29 @@
     };
 
     const MISSION_CARDS = [
-      {
-        name: "Artefact Hunt", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nEnd of Round 5:\nGain 4 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 2 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.",
-        additional: "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It has its Current Supply Value reduced.\n- Before It resolves a PLACE effect.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves."
-      },
-      {
-        name: "Artefact Hunt", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nEnd of Round 5:\nGain 3 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 1 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.",
-        additional: "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It resolves a PLACE effect.\n- It has its Current Supply Value reduced.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves."
-      },
-      {
-        name: "Divide and Conquer", type: "Standard", supply: 8, escalation: "+2 Supply", gameLength: 4,
-        parameters: "All Mission Markers are Activated.\nSplit the battlefield into four quarters as shown on the Deployment Card.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the First Round:\nCalculate the Total Current Supply in each battlefield quarter.\nGain 1 VP for each quarter where your Total Current Supply is higher than the Opponent's.\nOnly Units Wholly Within a quarter contribute their Supply to this check.\nIf a Unit controls a Mission Marker, that Unit is worth 1 extra Supply for controlling quarters.\n\nGain 2 VP for Controlling Mission Marker 5.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
-      },
-      {
-        name: "Divide and Conquer", type: "Skirmish", supply: 4, escalation: "+1 Supply", gameLength: 4,
-        parameters: "All Mission Markers are Activated.\nSplit the battlefield into four quarters as shown on the Deployment Card.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the First Round:\nCalculate the Total Current Supply in each battlefield quarter.\nGain 1 VP for each quarter where your Total Current Supply is higher than the Opponent's.\nOnly Units Wholly Within a quarter contribute their Supply to this check.\nIf a Unit controls a Mission Marker, that Unit is worth 1 extra Supply for controlling quarters.\n\nGain 2 VP for Controlling Mission Marker 5.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
-      },
-      {
-        name: "Frontlines", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 1 VP for each Controlled Mission Marker.\nGain an additional 2 VPs for a Marker if you gained Control of it from the Opponent this Round.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
-      },
-      {
-        name: "Frontlines", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 1 VP for each Controlled Mission Marker.\nGain an additional 2 VPs for a Marker if you gained Control of it from the Opponent this Round.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
-      },
-      {
-        name: "Gather the Resources", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
-        additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
-      },
-      {
-        name: "Gather the Resources", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
-        additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
-      },
-      {
-        name: "Hold Position", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\nFrom the Start of the Second Round: Gain 1 VP for each Controlled Mission Marker that is Neutral or associated with your colour. Gain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
-      },
-      {
-        name: "Hold Position", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\nFrom the Start of the Second Round: Gain 1 VP for each Controlled Mission Marker that is Neutral or associated with your colour. Gain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
-      },
-      {
-        name: "Supply Drop", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Deactivated.\nStart of the Round (1-4): Randomly determine one Deactivated Mission Marker (1-4) and flip it to its Activated side.\nStart of Round 5: Mission Marker 5 is automatically Activated.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the first Round: For each activated Controlled Mission Marker, gain VPs equal to the Game Round number in which that Mission Marker was Activated and remove it.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 12+ VPs."
-      },
-      {
-        name: "Supply Drop", type: "Skirmish", supply: 4, escalation: "+1 Supply", gameLength: 4,
-        parameters: "All Mission Markers are Deactivated.\nStart of the Round (2-4): Randomly determine one Deactivated Mission Marker (1,2,5) and flip it to its Activated side.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: For each activated Controlled Mission Marker, gain VPs equal to the Game Round number in which that Mission Marker was Activated and remove it.",
-        additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
-      },
-      {
-        name: "Fire in the Sky", type: "Standard", supply: 5, escalation: "+3 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP",
-        additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs."
-      },
-      {
-        name: "Fire in the Sky", type: "Skirmish", supply: 3, escalation: "+2 Supply", gameLength: 5,
-        parameters: "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.",
-        scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP",
-        additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs."
-      }
+      { name: "Artefact Hunt", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nEnd of Round 5:\nGain 4 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 2 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.", additional: "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It has its Current Supply Value reduced.\n- Before It resolves a PLACE effect.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves." },
+      { name: "Artefact Hunt", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nEnd of Round 5:\nGain 3 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 1 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.", additional: "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It resolves a PLACE effect.\n- It has its Current Supply Value reduced.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves." },
+      { name: "Divide and Conquer", type: "Standard", supply: 8, escalation: "+2 Supply", gameLength: 4, parameters: "All Mission Markers are Activated.\nSplit the battlefield into four quarters as shown on the Deployment Card.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the First Round:\nCalculate the Total Current Supply in each battlefield quarter.\nGain 1 VP for each quarter where your Total Current Supply is higher than the Opponent's.\nOnly Units Wholly Within a quarter contribute their Supply to this check.\nIf a Unit controls a Mission Marker, that Unit is worth 1 extra Supply for controlling quarters.\n\nGain 2 VP for Controlling Mission Marker 5.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs." },
+      { name: "Divide and Conquer", type: "Skirmish", supply: 4, escalation: "+1 Supply", gameLength: 4, parameters: "All Mission Markers are Activated.\nSplit the battlefield into four quarters as shown on the Deployment Card.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the First Round:\nCalculate the Total Current Supply in each battlefield quarter.\nGain 1 VP for each quarter where your Total Current Supply is higher than the Opponent's.\nOnly Units Wholly Within a quarter contribute their Supply to this check.\nIf a Unit controls a Mission Marker, that Unit is worth 1 extra Supply for controlling quarters.\n\nGain 2 VP for Controlling Mission Marker 5.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs." },
+      { name: "Frontlines", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 1 VP for each Controlled Mission Marker.\nGain an additional 2 VPs for a Marker if you gained Control of it from the Opponent this Round.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs." },
+      { name: "Frontlines", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 1 VP for each Controlled Mission Marker.\nGain an additional 2 VPs for a Marker if you gained Control of it from the Opponent this Round.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs." },
+      { name: "Gather the Resources", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.", additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs." },
+      { name: "Gather the Resources", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.", additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs." },
+      { name: "Hold Position", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\nFrom the Start of the Second Round: Gain 1 VP for each Controlled Mission Marker that is Neutral or associated with your colour. Gain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 10+ VPs." },
+      { name: "Hold Position", type: "Skirmish", supply: 3, escalation: "+1 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\nFrom the Start of the Second Round: Gain 1 VP for each Controlled Mission Marker that is Neutral or associated with your colour. Gain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs." },
+      { name: "Supply Drop", type: "Standard", supply: 6, escalation: "+2 Supply", gameLength: 5, parameters: "All Mission Markers are Deactivated.\nStart of the Round (1-4): Randomly determine one Deactivated Mission Marker (1-4) and flip it to its Activated side.\nStart of Round 5: Mission Marker 5 is automatically Activated.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the first Round: For each activated Controlled Mission Marker, gain VPs equal to the Game Round number in which that Mission Marker was Activated and remove it.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 12+ VPs." },
+      { name: "Supply Drop", type: "Skirmish", supply: 4, escalation: "+1 Supply", gameLength: 4, parameters: "All Mission Markers are Deactivated.\nStart of the Round (2-4): Randomly determine one Deactivated Mission Marker (1,2,5) and flip it to its Activated side.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: For each activated Controlled Mission Marker, gain VPs equal to the Game Round number in which that Mission Marker was Activated and remove it.", additional: "Special Winning Conditions: The game ends immediately if a Player leads by 8+ VPs." },
+      { name: "Fire in the Sky", type: "Standard", supply: 5, escalation: "+3 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP", additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs." },
+      { name: "Fire in the Sky", type: "Skirmish", supply: 3, escalation: "+2 Supply", gameLength: 5, parameters: "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.", scoring: "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP", additional: "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs." }
     ];
 
     const THEMES = {
-      Protoss: { 
-        bg: "bg-[#180829]", panelBg: "bg-[#25123d]", cardBg: "bg-[#30184e]", border: "border-amber-400/50", textPrimary: "text-amber-300", 
-        accent: "bg-amber-500 text-stone-950", accentSecondary: "bg-amber-400/20 text-amber-300 border-amber-400/40"
-      },
-      Terran: { 
-        bg: "bg-[#081226]", panelBg: "bg-[#0f2147]", cardBg: "bg-[#162e60]", border: "border-amber-500/40", textPrimary: "text-amber-400", 
-        accent: "bg-blue-500 text-stone-950", accentSecondary: "bg-blue-900/50 text-slate-200 border-blue-500/50"
-      },
-      Zerg: { 
-        bg: "bg-[#210913]", panelBg: "bg-[#33111f]", cardBg: "bg-[#421629]", border: "border-fuchsia-500/40", textPrimary: "text-fuchsia-300", 
-        accent: "bg-fuchsia-600 text-white", accentSecondary: "bg-fuchsia-950/60 text-fuchsia-200 border-fuchsia-600/40"
-      }
+      Protoss: { bg: "bg-[#180829]", panelBg: "bg-[#25123d]", cardBg: "bg-[#30184e]", border: "border-amber-400/50", textPrimary: "text-amber-300", accent: "bg-amber-500 text-stone-950", accentSecondary: "bg-amber-400/20 text-amber-300 border-amber-400/40" },
+      Terran: { bg: "bg-[#081226]", panelBg: "bg-[#0f2147]", cardBg: "bg-[#162e60]", border: "border-amber-500/40", textPrimary: "text-amber-400", accent: "bg-blue-500 text-stone-950", accentSecondary: "bg-blue-900/50 text-slate-200 border-blue-500/50" },
+      Zerg: { bg: "bg-[#210913]", panelBg: "bg-[#33111f]", cardBg: "bg-[#421629]", border: "border-fuchsia-500/40", textPrimary: "text-fuchsia-300", accent: "bg-fuchsia-600 text-white", accentSecondary: "bg-fuchsia-950/60 text-fuchsia-200 border-fuchsia-600/40" }
     };
 
-    const ENGAGEMENT_SCALES = {
-      "Free Build": { minerals: Infinity, vespene: Infinity },
-      "Skirmish": { minerals: 1000, vespene: 100 },
-      "Standard": { minerals: 2000, vespene: 200 }
-    };
+    const ENGAGEMENT_SCALES = { "Free Build": { minerals: Infinity, vespene: Infinity }, "Skirmish": { minerals: 1000, vespene: 100 }, "Standard": { minerals: 2000, vespene: 200 } };
 
     const RULES_DICTIONARY = {
       "Armoured": "Weapon deals enhanced damage against targets with the ARMOURED tag.",
@@ -407,6 +317,118 @@
       "Timing Push": "The active Zergling Unit Deploys from any table edge that is not a Player's Entry Edge. This action must end more than 10\" away from any Enemy model."
     };
 
+    const WEAPON_MAP = {
+      "Glaive Strike": { name: "Glaive Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PIERCE Light (2)", phase: "COMBAT PHASE" },
+      "Left Phase Disruptor": { name: "Left Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3)", phase: "ASSAULT PHASE" },
+      "Right Phase Disruptor": { name: "Right Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
+      "C-14 rifle": { name: "C-14 rifle", range: "12", target: "All", roa: 6, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "BURST FIRE 8\" (3)", phase: "ASSAULT PHASE" },
+      "Scatter Missiles": { name: "Scatter Missiles", range: "18", target: "Ground", roa: 6, hit: "5+", surge: "Light", sDice: "D3", dmg: 1, keyword: "INDIRECT FIRE, LOCKED IN (6), LONG RANGE (24\"), SIDEARM", phase: "ASSAULT PHASE" },
+      "Haywire Missiles": { name: "Haywire Missiles", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
+      "AGG-12": { name: "AGG-12", range: "12", target: "Ground", roa: 2, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "LONG RANGE (18\"), SPECIALIST", phase: "ASSAULT PHASE" },
+      "Rocket Launcher": { name: "Rocket Launcher", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "INDIRECT FIRE, LONG RANGE (18\"), SIDEARM, SPECIALIST", phase: "ASSAULT PHASE" },
+      "Bayonet": { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Acid Saliva": { name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Acid Saliva (Roach)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Acid Saliva (Vile)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Hydriodic Bile": { name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Hydriodic Bile (Roach)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Hydriodic Bile (Vile)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Claws": { name: "Claws", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Basic Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Swarmling Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Vile Claws": { name: "Vile Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Zergling Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Needle Spines": { name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" },
+      "Grooved Spines": { name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "LONG RANGE (16\")", phase: "ASSAULT PHASE" },
+      "Scythe": { name: "Scythe", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Energy Blast": { name: "Energy Blast", range: "8", target: "All", roa: 5, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+      "Blades": { name: "Blades", range: "E", target: "Ground", roa: 6, hit: "4+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2)", phase: "COMBAT PHASE" },
+      "Shredding Claws": { name: "Shredding Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
+      "Plasma Discharge": { name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }
+    };
+
+    const FACTION_CARDS = [
+      { faction: "Protoss", subFaction: "Daelaam", name: "Daelaam", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Dae'Uhl", "Mass Recall"] },
+      { faction: "Protoss", subFaction: "Khalai", name: "Khalai", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 2x Elite, 3x Core Slot", abilities: ["Pylon Warp-In", "Bound by the Khala"] },
+      { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 EN | 1x Hero, 3x Elite, 2x Core Slot", abilities: ["Might Of The Nerazim", "Darkness Descends"] },
+      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Raynor's Raiders", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Hero, 3x Core, 1x Support Slot", abilities: ["Rapid Ingress", "Ready for Pickup?"] },
+      { faction: "Terran", subFaction: "Generic", name: "Terran Armed Forces", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Tactical Retreat", "Terran Tenacity"] },
+      { faction: "Zerg", subFaction: "Kerrigan's Swarm", name: "Kerrigan's Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Hero, 2x Elite, 3x Core Slot", abilities: ["Wild Mutation", "Zerg Creep", "Omega Network"] },
+      { faction: "Zerg", subFaction: "Generic", name: "Zerg Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Brood Instinct", "Zerg Creep", "Rapid Burrowing"] }
+    ];
+
+    const TACTICAL_CARDS = [
+      { faction: "Protoss", name: "Forge", type: "Tactical Card", tags: "30 Gas", vespene: 30, provides: "+1 EN | 1x Elite Slot", abilities: ["Ground Armor", "Ground Weapons"] },
+      { faction: "Protoss", name: "Gate Chronoboosted", type: "Tactical Card", tags: "35 Gas, Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: ["Zealous Charge", "Quick Strikes"] },
+      { faction: "Protoss", name: "Gateway", type: "Tactical Card", tags: "25 Gas", vespene: 25, provides: "+1 EN | 1x Core Slot", abilities: ["Quick Strikes"] },
+      { faction: "Protoss", name: "Nexus", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 EN | 2x Core Slot", abilities: ["Ancient Pride", "Strategic Recall"] },
+      { faction: "Protoss", name: "Observer", type: "Tactical Card", tags: "25 Gas, Unique", vespene: 25, provides: "+1 EN | 1x Support Slot", abilities: ["Surveillance", "Gravitic Boosters"] },
+      { faction: "Protoss", name: "Overcharged Nexus", type: "Tactical Card", tags: "35 Gas, Unique", vespene: 35, provides: "+1 EN | 1x Elite, 1x Core Slot", abilities: ["Photon Overcharge", "Strategic Recall"] },
+      { faction: "Protoss", name: "Power Field", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 EN | 1x Hero, 1x Elite, 1x Core Slot", abilities: ["Guardian Shell"] },
+      { faction: "Protoss", name: "Robotics Facility", type: "Tactical Card", tags: "35 Gas", vespene: 35, provides: "+1 EN | 2x Elite Slot", abilities: ["Plasma Shields"] },
+      { faction: "Protoss", name: "Twilight Council", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 EN | 1x Elite, 1x Support Slot", abilities: ["Veil of Shadows", "Weapons of the Firstborn"] },
+      { faction: "Protoss", name: "Void Seeker", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 EN | 1x Core Slot", abilities: ["Personal Transport", "Anakh Su'n"] },
+      { faction: "Protoss", name: "Warp Gate", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 EN | 2x Core Slot", abilities: ["Warp In", "Quick Strikes"] },
+      { faction: "Protoss", name: "Warp Prism", type: "Tactical Card", tags: "35 Gas, Unique", vespene: 35, provides: "+1 EN | 2x Core Slot", abilities: ["Phase", "Warp Conduit"] },
+      { faction: "Terran", name: "Academy", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 CP | 2x Support Slot", abilities: ["Advanced Training"] },
+      { faction: "Terran", name: "Armory", type: "Tactical Card", tags: "30 Gas", vespene: 30, provides: "+1 CP | 1x Elite Slot", abilities: ["Vehicle Plating", "Vehicle Weapons"] },
+      { faction: "Terran", name: "Barracks", type: "Tactical Card", tags: "30 Gas", vespene: 30, provides: "+1 CP | 1x Core Slot", abilities: ["Go! Go! Go!"] },
+      { faction: "Terran", name: "Barracks (Proxy)", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+2 CP | 2x Core Slot", abilities: ["Go! Go! Go!", "Armed and Ready"] },
+      { faction: "Terran", name: "Barracks (Tech Lab)", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+2 CP | 1x Elite, 1x Core Slot", abilities: ["Go! Go! Go!", "Let's Have a Blast!"] },
+      { faction: "Terran", name: "Dropship", type: "Tactical Card", tags: "35 Gas, Unique", vespene: 35, provides: "+1 CP | 1x Core, 1x Support Slot", abilities: ["Strap in!", "Ready For Dust-off"] },
+      { faction: "Terran", name: "Engineering Bay", type: "Tactical Card", tags: "25 Gas", vespene: 25, provides: "+1 CP | 1x Core Slot", abilities: ["Infantry Armor", "Infantry Weapons"] },
+      { faction: "Terran", name: "Factory", type: "Tactical Card", tags: "35 Gas", vespene: 35, provides: "+1 CP | 2x Elite Slot", abilities: ["Field Repair"] },
+      { faction: "Terran", name: "Factory (Tech Lab)", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 CP | 2x Elite Slot", abilities: ["Field Repair", "Pound 'em Flat!"] },
+      { faction: "Terran", name: "Orbital Command", type: "Tactical Card", tags: "25 Gas, Unique", vespene: 25, provides: "+1 CP | 1x Core Slot", abilities: ["ComSat Station", "Scanner Sweep"] },
+      { faction: "Terran", name: "Supply Depot", type: "Tactical Card", tags: "40 Gas, Unique", vespene: 40, provides: "+1 CP | 1x Hero, 1x Elite, 1x Core Slot", abilities: ["Additional Supply Depots"] },
+      { faction: "Zerg", name: "Accelerating Creep", type: "Tactical Card", tags: "Unique", vespene: 0, provides: null, abilities: ["Speed on Creep", "Living Glob of Tissue", "Creep Removal"] },
+      { faction: "Zerg", name: "Cocoon", type: "Tactical Card", tags: "Unique", vespene: 30, provides: "1x Elite Slot", abilities: ["Spawn Larva", "Ravager Morph"] },
+      { faction: "Zerg", name: "Evolution Chamber", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Carapace", "Extended Claws"] },
+      { faction: "Zerg", name: "Hatchery", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "Resource: +1 BM | 1x Support Slot", abilities: ["Lie in Wait", "Creep Spread"] },
+      { faction: "Zerg", name: "Hydralisk Den", type: "Tactical Card", tags: "Standard", vespene: 30, provides: "Resource: +1 BM | 2x Elite Slot", abilities: ["Missile Attacks"] },
+      { faction: "Zerg", name: "Lair", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "Resource: +1 BM | 1x Elite, 1x Core Slot", abilities: ["Predation", "Creep Spread"] },
+      { faction: "Zerg", name: "Malignant Creep", type: "Tactical Card", tags: "Unique", vespene: 10, provides: null, abilities: ["Living Glob of Tissue", "Creep Removal", "Malevolent Matriarch"] },
+      { faction: "Zerg", name: "Overlord", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "Resource: +1 BM | 1x Hero, 1x Elite, 1x Core Slot", abilities: ["Ventral Sacs", "Excrete Creep"] },
+      { faction: "Zerg", name: "Overseer", type: "Tactical Card", tags: "Unique", vespene: 25, provides: "Resource: +1 BM | 1x Support Slot", abilities: ["Oversight Mode", "Pneumatized Carapace"] },
+      { faction: "Zerg", name: "Roach Warren", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Nasty Surprise"] },
+      { faction: "Zerg", name: "Spawning Pool", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Feral Rage"] },
+      { faction: "Zerg", name: "Spawning Pool (Six Pool)", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "Resource: +2 BM | 2x Core Slot", abilities: ["Timing Push", "Feral Rage"] }
+    ];
+
+    const UNITS_DATABASE = [
+      { faction: "Terran", name: "Marauder", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 2, minerals: 160, supply: 1 }, { models: 4, minerals: 290, supply: 2 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }, { max: 4, supply: 2 }], stats: { shield: "-", speed: "4/7", armour: "4+", evade: "6+", hitPoints: 5, size: 2 }, weapons: [{ name: "Quad K12", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack", "Concussive Shells"], upgrades: [{ name: "Veteran of Tarsonis", type: "Standard", costs: [20, 40] }, { name: "Kinetic Foam", type: "Standard", costs: [20, 40] }, { name: "Laser Targeting Systems", type: "Standard", costs: [20, 40] }] },
+      { faction: "Terran", name: "Marine", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 6, minerals: 170, supply: 1 }, { models: 9, minerals: 220, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 3, supply: 0 }, { max: 6, supply: 1 }, { max: 9, supply: 2 }], stats: { shield: "-", speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 2 }, weapons: [{ name: "C-14 rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack (Marine)"], upgrades: [{ name: "Combat Shield", type: "Standard", costs: [20, 30] }, { name: "AGG-12", type: "Replacement", costs: [10, 10], replaces: "C-14 rifle" }, { name: "Rocket Launcher", type: "Replacement", costs: [40, 40], replaces: "C-14 rifle" }, { name: "Slugthrower", type: "Standard", costs: [10, 20] }, { name: "Grenades - Frag", type: "Standard", costs: [10, 10] }, { name: "Bayonet", type: "Replacement", costs: [20, 30], replaces: "Strike" }] },
+      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Raynor's Raider (Marine)", tags: "Raynor's Raiders, Biological, Light, Ground", slot: "Core", compositions: [{ models: 6, minerals: 230, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 3, supply: 0 }, { max: 6, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 2 }, weapons: [{ name: "C-14 rifle", range: "12", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Stimpack (Marine)", "Raiders Roll!", "Rapid Reinforcements", "Slugthrower", "Grenades - Frag"], upgrades: [] },
+      { faction: "Terran", name: "Medic", tags: "Biological, Light, Ground", slot: "Support", compositions: [{ models: 3, minerals: 120, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "5+", evade: "5+", hitPoints: 2, size: 2 }, weapons: [{ name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Life Support", "Restoration (Medic)", "Medpack", "Optical Flare"], upgrades: [{ name: "Advanced Medic Facilities", type: "Standard", costs: [60] }, { name: "A-13 Flash Grenade Launcher", type: "Standard", costs: [20] }, { name: "Stabilizer Medpacks", type: "Standard", costs: [20] }] },
+      { faction: "Terran", name: "Goliath", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 180, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 2 }], stats: { shield: "-", speed: "7", armour: "4+", evade: "-", hitPoints: 10, size: 3 }, weapons: [{ name: "Autocannon", range: "12", target: "Ground", roa: 9, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "LONG RANGE (18\")", phase: "ASSAULT PHASE" }, { name: "Underbelly Machine Gun", range: "8", target: "Ground", roa: 6, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PINPOINT, SIDEARM", phase: "ASSAULT PHASE" }, { name: "Hellfire Missiles", range: "16", target: "Flying", roa: 6, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "ANTI-EVADE (1), SIDEARM", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 4, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Target Lock", "Indomitable", "Devastating Charge (Goliath)"], upgrades: [{ name: "Ares-Class Targeting System", type: "Standard", costs: [20] }, { name: "Scatter Missiles", type: "Replacement", costs: [30], replaces: "Hellfire Missiles" }, { name: "Haywire Missiles", type: "Replacement", costs: [40], replaces: "Hellfire Missiles" }] },
+      { faction: "Terran", name: "Siege Tank", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 220, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 2 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "-", hitPoints: 14, size: 2 }, weapons: [{ name: "Twin Cannon", range: "12", target: "Ground", roa: 8, hit: "3+", surge: "Armoured", sDice: "D6", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Shock Cannon", range: "18", target: "Ground", roa: "BT+4", hit: "4+", surge: "Light, Armoured", sDice: "BT", dmg: 1, keyword: "SIEGE MODE Status", phase: "ASSAULT PHASE" }, { name: "Rolling Over", range: "E", target: "Ground", roa: 2, hit: "2+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Large", "Heavy Plating", "Indomitable", "Point Blank", "Aftershock Rounds", "Devastating Charge (Goliath)"], upgrades: [{ name: "Mode Transformation", type: "Standard", costs: [20] }, { name: "Coordinated Strike", type: "Standard", costs: [20] }, { name: "Shaped Blast", type: "Standard", costs: [10] }, { name: "Smart Shells", type: "Standard", costs: [10] }] },
+      { faction: "Terran", name: "Jim Raynor", tags: "Biological, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 280, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "4+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Commando Rifle", range: "18", target: "All", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "BULKY, PIERCE Armoured (3)", phase: "ASSAULT PHASE" }, { name: "\"Justice\" Revolver", range: "6", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "ANTI-EVADE (2), SIDEARM, PINPOINT", phase: "ASSAULT PHASE" }, { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Commander", "Freedom Fighters", "Orders"], upgrades: [{ name: "C-14 rifle", type: "Replacement", costs: [0], replaces: "Commando Rifle" }] },
+      { faction: "Terran", subFaction: "Raynor's Raiders", name: "Point Defense Drone", tags: "Raynor's Raiders, Armoured, Flying, Mechanical", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "6+", evade: "6+", hitPoints: 3, size: "-" }, weapons: [], abilities: ["Point Defense Laser", "Gliding", "Structure"], upgrades: [] },
+      { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 3, minerals: 170, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20] }, { name: "Zealous Round", type: "Standard", costs: [10] }, { name: "We Stand as One", type: "Standard", costs: [20] }] },
+      { faction: "Protoss", name: "Adept", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 4, minerals: 160, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [{ name: "Resonating Glaives", type: "Standard", costs: [20] }, { name: "Guidance", type: "Standard", costs: [10] }, { name: "Glaive Strike", type: "Replacement", costs: [20], replaces: "Strike" }] },
+      { faction: "Protoss", subFaction: "Nerazim", name: "Nerazim Watchers", tags: "Protoss, Nerazim, Biological, Light, Ground", slot: "Core", compositions: [{ models: 4, minerals: 210, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 3, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1), PINPOINT", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Path of Shadows (Watchers)", "Nerazim Farsight", "Psionic Transfer"], upgrades: [] },
+      { faction: "Protoss", name: "Stalker", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: 3, speed: "4/8", armour: "4+", evade: "6+", hitPoints: 6, size: 3 }, weapons: [{ name: "Particle Disruptors", range: "12", target: "All", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Blink"], upgrades: [{ name: "Path of Shadows (Stalker)", type: "Standard", costs: [20, 40] }, { name: "Fury of the Nerazim", type: "Standard", costs: [20, 30] }] },
+      { faction: "Protoss", name: "Immortal", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 280, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 2 }], stats: { shield: 6, speed: "7", armour: "4+", evade: "-", hitPoints: 8, size: 3 }, weapons: [{ name: "Left Photon Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "CONCENTRATED FIRE (1), LONG RANGE (16”)", phase: "ASSAULT PHASE" }, { name: "Right Photon Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 2, keyword: "CONCENTRATED FIRE (1), LONG RANGE (16”), SIDEARM", phase: "ASSAULT PHASE" }, { name: "Stomp", range: "E", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Improved Barrier", "Indomitable", "Devastating Charge"], upgrades: [{ name: "Shield Overcharge", type: "Standard", costs: [20] }, { name: "Left Phase Disruptor", type: "Replacement", costs: [20], replaces: "Left Photon Disruptor" }, { name: "Right Phase Disruptor", type: "Replacement", costs: [20], replaces: "Right Photon Disruptor" }, { name: "Fury Unyielding", type: "Standard", costs: [20] }, { name: "For the Ancients", type: "Standard", costs: [20] }] },
+      { faction: "Protoss", subFaction: "Khalai", name: "Praetor Guard", tags: "Khalai, Biological, Light, Ground, Unique", slot: "Elite", compositions: [{ models: 3, minerals: 260, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Shield Overcharge (Praetor)", "Leg Enhancements (Praetor)", "Charge", "Devastating Charge (Praetor)", "Titan Killers", "Precognition"], upgrades: [] },
+      { faction: "Protoss", name: "Sentry", tags: "Light, Mechanical, Psionic, Ground", slot: "Support", compositions: [{ models: 2, minerals: 130, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }], stats: { shield: 2, speed: "4/7", armour: "5+", evade: "6+", hitPoints: 4, size: 1 }, weapons: [{ name: "Disruption Beam", range: "8", target: "All", roa: 2, hit: "2+", surge: "-", sDice: "-", dmg: 1, keyword: "INSTANT", phase: "ASSAULT PHASE" }, { name: "Beam", range: "E", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Restoration", "Force Field", "Guardian Shield"], upgrades: [{ name: "Solid-Field Projectors", type: "Standard", costs: [10] }, { name: "Hallucination", type: "Standard", costs: [20] }] },
+      { faction: "Protoss", name: "Pylon", tags: "Khalai, Armored, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: 2, speed: "-", armour: "5+", evade: "-", hitPoints: 8, size: 3 }, weapons: [], abilities: ["Structure", "Khalai Ingenuity", "Warp Conduit"], upgrades: [] },
+      { faction: "Protoss", name: "Artanis", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 270, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 4, speed: "7", armour: "4+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Twilight Blades Strike", range: "E", target: "Ground", roa: 2, hit: "2+", surge: "Armoured", sDice: "D3", dmg: 3, keyword: "-", phase: "COMBAT PHASE" }, { name: "Twilight Blades Sweep", range: "E", target: "Ground", roa: 6, hit: "2+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Commander", "Phase Prism", "Hierarch's Stand", "Lightning Dash", "Devastating Charge"], upgrades: [] },
+      { faction: "Protoss", name: "Zeratul", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 230, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: 3, speed: "7", armour: "5+", evade: "5+", hitPoints: 5, size: 2 }, weapons: [{ name: "Master Warp Blade", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "INSTANT", phase: "COMBAT PHASE" }], abilities: ["One With the Shadows", "Prophetic Vision", "Sentenced to Death", "Void Prison", "Void Blink", "Devastating Charge (Zeratul)", "Shadow Strike"], upgrades: [] },
+      { faction: "Zerg", name: "Corpser (Roach)", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 220, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Claws", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Burrow", "Roachling Infestation", "Regeneration", "Devastating Charge (Roach)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [10] }, { name: "Hydriodic Bile", type: "Replacement", costs: [10], replaces: "Acid Saliva" }] },
+      { faction: "Zerg", name: "Hydralisk", tags: "Biological, Light, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 140, supply: 1 }, { models: 2, minerals: 260, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Scythe", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron (Hydralisk)", "Lunge"], upgrades: [{ name: "Ancillary Carapace", type: "Standard", costs: [20, 30] }, { name: "Lurking", type: "Standard", costs: [10, 10] }, { name: "Burrow Ambush", type: "Standard", costs: [20, 40] }, { name: "Grooved Spines", type: "Replacement", costs: [20, 30], replaces: "Needle Spines" }] },
+      { faction: "Zerg", name: "Kerrigan", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "6+", hitPoints: 9, size: 2 }, weapons: [{ name: "Energy Blast", range: "8", target: "All", roa: 5, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Blades", range: "E", target: "Ground", roa: 6, hit: "4+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2)", phase: "COMBAT PHASE" }], abilities: ["Commander", "Crushing Grip", "Mutating Carapace", "Leaping Strike", "Devastating Charge (Kerrigan)"], upgrades: [] },
+      { faction: "Zerg", subFaction: "Kerrigan's Swarm", name: "Kerrigan Swarm Raptor (Zergling)", tags: "Kerrigan's Swarm, Biological, Light, Ground, Unique", slot: "Elite", compositions: [{ models: 6, minerals: 230, supply: 1 }], supplyProfile: [{ max: 3, supply: 0 }, { max: 6, supply: 1 }], stats: { shield: "-", speed: "5/9", armour: "4+", evade: "5+", hitPoints: 2, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "3+", surge: "Light, Armoured", sDice: "D6", dmg: 1, keyword: "INSTANT", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Raptor Strain", "Leap", "Adrenal Overload", "Devastating Charge (Kerrigan Swarm Raptor)"], upgrades: [] },
+      { faction: "Zerg", subFaction: "Kerrigan's Swarm", name: "Omega Worm", tags: "Kerrigan's Swarm, Armoured, Biological, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "5+", evade: "-", hitPoints: 10, size: 3 }, weapons: [], abilities: ["Detection", "Source of Creep", "Structure", "Omega Network (Unit)"], upgrades: [] },
+      { faction: "Zerg", name: "Queen", tags: "Armoured, Biological, Psionic, Ground", slot: "Support", compositions: [{ models: 1, minerals: 140, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "4", armour: "4+", evade: "-", hitPoints: 9, size: 3 }, weapons: [{ name: "Talons", range: "6", target: "Ground", roa: 4, hit: "4+", surge: "Light", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Acid spines", range: "12", target: "Flying", roa: 4, hit: "4+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Talons", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Spawn Creep Tumor", "Transfusion", "Restoration (Queen)", "Psionic Link", "Devastating Charge (Queen)"], upgrades: [{ name: "Creep Speed", type: "Standard", costs: [10] }, { name: "Domineering Presence", type: "Standard", costs: [10] }] },
+      { faction: "Zerg", name: "Raptor (Zergling)", tags: "Biological, Light, Ground", slot: "Elite", compositions: [{ models: 12, minerals: 210, supply: 1 }, { models: 18, minerals: 260, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "5/9", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Raptor Strain", "Adrenal Overload", "Metabolic Boost", "Devastating Charge (Raptor)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] },
+      { faction: "Zerg", name: "Ravager", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 1, minerals: 160, supply: 1 }, { models: 2, minerals: 270, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 2, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "5+", evade: "5+", hitPoints: 9, size: 3 }, weapons: [{ name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Basic Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Corrosive Bile", "Deep Tunnel", "Devastating Charge (Ravager)"], upgrades: [{ name: "Bloated Bile Ducts", type: "Standard", costs: [20, 40] }, { name: "Burrow Ambush", type: "Standard", costs: [20, 40] }, { name: "Potent Bile", type: "Standard", costs: [20, 40] }] },
+      { faction: "Zerg", name: "Roach", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 170, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva (Roach)", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Basic Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Burrow", "Regeneration", "Devastating Charge (Ravager)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [10] }, { name: "Hydriodic Bile (Roach)", type: "Replacement", costs: [10], replaces: "Acid Saliva (Roach)" }] },
+      { faction: "Zerg", name: "Roachling", tags: "Biological, Light, Ground", slot: "Summoned", compositions: [{ models: 3, minerals: 0, supply: 0 }], supplyProfile: [{ max: 3, supply: 0 }], stats: { shield: "-", speed: "4/7", armour: "6+", evade: "6+", hitPoints: 1, size: 1 }, weapons: [{ name: "Basic Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Underdeveloped Claws"], upgrades: [] },
+      { faction: "Zerg", name: "Swarmling (Zergling)", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 18, minerals: 210, supply: 1 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 18, supply: 1 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "5+", hitPoints: 1, size: 1 }, weapons: [{ name: "Swarmling Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Zergling Reconstitution", "Metabolic Boost", "Devastating Charge (Swarmling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20] }] },
+      { faction: "Zerg", name: "Vile (Roach)", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 190, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva (Vile)", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Vile Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Debilitating Saliva", "Burrow", "Regeneration", "Devastating Charge (Vile)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [10] }, { name: "Hydriodic Bile (Vile)", type: "Replacement", costs: [10], replaces: "Acid Saliva (Vile)" }] },
+      { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 150, supply: 1 }, { models: 18, minerals: 210, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Zergling Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Metabolic Boost", "Devastating Charge (Zergling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Zergling Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] }
+    ];
+
     const ABILITY_MAP = {
       "Stimpack": { type: "ACTIVE", cost: "1 CP", phase: "MOVEMENT PHASE" },
       "Devastating Charge": { type: "PASSIVE", cost: "-", phase: "ASSAULT PHASE" },
@@ -600,48 +622,21 @@
       "Feral Rage": { type: "ACTIVE", cost: "-", phase: "COMBAT PHASE" },
       "Timing Push": { type: "ACTIVE", cost: "-", phase: "MOVEMENT PHASE" }
     };
-
-    const WEAPON_MAP = {
-      "Glaive Strike": { name: "Glaive Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "PIERCE Light (2)", phase: "COMBAT PHASE" },
-      "Left Phase Disruptor": { name: "Left Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3)", phase: "ASSAULT PHASE" },
-      "Right Phase Disruptor": { name: "Right Phase Disruptor", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
-      "C-14 rifle": { name: "C-14 rifle", range: "12", target: "All", roa: 6, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "BURST FIRE 8\" (3)", phase: "ASSAULT PHASE" },
-      "Scatter Missiles": { name: "Scatter Missiles", range: "18", target: "Ground", roa: 6, hit: "5+", surge: "Light", sDice: "D3", dmg: 1, keyword: "INDIRECT FIRE, LOCKED IN (6), LONG RANGE (24\"), SIDEARM", phase: "ASSAULT PHASE" },
-      "Haywire Missiles": { name: "Haywire Missiles", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (3), SIDEARM", phase: "ASSAULT PHASE" },
-      "AGG-12": { name: "AGG-12", range: "12", target: "Ground", roa: 2, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "LONG RANGE (18\"), SPECIALIST", phase: "ASSAULT PHASE" },
-      "Rocket Launcher": { name: "Rocket Launcher", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "INDIRECT FIRE, LONG RANGE (18\"), SIDEARM, SPECIALIST", phase: "ASSAULT PHASE" },
-      "Bayonet": { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Acid Saliva": { name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
-      "Acid Saliva (Roach)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
-      "Acid Saliva (Vile)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
-      "Hydriodic Bile": { name: "Acid Saliva", range: "8", target: "Ground", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
-      "Hydriodic Bile (Roach)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 3, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
-      "Hydriodic Bile (Vile)": { name: "Acid Saliva", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
-      "Claws": { name: "Claws", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Basic Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Swarmling Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Vile Claws": { name: "Vile Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Zergling Claws": { name: "Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Needle Spines": { name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" },
-      "Grooved Spines": { name: "Needle Spines", range: "12", target: "All", roa: 3, hit: "3+", surge: "Light, Armoured", sDice: "D3+1", dmg: 2, keyword: "LONG RANGE (16\")", phase: "ASSAULT PHASE" },
-      "Scythe": { name: "Scythe", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Energy Blast": { name: "Energy Blast", range: "8", target: "All", roa: 5, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
-      "Blades": { name: "Blades", range: "E", target: "Ground", roa: 6, hit: "4+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2)", phase: "COMBAT PHASE" },
-      "Shredding Claws": { name: "Shredding Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Plasma Discharge": { name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }
-    };
-
-    const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen = false }) => {
+const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen = false }) => {
       const [isOpen, setIsOpen] = useState(defaultOpen);
       useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
+
       const phaseWeapons = unitWeapons.filter(w => w.phase === phase);
       const phaseAbilities = unitAbilities.filter(a => a.phase === phase);
+
       if (phaseWeapons.length === 0 && phaseAbilities.length === 0) return null;
+
       return (
         <div className="border border-white/10 rounded overflow-hidden mb-2 bg-black/40">
           <button onClick={() => setIsOpen(!isOpen)} className="w-full px-3 py-1.5 bg-white/5 hover:bg-white/10 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-300">
             <span>{title}</span><span>{isOpen ? '▼' : '▶'}</span>
           </button>
+          
           {isOpen && (
             <div className="p-3 space-y-3">
               {phaseAbilities.map((ab, idx) => {
@@ -649,7 +644,9 @@
                 if (ab.type === "ACTIVE") badgeColor = "bg-sky-500";
                 if (ab.type === "REACTION") badgeColor = "bg-amber-500 text-black";
                 if (ab.type === "PASSIVE") badgeColor = "bg-emerald-600";
+                
                 const displayName = ab.name.includes('(') ? ab.name.split('(')[0].trim() : ab.name;
+
                 return (
                   <div key={`ab-${idx}-${ab.name}`} className="text-xs leading-tight">
                     <span className="font-orbitron font-bold uppercase mr-2 text-white cursor-pointer hover:text-amber-300" onClick={() => openRule && openRule(ab.name)}>{displayName} {openRule && 'ℹ'}</span>
@@ -659,6 +656,7 @@
                   </div>
                 );
               })}
+
               {phaseWeapons.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-[10px] whitespace-nowrap">
@@ -690,22 +688,29 @@
     const TacticalCardUI = ({ card, count = 0, isUnique = true, onAdd, onRemove, theme, defaultOpen = false }) => {
       const [isOpen, setIsOpen] = useState(defaultOpen);
       const isAdded = count > 0;
+
       return (
         <div className={`relative rounded-xl border flex flex-col overflow-hidden text-left transition-all hover:scale-[1.02] shadow-md shrink-0 w-full h-full ${isAdded ? theme.border + ' shadow-[0_0_15px_rgba(255,255,255,0.1)] ring-1 ring-white/10' : 'border-white/10 opacity-75 hover:opacity-100 bg-black/80'}`}>
           <div className={`p-3 flex justify-between items-start border-b cursor-pointer transition-colors ${isAdded ? theme.accent : 'bg-slate-800 border-white/10'}`} onClick={() => setIsOpen(!isOpen)}>
             <div className="flex-1 pr-2">
               <span className={`font-bold text-sm font-orbitron uppercase tracking-wider block ${isAdded ? 'text-stone-900' : 'text-slate-200'}`}>{card.name}</span>
-              <span className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 block ${isAdded ? 'text-stone-800/80' : 'text-slate-400'}`}>{card.type}{card.tags ? ` • ${card.tags}` : ''}</span>
+              <span className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 block ${isAdded ? 'text-stone-800/80' : 'text-slate-400'}`}>
+                {card.type}{card.tags ? ` • ${card.tags}` : ''}
+              </span>
             </div>
             <div className="flex flex-col items-end gap-2 shrink-0 z-10">
               <div className="flex items-center gap-2">
                 {card.vespene > 0 && <span className={`font-mono text-sm font-black bg-black/40 px-2 py-0.5 rounded shadow-inner border border-black/20 ${isAdded ? 'text-emerald-400' : 'text-emerald-500'}`}>{card.vespene} Gas</span>}
                 <span className={`text-xs ${isAdded ? 'text-stone-800' : 'text-slate-400'}`}>{isOpen ? '▼' : '▶'}</span>
               </div>
+              
               {onAdd && onRemove && (
                  <div onClick={(e) => e.stopPropagation()}>
                     {isUnique ? (
-                       <button onClick={isAdded ? onRemove : onAdd} className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors shadow-sm ${isAdded ? 'bg-rose-600 text-white border-rose-700 hover:bg-rose-500' : 'bg-black/50 text-slate-200 border-white/20 hover:bg-black/80 hover:text-white'}`}>
+                       <button 
+                         onClick={isAdded ? onRemove : onAdd}
+                         className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors shadow-sm ${isAdded ? 'bg-rose-600 text-white border-rose-700 hover:bg-rose-500' : 'bg-black/50 text-slate-200 border-white/20 hover:bg-black/80 hover:text-white'}`}
+                       >
                          {isAdded ? 'Drop Card' : 'Draft Card'}
                        </button>
                     ) : (
@@ -719,6 +724,7 @@
               )}
             </div>
           </div>
+          
           {isOpen && (
             <div className={`p-3 flex-1 flex flex-col gap-2 w-full ${isAdded ? theme.cardBg : 'bg-transparent'}`}>
               {card.provides && (
@@ -726,15 +732,18 @@
                   <span className="text-white">{card.provides}</span>
                 </div>
               )}
+              
               {card.abilities && card.abilities.length > 0 && (
                 <div className="flex flex-col gap-1.5 w-full mt-2">
                   {card.abilities.map((abilityName, idx) => {
                      const mappedInfo = ABILITY_MAP[abilityName] || { type: "PASSIVE", cost: "-", phase: "ANY PHASE" };
                      const descText = RULES_DICTIONARY[abilityName] || "Rule text available in full rulebook.";
+                     
                      let typeColor = "bg-rose-600";
                      if (mappedInfo.type === "ACTIVE") typeColor = "bg-sky-500";
                      if (mappedInfo.type === "REACTION") typeColor = "bg-amber-500 text-black";
                      if (mappedInfo.type === "PASSIVE") typeColor = "bg-emerald-600";
+
                      return (
                       <div key={`${abilityName}-${idx}`} className="bg-black/60 rounded p-2 border border-white/5">
                          <div className="flex justify-between items-start mb-1">
@@ -771,9 +780,11 @@
                 const minModels = Math.min(...(unit.compositions || []).map(c => c.models));
                 const maxModels = Math.max(...(unit.compositions || []).map(c => c.models));
                 const modelsDisplay = minModels === maxModels ? minModels : `${minModels}-${maxModels}`;
+                
                 const minSupply = Math.min(...(unit.compositions || []).map(c => c.supply));
                 const maxSupply = Math.max(...(unit.compositions || []).map(c => c.supply));
                 const supplyDisplay = minSupply === maxSupply ? minSupply : `${minSupply}-${maxSupply}`;
+
                 const minMinerals = Math.min(...(unit.compositions || []).map(c => c.minerals));
                 const maxMinerals = Math.max(...(unit.compositions || []).map(c => c.minerals));
                 const costDisplay = minMinerals === maxMinerals ? `${minMinerals}` : `${minMinerals}-${maxMinerals}`;
@@ -787,11 +798,13 @@
                       </div>
                       <button onClick={() => onConfigure(unit)} className={`px-4 py-1.5 rounded font-bold text-sm ${theme.accent}`}>Configure</button>
                     </div>
+
                     <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs uppercase font-bold text-slate-400 mb-3 mt-2">
                       <span className="flex items-baseline gap-1">Models: <span className="text-white text-sm">{modelsDisplay}</span></span>
                       <span className="flex items-baseline gap-1">Supply: <span className="text-amber-300 text-sm">{supplyDisplay}</span></span>
                       <span className="flex items-baseline gap-1">Cost: <span className="text-sky-400 text-sm">{costDisplay} Min</span></span>
                     </div>
+
                     <div className="grid grid-cols-6 gap-1 bg-black/60 p-2 rounded text-center text-xs font-orbitron shadow-inner">
                       {unit.stats && unit.stats.shield !== undefined && unit.stats.shield !== "-" && <div><span className="block text-[9px] text-blue-300">SHD</span><span className="font-bold text-white">{unit.stats.shield}</span></div>}
                       <div><span className="block text-[9px] text-slate-400">SPD</span><span className="font-bold text-white">{unit.stats?.speed || "-"}</span></div>
@@ -872,10 +885,12 @@
 
     const KeywordsView = ({ theme }) => {
       const [searchQuery, setSearchQuery] = useState("");
+
       const getCategory = (ruleName) => {
         const lowerRule = ruleName.toLowerCase();
         const weaponKeys = ['armoured', 'light', 'anti-evade', 'precision', 'pierce', 'indirect fire', 'sidearm', 'long range', 'instant', 'critical hit', 'burst fire', 'locked in', 'pinpoint', 'concentrated fire'];
         if (weaponKeys.some(k => lowerRule.includes(k))) return 'weapons';
+        
         let p = false, t = false, z = false;
         UNITS_DATABASE.forEach(u => {
            if (u.abilities && u.abilities.includes(ruleName)) {
@@ -891,23 +906,32 @@
                if(c.faction === 'Zerg') z = true;
            }
         });
+        
         if (p && !t && !z) return 'protoss';
         if (!p && t && !z) return 'terran';
         if (!p && !t && z) return 'zerg';
+        
         if (lowerRule.includes('protoss') || lowerRule.includes('khala') || lowerRule.includes('nerazim') || lowerRule.includes('psionic')) return 'protoss';
         if (lowerRule.includes('terran') || lowerRule.includes('medic') || lowerRule.includes('marine')) return 'terran';
         if (lowerRule.includes('zerg') || lowerRule.includes('creep') || lowerRule.includes('burrow')) return 'zerg';
+
         return 'mechanics';
       };
 
-      const sortedKeywords = useMemo(() => Object.entries(RULES_DICTIONARY).sort((a, b) => a[0].localeCompare(b[0])), []);
+      const sortedKeywords = useMemo(() => {
+        return Object.entries(RULES_DICTIONARY).sort((a, b) => a[0].localeCompare(b[0]));
+      }, []);
+
       const categorizedData = useMemo(() => {
         const data = { weapons: [], mechanics: [], protoss: [], terran: [], zerg: [] };
-        sortedKeywords.forEach(([key, desc]) => { data[getCategory(key)].push({ key, desc }); });
+        sortedKeywords.forEach(([key, desc]) => {
+            data[getCategory(key)].push({ key, desc });
+        });
         return data;
       }, [sortedKeywords]);
 
       const matchSearch = (text) => text.toLowerCase().includes(searchQuery.toLowerCase());
+
       const filteredData = {
         weapons: categorizedData.weapons.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
         mechanics: categorizedData.mechanics.filter(r => matchSearch(r.key) || matchSearch(r.desc)),
@@ -937,15 +961,26 @@
         <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
             <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Keywords Library</h2>
+            
             <div className="flex-1 w-full max-w-md relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search keywords or abilities..." className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search keywords or abilities..."
+                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner"
+              />
             </div>
           </div>
+
           <div className="space-y-4">
              {Object.values(filteredData).every(arr => arr.length === 0) && (
-                 <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">No keywords found.</div>
+                 <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
+                    No keywords found.
+                 </div>
              )}
+             
              <RuleBlock title="Weapon Traits" data={filteredData.weapons} icon="🎯" color="text-rose-400" />
              <RuleBlock title="Universal Mechanics" data={filteredData.mechanics} icon="⚙️" color="text-slate-300" />
              <RuleBlock title="Terran Abilities" data={filteredData.terran} icon="🦅" color="text-blue-400" />
@@ -965,11 +1000,13 @@
       useEffect(() => {
         if (!cloudUser || !window.fbDb) return;
         const loadRules = async () => {
-          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
-          try {
-            const snap = await window.fbHelpers.getDoc(docRef);
-            if (snap.exists()) setCustomRules(JSON.parse(snap.data().rulesArray));
-          } catch(e) {}
+            const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
+            try {
+                const snap = await window.fbHelpers.getDoc(docRef);
+                if (snap.exists()) {
+                    setCustomRules(JSON.parse(snap.data().rulesArray));
+                }
+            } catch(e) {}
         };
         loadRules();
       }, [cloudUser]);
@@ -977,7 +1014,9 @@
       const saveCustomRules = async (rulesToSave) => {
         if (!cloudUser || !window.fbDb) return;
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
-        try { await window.fbHelpers.setDoc(docRef, { rulesArray: JSON.stringify(rulesToSave) }); } catch(e) {}
+        try {
+            await window.fbHelpers.setDoc(docRef, { rulesArray: JSON.stringify(rulesToSave) });
+        } catch(e) {}
       };
 
       const handleAddRule = (e) => {
@@ -1003,39 +1042,55 @@
         <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
             <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Game Rules</h2>
+            
             <div className="flex-1 w-full max-w-md relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search rules..." className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search rules..."
+                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner"
+              />
             </div>
           </div>
+
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <div className="xl:col-span-2 space-y-6">
-              <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">Core Rulebook Data Not Yet Assimilated.<br/><span className="text-xs text-slate-600">Awaiting transmission...</span></div>
-              {filteredCustom.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-black uppercase font-orbitron mb-4 border-b border-white/10 pb-2 text-sky-300">Custom Rules & Notes</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredCustom.map((r, idx) => (
-                      <div key={idx} className="bg-sky-950/20 border border-sky-900/50 p-4 rounded-lg shadow-md relative group">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">{r.title}</h3>
-                          <button onClick={() => handleDeleteRule(idx)} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
-                        </div>
-                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{r.desc}</p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
+                    Core Rulebook Data Not Yet Assimilated.<br/><span className="text-xs text-slate-600">Awaiting transmission...</span>
                 </div>
-              )}
+
+                {filteredCustom.length > 0 && (
+                    <div>
+                        <h2 className={`text-xl font-black uppercase font-orbitron mb-4 border-b border-white/10 pb-2 text-sky-300`}>Custom Rules & Notes</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredCustom.map((r, idx) => (
+                            <div key={idx} className="bg-sky-950/20 border border-sky-900/50 p-4 rounded-lg shadow-md relative group">
+                            <div className="flex justify-between items-start mb-1">
+                                <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">{r.title}</h3>
+                                <button onClick={() => handleDeleteRule(idx)} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
+                            </div>
+                            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{r.desc}</p>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+                )}
             </div>
+
             <div className="xl:col-span-1">
-              <form onSubmit={handleAddRule} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
+                <form onSubmit={handleAddRule} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
                 <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Add Custom Rule</h3>
                 {!cloudUser && <p className="text-xs text-rose-400 mb-2">Cloud Sync is offline. Your rules will not be saved permanently.</p>}
-                <div><input type="text" value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)} placeholder="Rule Title (e.g., Cover Mechanics)" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" /></div>
-                <div><textarea value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)} placeholder="Rule details..." rows="5" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea></div>
+                <div>
+                    <input type="text" value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)} placeholder="Rule Title (e.g., Cover Mechanics)" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" />
+                </div>
+                <div>
+                    <textarea value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)} placeholder="Rule details..." rows="5" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea>
+                </div>
                 <button type="submit" disabled={!cloudUser} className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${cloudUser ? theme.accent : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Save Rule</button>
-              </form>
+                </form>
             </div>
           </div>
         </div>
@@ -1304,7 +1359,7 @@
       if (!activeMissionCard) activeMissionCard = MISSION_CARDS.find(m => m.name === matchData.mission) || MISSION_CARDS[0];
 
       const escValue = parseInt((activeMissionCard.escalation.match(/\d+/) || [0])[0], 10) || 0;
-      const supplyPool = matchData.round >= activeMissionCard.gameLength ? Infinity : (activeMissionCard.supply + (matchData.round - 1) * escValue);
+      const supplyPool = matchData.round >= activeMissionCard.gameLength ? Infinity : (activeMissionCard.supply + (matchData.round - 1) * activeMissionCard.escValue);
       const availableSupply = supplyPool === Infinity ? Infinity : Math.max(0, supplyPool - activeSupply);
 
       const parseSlots = (providesStr) => {
@@ -1559,8 +1614,8 @@
             <div className="flex flex-wrap items-center gap-2 md:gap-4">
               {!isPlayMode && (
                 <div className="flex gap-2 mr-2">
-                  <button onClick={() => { if(cloudUser) setShowSaveModal(true); else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 ${cloudUser ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser ? "Save to Cloud" : "Cloud offline"}>☁️ Save</button>
-                  <button onClick={() => { if(cloudUser) { fetchCloudRosters(); setShowLoadModal(true); } else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 ${cloudUser ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser ? "Load from Cloud" : "Cloud offline"}>☁️ Load</button>
+                  <button onClick={() => { if(cloudUser && !isGuest) setShowSaveModal(true); else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 ${cloudUser && !isGuest ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser && !isGuest ? "Save to Cloud" : "Cloud offline"}>☁️ Save</button>
+                  <button onClick={() => { if(cloudUser && !isGuest) { fetchCloudRosters(); setShowLoadModal(true); } else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 ${cloudUser && !isGuest ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser && !isGuest ? "Load from Cloud" : "Cloud offline"}>☁️ Load</button>
                 </div>
               )}
               {!isPlayMode && (
@@ -1906,6 +1961,7 @@
 
           {configUnitData && <UnitConfigModal configData={configUnitData} currentTotalMinerals={totalMinerals} limitMinerals={limits.minerals} onClose={() => setConfigUnitData(null)} onSave={handleSaveUnit} />}
 
+          {/* Cloud Save Modal */}
           {showSaveModal && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4">
               <div className="max-w-md w-full p-6 rounded-xl border border-sky-500/50 bg-[#0f172a] shadow-2xl">
@@ -1920,6 +1976,7 @@
             </div>
           )}
 
+          {/* Cloud Load Modal */}
           {showLoadModal && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4">
               <div className="max-w-lg w-full p-6 rounded-xl border border-sky-500/50 bg-[#0f172a] shadow-2xl max-h-[80vh] flex flex-col">
@@ -1956,6 +2013,7 @@
             </div>
           )}
 
+          {/* Dynamic Modals */}
           {activeModal && activeModal.type === 'rule' && (
             <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
               <div className={`max-w-md w-full p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl`} onClick={e => e.stopPropagation()}>
@@ -1994,44 +2052,52 @@
       const [editName, setEditName] = useState("");
 
       useEffect(() => {
-        const initAuth = async () => {
-          const { fbAuth, fbHelpers } = window;
-          if (!fbAuth) return;
-          fbHelpers.onAuthStateChanged(fbAuth, async (u) => {
+        const setupAuth = () => {
+          if (!window.fbAuth || !window.fbHelpers) return;
+          window.fbHelpers.onAuthStateChanged(window.fbAuth, (u) => {
             if (u) {
               setCloudUser(u);
               setIsGuest(u.isAnonymous);
             } else {
-              try { await fbHelpers.signInAnonymously(fbAuth); } catch(e) { console.error(e); }
+              window.fbHelpers.signInAnonymously(window.fbAuth).catch((e) => console.warn(e));
             }
           });
         };
 
-        if (window.fbDb && window.fbAuth) {
-          initAuth();
+        if (window.fbAuth) {
+          setupAuth();
         } else {
-          window.addEventListener('firebase-ready', initAuth);
-          return () => window.removeEventListener('firebase-ready', initAuth);
+          window.addEventListener('firebase-ready', setupAuth);
+          return () => window.removeEventListener('firebase-ready', setupAuth);
         }
       }, []);
 
       useEffect(() => {
-        if (!cloudUser || !window.fbDb) return;
-        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
-        const unsub = window.fbHelpers.onSnapshot(docRef, (snap) => {
-          if (snap.exists()) setProfile(snap.data());
-        });
-        return () => unsub();
+        if (!cloudUser || !window.fbDb || !window.fbHelpers) return;
+        try {
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+          const unsub = window.fbHelpers.onSnapshot(docRef, (snap) => {
+            if (snap.exists()) setProfile(snap.data());
+          }, (err) => console.warn(err));
+          return () => unsub();
+        } catch (e) {
+          console.warn("Profile fetch skipped:", e);
+        }
       }, [cloudUser]);
 
       const handleSaveProfile = async () => {
-        if (!cloudUser || !window.fbDb) return;
-        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
-        await window.fbHelpers.setDoc(docRef, { displayName: editName.trim() }, { merge: true });
-        setShowProfileModal(false);
+        if (!cloudUser || !window.fbDb || !window.fbHelpers) return;
+        try {
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+          await window.fbHelpers.setDoc(docRef, { displayName: editName.trim() }, { merge: true });
+          setShowProfileModal(false);
+        } catch (e) {
+          console.error(e);
+        }
       };
 
       const handleGoogleLogin = async () => {
+        if (!window.fbHelpers || !window.fbAuth) return;
         const { fbAuth, GoogleAuthProvider, signInWithPopup } = window.fbHelpers;
         const provider = new GoogleAuthProvider();
         try {
@@ -2040,7 +2106,7 @@
           setIsGuest(false);
         } catch (e) {
           console.error("Google Login Error", e);
-          alert("Login failed. Ensure Google Sign-In is enabled in your Firebase Console and your domain is authorized.");
+          alert("Login failed. Check your Firebase Authorized Domains configuration.");
         }
       };
 
