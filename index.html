@@ -433,6 +433,106 @@
       { faction: "Zerg", name: "Vile (Roach)", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 190, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva (Vile)", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Vile Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Debilitating Saliva", "Burrow", "Regeneration", "Devastating Charge (Vile)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [10] }, { name: "Hydriodic Bile (Vile)", type: "Replacement", costs: [10], replaces: "Acid Saliva (Vile)" }] },
       { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 150, supply: 1 }, { models: 18, minerals: 210, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Zergling Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Metabolic Boost", "Devastating Charge (Zergling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Zergling Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] }
     ];
+const ABILITY_MAP = {}; 
+
+    const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen }) => {
+      const weapons = unitWeapons.filter(w => w.phase === phase);
+      const abilities = unitAbilities.filter(a => a.phase === phase);
+      if (weapons.length === 0 && abilities.length === 0) return null;
+
+      return (
+        <details className="group mb-2" open={defaultOpen}>
+          <summary className="text-sm font-orbitron font-bold uppercase cursor-pointer flex justify-between items-center bg-black/40 p-2 rounded border border-white/10 hover:bg-white/10 transition-colors">
+            <span className="text-sky-400">{title}</span>
+            <span className="text-slate-400 group-open:rotate-180 transition-transform text-xs">▼</span>
+          </summary>
+          <div className="p-2 space-y-3 mt-1 bg-black/20 rounded border border-white/5">
+            {weapons.map((w, idx) => (
+              <div key={idx} className="bg-slate-900/50 p-2 rounded border border-slate-700/50">
+                <div className="flex justify-between items-center border-b border-slate-700/50 pb-1 mb-1">
+                  <span className="font-bold text-amber-300 text-sm">{w.name}</span>
+                  <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Rng: {w.range}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1 text-[10px] text-center mb-1 font-mono">
+                  <div className="bg-black/40 rounded p-0.5"><span className="text-slate-500 block leading-none">RoA</span>{w.roa}</div>
+                  <div className="bg-black/40 rounded p-0.5"><span className="text-slate-500 block leading-none">Hit</span>{w.hit}</div>
+                  <div className="bg-black/40 rounded p-0.5"><span className="text-slate-500 block leading-none">S.Dice</span>{w.sDice}</div>
+                  <div className="bg-black/40 rounded p-0.5"><span className="text-slate-500 block leading-none">Dmg</span>{w.dmg}</div>
+                </div>
+                <div className="text-[10px] text-slate-400 leading-tight">
+                  <span className="text-sky-300">Surge:</span> {w.surge} | <span className="text-fuchsia-300">Keywords:</span> {w.keyword}
+                </div>
+              </div>
+            ))}
+            {abilities.map((a, idx) => (
+              <div key={idx} className="bg-sky-900/20 p-2 rounded border border-sky-900/30">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-bold text-sky-300 text-xs flex items-center gap-1">
+                    {a.name} 
+                    {openRule && <button onClick={(e) => { e.preventDefault(); openRule(a.name); }} className="text-sky-500 hover:text-sky-300 ml-1">ℹ️</button>}
+                  </span>
+                  <span className="text-[9px] bg-sky-950 px-1 rounded text-sky-400 border border-sky-800">{a.type || "PASSIVE"}</span>
+                </div>
+                <p className="text-[10px] text-slate-300 leading-tight whitespace-pre-wrap">{a.desc}</p>
+              </div>
+            ))}
+          </div>
+        </details>
+      );
+    };
+
+    const TacticalCardUI = ({ card, count, isUnique, theme, onAdd, onRemove, defaultOpen }) => (
+      <div className={`flex flex-col border rounded-lg overflow-hidden bg-black/60 shadow-md h-full ${count > 0 ? theme.border : 'border-white/10 opacity-70'}`}>
+        <div className="p-3 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-slate-900 to-black">
+          <div className="pr-2">
+            <h4 className={`font-orbitron font-bold uppercase text-sm leading-tight ${count > 0 ? theme.textPrimary : 'text-slate-300'}`}>{card.name}</h4>
+            <div className="flex flex-wrap gap-2 text-[9px] uppercase tracking-widest text-slate-500 mt-1">
+              <span>{card.faction}</span>
+              {card.vespene > 0 && <span className="text-emerald-400">{card.vespene} Gas</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {onRemove && count > 0 && <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="w-6 h-6 rounded bg-rose-900/50 text-rose-400 flex items-center justify-center font-bold text-xs hover:bg-rose-800 transition-colors">-</button>}
+            <span className="font-orbitron font-black text-sm">{count}{isUnique ? '/1' : ''}</span>
+            {onAdd && <button onClick={(e) => { e.stopPropagation(); onAdd(); }} disabled={isUnique && count >= 1} className={`w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors ${isUnique && count >= 1 ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-900/50 text-emerald-400 hover:bg-emerald-800'}`}>+</button>}
+          </div>
+        </div>
+        <div className="p-3 text-[10px] text-slate-300 space-y-2 flex-1">
+          {card.provides && <div><span className="font-bold text-sky-400 block mb-0.5">Provides:</span> {card.provides}</div>}
+          {card.abilities && card.abilities.length > 0 && (
+            <div><span className="font-bold text-amber-400 block mb-0.5">Abilities:</span> {card.abilities.join(", ")}</div>
+          )}
+        </div>
+      </div>
+    );
+
+    const ArmoryGroup = ({ title, units, onConfigure, theme }) => {
+      if (units.length === 0) return null;
+      return (
+        <div className="mb-6">
+          <h3 className={`text-sm font-orbitron font-black uppercase mb-3 border-b border-white/10 pb-1 ${theme.textPrimary}`}>{title} <span className="text-slate-500 text-xs">({units.length})</span></h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {units.map(unit => (
+              <div key={unit.name} className="flex flex-col bg-black/40 border border-white/10 rounded-lg p-3 hover:border-white/30 transition-colors cursor-pointer group" onClick={() => onConfigure(unit)}>
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 className="font-orbitron font-bold text-white uppercase text-sm group-hover:text-sky-300 transition-colors">{unit.name}</h4>
+                    <span className="text-[9px] uppercase tracking-widest text-slate-500 block mt-0.5">{unit.tags}</span>
+                  </div>
+                </div>
+                <div className="mt-auto flex justify-between items-end pt-2">
+                  <div className="text-[10px] text-slate-400">
+                    <span className="block"><span className="text-sky-300 font-bold">Min:</span> {unit.compositions[0].minerals}</span>
+                    <span className="block"><span className="text-amber-300 font-bold">Sup:</span> {unit.compositions[0].supply}</span>
+                  </div>
+                  <button className={`text-[10px] uppercase font-bold px-2 py-1 rounded transition-colors ${theme.accentSecondary}`}>Configure</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
 
     const MissionsView = ({ theme }) => {
       const [filter, setFilter] = useState("All");
