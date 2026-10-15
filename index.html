@@ -484,8 +484,8 @@ const ABILITY_MAP = {};
     };
 
     const TacticalCardUI = ({ card, count, isUnique, theme, onAdd, onRemove, defaultOpen }) => (
-      <div className={`flex flex-col border rounded-lg overflow-hidden bg-black/60 shadow-md h-full ${count > 0 ? theme.border : 'border-white/10 opacity-70'}`}>
-        <div className="p-3 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-slate-900 to-black">
+      <div className={`flex flex-col border rounded-lg bg-black/60 shadow-md h-full ${count > 0 ? theme.border : 'border-white/10 opacity-70'}`}>
+        <div className="p-3 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-slate-900 to-black rounded-t-lg shrink-0">
           <div className="pr-2">
             <h4 className={`font-orbitron font-bold uppercase text-base md:text-lg leading-tight ${count > 0 ? theme.textPrimary : 'text-slate-300'}`}>{card.name}</h4>
             <div className="flex flex-wrap items-center gap-2 text-[11px] md:text-xs uppercase tracking-widest text-slate-500 mt-1">
@@ -506,12 +506,36 @@ const ABILITY_MAP = {};
             {onAdd && <button onClick={(e) => { e.stopPropagation(); onAdd(); }} disabled={isUnique && count >= 1} className={`w-8 h-8 rounded flex items-center justify-center font-bold text-sm transition-colors ${isUnique && count >= 1 ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-900/50 text-emerald-400 hover:bg-emerald-800'}`}>+</button>}
           </div>
         </div>
-        <div className="p-3 text-xs md:text-sm text-slate-300 space-y-2 flex-1 leading-relaxed">
-          {card.provides && <div><span className="font-bold text-sky-400 block mb-0.5">Provides:</span> {card.provides}</div>}
-          {card.abilities && card.abilities.length > 0 && (
-            <div><span className="font-bold text-amber-400 block mb-0.5">Abilities:</span> {card.abilities.join(", ")}</div>
-          )}
-        </div>
+
+        {/* ALWAYS VISIBLE PROVIDES BLOCK */}
+        {card.provides && (
+          <div className="p-3 bg-black/40 text-xs md:text-sm text-slate-200 border-b border-white/5">
+            <span className="font-bold text-sky-400 block mb-1 uppercase tracking-widest text-[10px] md:text-xs">Provides:</span> 
+            <span className="font-bold">{card.provides}</span>
+          </div>
+        )}
+
+        {/* DETAILS/ABILITIES BLOCK */}
+        <details className="group" open={defaultOpen}>
+          <summary className="p-3 text-xs md:text-sm font-bold text-slate-400 cursor-pointer hover:text-white uppercase tracking-widest bg-white/5 border-b border-white/10 flex justify-between items-center">
+            <span>Abilities & Rules</span>
+            <span className="group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="p-3 bg-black/40">
+            {card.abilities && card.abilities.length > 0 ? (
+              <div className="space-y-3">
+                {card.abilities.map(a => (
+                  <div key={a} className="bg-sky-900/20 p-3 rounded border border-sky-900/30">
+                    <span className="font-bold text-sky-300 text-sm md:text-base block mb-2">{a}</span>
+                    <span className="text-xs md:text-sm text-slate-300 leading-relaxed block whitespace-pre-wrap">{RULES_DICTIONARY[a] || "Rule text available in full rulebook."}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs md:text-sm text-slate-500 italic">No special abilities on this card.</div>
+            )}
+          </div>
+        </details>
       </div>
     );
 
