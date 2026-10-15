@@ -898,7 +898,7 @@ const ABILITY_MAP = {};
       );
     };
 
-    const ArmyBuilderView = ({ theme, selectedFaction, setSelectedFaction, isPlayMode, setIsPlayMode, cloudUser }) => {
+    const ArmyBuilderView = ({ theme, selectedFaction, setSelectedFaction, isPlayMode, setIsPlayMode, cloudUser, isGuest }) => {
       const [scale, setScale] = useState("Free Build");
       const [roster, setRoster] = useState([]);
       const [tacticalCards, setTacticalCards] = useState([]);
@@ -1834,7 +1834,7 @@ const ABILITY_MAP = {};
               </div>
             )}
             
-            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} setSelectedFaction={setFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} cloudUser={cloudUser} />}
+            {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} setSelectedFaction={setFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} cloudUser={cloudUser} isGuest={isGuest} />}
             {activeTab === "missions" && <MissionsView theme={theme} />}
             {activeTab === "keywords" && <KeywordsView theme={theme} />}
             {activeTab === "rules" && <RulesView theme={theme} cloudUser={cloudUser} />}
