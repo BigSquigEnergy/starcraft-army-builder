@@ -31,9 +31,10 @@
   <div id="root"></div>
 
   <!-- Firebase Compat Scripts for local file:// execution -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -53,6 +54,7 @@
       window.fbDb = firebase.firestore();
       window.fbAuth = firebase.auth();
       window.fbAppId = firebaseConfig.projectId;
+      window.fbStorage = firebase.storage();
 
       window.fbHelpers = {
         doc: (db, ...paths) => db.doc(paths.join('/')),
@@ -788,10 +790,14 @@ const ABILITY_MAP = {};
       const [posts, setPosts] = useState([]);
       const [adminUid, setAdminUid] = useState(null);
       const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
+      
       const [newTitle, setNewTitle] = useState("");
-      const [newHeaderImg, setNewHeaderImg] = useState("");
       const [newCategory, setNewCategory] = useState("Game News");
       const [newContent, setNewContent] = useState("");
+      
+      const [headerFile, setHeaderFile] = useState(null);
+      const [isUploading, setIsUploading] = useState(false);
+      const [isInlineUploading, setIsInlineUploading] = useState(false);
 
       useEffect(() => {
         if (!cloudUser || !window.fbDb) return;
@@ -821,23 +827,60 @@ const ABILITY_MAP = {};
         await window.fbHelpers.setDoc(adminRef, { uid: cloudUser.uid });
       };
 
+      const handleInlineUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !window.fbStorage) return;
+        
+        setIsInlineUploading(true);
+        try {
+            const storageRef = window.fbStorage.ref().child(`unn_media/${Date.now()}_${file.name}`);
+            const snapshot = await storageRef.put(file);
+            const url = await snapshot.ref.getDownloadURL();
+            setNewContent(prev => prev + `\n[IMG]${url}[/IMG]\n`);
+        } catch (err) {
+            console.error(err);
+            alert("Upload failed! Make sure Storage is enabled in your Firebase Console.");
+        }
+        setIsInlineUploading(false);
+        e.target.value = ""; 
+      };
+
       const handleAddPost = async (e) => {
         e.preventDefault();
         if (!newTitle.trim() || !newContent.trim() || !cloudUser || !window.fbDb || isGuest) return;
-        const newPost = {
-          title: newTitle.trim(),
-          category: newCategory,
-          headerImage: newHeaderImg.trim(),
-          author: "UNN Command",
-          content: newContent.trim(),
-          date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-          createdAt: Date.now()
-        };
-        const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts');
-        await window.fbHelpers.addDoc(colRef, newPost);
-        setNewTitle("");
-        setNewHeaderImg("");
-        setNewContent("");
+        
+        setIsUploading(true);
+        let uploadedImgUrl = "";
+
+        try {
+            if (headerFile && window.fbStorage) {
+                const storageRef = window.fbStorage.ref().child(`unn_headers/${Date.now()}_${headerFile.name}`);
+                const snapshot = await storageRef.put(headerFile);
+                uploadedImgUrl = await snapshot.ref.getDownloadURL();
+            }
+
+            const newPost = {
+              title: newTitle.trim(),
+              category: newCategory,
+              headerImage: uploadedImgUrl,
+              author: "UNN Command",
+              content: newContent.trim(),
+              date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+              createdAt: Date.now()
+            };
+            const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts');
+            await window.fbHelpers.addDoc(colRef, newPost);
+            
+            setNewTitle("");
+            setHeaderFile(null);
+            setNewContent("");
+            const fileInput = document.getElementById("headerFileInput");
+            if (fileInput) fileInput.value = "";
+        } catch (error) {
+            console.error(error);
+            alert("Upload failed. Make sure Storage is enabled in your Firebase Console.");
+        }
+        setIsUploading(false);
       };
 
       const handleDeletePost = async (id) => {
@@ -851,7 +894,7 @@ const ABILITY_MAP = {};
           const trimmed = line.trim();
           if (trimmed.toUpperCase().startsWith('[IMG]') && trimmed.toUpperCase().endsWith('[/IMG]')) {
             const url = trimmed.substring(5, trimmed.length - 6);
-            return <img key={i} src={url} alt="UNN Attached Media" className="w-full max-h-[400px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />;
+            return <img key={i} src={url} alt="UNN Attached Media" className="w-full max-h-[500px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />;
           }
           return <span key={i}>{line}<br/></span>;
         });
@@ -916,7 +959,12 @@ const ABILITY_MAP = {};
                 <form onSubmit={handleAddPost} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
                   <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Publish Broadcast</h3>
                   <div><input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Headline..." className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" /></div>
-                  <div><input type="text" value={newHeaderImg} onChange={e => setNewHeaderImg(e.target.value)} placeholder="Header Image URL (Optional)..." className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" /></div>
+                  
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Upload Header Image</label>
+                    <input id="headerFileInput" type="file" accept="image/*" onChange={e => setHeaderFile(e.target.files[0])} className="w-full bg-black/60 border border-white/20 rounded p-2 text-sm text-slate-300 outline-none focus:border-sky-500 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-700 file:text-white hover:file:bg-slate-600 cursor-pointer" />
+                  </div>
+
                   <div>
                     <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500">
                       <option value="Game News">Game News</option>
@@ -925,11 +973,23 @@ const ABILITY_MAP = {};
                       <option value="Intel Report">Intel Report</option>
                     </select>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 mb-1 font-bold uppercase tracking-widest">Type [IMG]image-url[/IMG] to insert pictures inline</p>
-                    <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Message content..." rows="8" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea>
+                  
+                  <div className="bg-black/40 border border-white/10 p-3 rounded mt-2">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex justify-between items-center">
+                        <span>Message Content</span>
+                        {isInlineUploading && <span className="text-sky-400 animate-pulse">Uploading Media...</span>}
+                    </label>
+                    <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Message content..." rows="8" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none mb-2"></textarea>
+                    
+                    <div className="flex items-center justify-between border-t border-white/10 pt-2">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden min-[350px]:inline">Attach Inline Image:</span>
+                        <input type="file" accept="image/*" onChange={handleInlineUpload} disabled={isInlineUploading} className="text-[10px] text-slate-300 outline-none file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-sky-900/50 file:text-sky-300 hover:file:bg-sky-800 cursor-pointer disabled:opacity-50 w-[180px]" />
+                    </div>
                   </div>
-                  <button type="submit" className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${theme.accent}`}>Broadcast to UNN</button>
+
+                  <button type="submit" disabled={isUploading} className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${isUploading ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : theme.accent}`}>
+                    {isUploading ? 'Transmitting...' : 'Broadcast to UNN'}
+                  </button>
                 </form>
               </div>
             )}
