@@ -959,25 +959,28 @@ const ABILITY_MAP = {};
       };
 
       const renderContent = (text) => {
-        return text.split('\n').map((line, i) => {
-          const trimmed = line.trim();
+        if (!text) return null;
+        
+        // 1. Escape basic HTML for safety
+        let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        // 2. Parse all custom tags into styled HTML
+        safeText = safeText
+          // Media Blocks
+          .replace(/\[IMG\](.*?)\[\/IMG\]/gi, '<img src="$1" alt="UNN Attached Media" class="w-full max-h-[500px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />')
+          .replace(/\[YOUTUBE\](.*?)\[\/YOUTUBE\]/gi, '<div class="my-4 aspect-video w-full rounded overflow-hidden border border-white/20 shadow-lg bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$1" frameborder="0" allowfullscreen></iframe></div>')
           
-          if (trimmed.toUpperCase().startsWith('[IMG]') && trimmed.toUpperCase().endsWith('[/IMG]')) {
-            const url = trimmed.substring(5, trimmed.length - 6);
-            return <img key={i} src={url} alt="UNN Attached Media" className="w-full max-h-[500px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />;
-          }
+          // Formatting Blocks
+          .replace(/\[QUOTE\]([\s\S]*?)\[\/QUOTE\]/gi, '<blockquote class="border-l-4 border-sky-500 pl-4 italic text-slate-300 my-4 bg-sky-900/20 py-3 pr-3 rounded-r leading-relaxed shadow-sm">$1</blockquote>')
+          .replace(/\[B\]([\s\S]*?)\[\/B\]/gi, '<strong class="font-bold text-white">$1</strong>')
+          .replace(/\[I\]([\s\S]*?)\[\/I\]/gi, '<em class="italic">$1</em>')
+          .replace(/\[COLOR=(.*?)\]([\s\S]*?)\[\/COLOR\]/gi, '<span style="color: $1">$2</span>')
+          .replace(/\[SIZE=(.*?)\]([\s\S]*?)\[\/SIZE\]/gi, '<span style="font-size: $1">$2</span>')
           
-          if (trimmed.toUpperCase().startsWith('[YOUTUBE]') && trimmed.toUpperCase().endsWith('[/YOUTUBE]')) {
-            const videoId = trimmed.substring(9, trimmed.length - 10);
-            return (
-              <div key={i} className="my-4 aspect-video w-full rounded overflow-hidden border border-white/20 shadow-lg bg-black">
-                <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${videoId}`} title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-              </div>
-            );
-          }
-          
-          return <span key={i}>{line}<br/></span>;
-        });
+          // Line breaks
+          .replace(/\n/g, '<br/>');
+
+        return <div dangerouslySetInnerHTML={{ __html: safeText }} />;
       };
 
       const isAdmin = cloudUser && adminUid === cloudUser.uid;
@@ -1070,8 +1073,14 @@ const ABILITY_MAP = {};
                   
                   <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
                     <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex justify-between items-center">
-                        <span>Body Content <span className="text-[9px] text-sky-400 ml-2 normal-case tracking-normal font-normal bg-sky-900/30 px-2 py-0.5 rounded border border-sky-500/30">Use tags: [IMG]url[/IMG] or [YOUTUBE]id[/YOUTUBE]</span></span>
-                        {isInlineUploading && <span className="text-sky-400 animate-pulse text-[10px]">Uploading Media...</span>}
+                        <span>Body Content 
+                          <span className="block mt-1 text-[9px] text-sky-400 normal-case tracking-normal font-normal bg-sky-900/30 px-2 py-1 rounded border border-sky-500/30 leading-relaxed">
+                            <strong>Tags:</strong> [B]bold[/B], [I]italic[/I], [QUOTE]text[/QUOTE]<br/>
+                            [COLOR=orange]text[/COLOR] (use words or #hex), [SIZE=24px]text[/SIZE]<br/>
+                            [IMG]url[/IMG], [YOUTUBE]id[/YOUTUBE]
+                          </span>
+                        </span>
+                        {isInlineUploading && <span className="text-sky-400 animate-pulse text-[10px] shrink-0 ml-2">Uploading Media...</span>}
                     </label>
                     <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Draft transmission here..." rows="12" className="w-full bg-black/80 border border-white/20 rounded p-4 text-sm text-white outline-none focus:border-sky-500 resize-y leading-relaxed font-mono"></textarea>
                     
