@@ -845,12 +845,14 @@ const ABILITY_MAP = {};
       const [posts, setPosts] = useState([]);
       const [adminUid, setAdminUid] = useState(null);
       const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
+      const [isComposing, setIsComposing] = useState(false);
       
       const [newTitle, setNewTitle] = useState("");
       const [newCategory, setNewCategory] = useState("Game News");
       const [newContent, setNewContent] = useState("");
       
       const [headerFile, setHeaderFile] = useState(null);
+      const [headerPreviewUrl, setHeaderPreviewUrl] = useState(null);
       const [isUploading, setIsUploading] = useState(false);
       const [isInlineUploading, setIsInlineUploading] = useState(false);
 
@@ -876,6 +878,17 @@ const ABILITY_MAP = {};
         return () => { unsubAdmin(); unsubPosts(); };
       }, [cloudUser]);
 
+      // Cleanup preview URL to avoid memory leaks
+      useEffect(() => {
+        if (headerFile) {
+            const url = URL.createObjectURL(headerFile);
+            setHeaderPreviewUrl(url);
+            return () => URL.revokeObjectURL(url);
+        } else {
+            setHeaderPreviewUrl(null);
+        }
+      }, [headerFile]);
+
       const claimAdmin = async () => {
         if (!cloudUser || !window.fbDb || isGuest) return;
         const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
@@ -894,7 +907,7 @@ const ABILITY_MAP = {};
             setNewContent(prev => prev + `\n[IMG]${url}[/IMG]\n`);
         } catch (err) {
             console.error(err);
-            alert("Upload failed! Make sure Storage is enabled in your Firebase Console.");
+            alert("Upload failed! Make sure Storage is enabled.");
         }
         setIsInlineUploading(false);
         e.target.value = ""; 
@@ -926,20 +939,21 @@ const ABILITY_MAP = {};
             const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts');
             await window.fbHelpers.addDoc(colRef, newPost);
             
+            // Reset and close composer
             setNewTitle("");
             setHeaderFile(null);
             setNewContent("");
-            const fileInput = document.getElementById("headerFileInput");
-            if (fileInput) fileInput.value = "";
+            setIsComposing(false);
         } catch (error) {
             console.error(error);
-            alert("Upload failed. Make sure Storage is enabled in your Firebase Console.");
+            alert("Upload failed. Check console for details.");
         }
         setIsUploading(false);
       };
 
       const handleDeletePost = async (id) => {
         if (!cloudUser || !window.fbDb || isGuest) return;
+        if (!window.confirm("Delete this transmission permanently?")) return;
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts', id);
         await window.fbHelpers.deleteDoc(docRef);
       };
@@ -948,26 +962,16 @@ const ABILITY_MAP = {};
         return text.split('\n').map((line, i) => {
           const trimmed = line.trim();
           
-          // Image Parser
           if (trimmed.toUpperCase().startsWith('[IMG]') && trimmed.toUpperCase().endsWith('[/IMG]')) {
             const url = trimmed.substring(5, trimmed.length - 6);
             return <img key={i} src={url} alt="UNN Attached Media" className="w-full max-h-[500px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />;
           }
           
-          // YouTube Video Parser
           if (trimmed.toUpperCase().startsWith('[YOUTUBE]') && trimmed.toUpperCase().endsWith('[/YOUTUBE]')) {
             const videoId = trimmed.substring(9, trimmed.length - 10);
             return (
-              <div key={i} className="my-4 aspect-video w-full max-w-3xl mx-auto rounded overflow-hidden border border-white/20 shadow-lg bg-black">
-                <iframe 
-                  width="100%" 
-                  height="100%" 
-                  src={`https://www.youtube.com/embed/${videoId}`} 
-                  title="YouTube video player" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen>
-                </iframe>
+              <div key={i} className="my-4 aspect-video w-full rounded overflow-hidden border border-white/20 shadow-lg bg-black">
+                <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${videoId}`} title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
               </div>
             );
           }
@@ -979,97 +983,136 @@ const ABILITY_MAP = {};
       const isAdmin = cloudUser && adminUid === cloudUser.uid;
       const canClaim = !isCheckingAdmin && !adminUid && cloudUser && !isGuest;
 
+      // REUSABLE CARD COMPONENT FOR BOTH FEED AND LIVE PREVIEW
+      const PostCard = ({ post, isPreview = false }) => (
+        <div className={`bg-black/40 border ${isPreview ? 'border-sky-500/50 shadow-[0_0_15px_rgba(14,165,233,0.2)]' : 'border-white/10'} rounded-xl overflow-hidden shadow-lg relative group flex flex-col`}>
+          {isPreview && <div className="absolute top-0 right-0 bg-sky-600 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 rounded-bl-lg">Live Preview</div>}
+          {post.headerImage && (
+            <div className="w-full h-48 md:h-64 overflow-hidden border-b border-white/10 bg-black shrink-0">
+              <img src={post.headerImage} alt="Header" className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" />
+            </div>
+          )}
+          <div className="bg-gradient-to-r from-slate-900 to-black p-4 md:p-5 border-b border-white/10 shrink-0">
+            <div className="flex justify-between items-start gap-4 flex-wrap mb-2">
+              <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide">{post.title || "UNTITLED TRANSMISSION"}</h3>
+              <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest shrink-0">{post.category}</span>
+            </div>
+            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-500">
+              <span>{post.date}</span>
+              <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
+              <span>By: <span className="text-slate-300">{post.author}</span></span>
+            </div>
+          </div>
+          <div className="p-4 md:p-5">
+            <div className="text-sm md:text-base text-slate-300 leading-relaxed min-h-[100px]">
+                {post.content ? renderContent(post.content) : <span className="italic text-slate-600">Awaiting content input...</span>}
+            </div>
+          </div>
+          {isAdmin && !isPreview && (
+            <button onClick={() => handleDeletePost(post.id)} className="absolute top-4 right-4 bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+              Delete
+            </button>
+          )}
+        </div>
+      );
+
       return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-5xl mx-auto w-full pb-24 md:pb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-20 p-4 rounded-lg shadow-md">
             <h2 className={`text-3xl font-black uppercase font-orbitron flex items-center gap-3 ${theme.textPrimary}`}>
-              <span className="text-4xl">📡</span> Universal News Network
+              <span className="text-4xl">📡</span> UNN Broadcast
             </h2>
-            {canClaim && (
-              <button onClick={claimAdmin} className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg animate-pulse">
-                Claim Admin Rights
-              </button>
-            )}
-            {isAdmin && <span className="text-xs uppercase font-bold text-emerald-400 tracking-widest border border-emerald-500/50 bg-emerald-900/30 px-3 py-1 rounded">Admin Mode Active</span>}
+            <div className="flex items-center gap-3">
+                {canClaim && (
+                  <button onClick={claimAdmin} className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg animate-pulse">
+                    Claim Admin Rights
+                  </button>
+                )}
+                {isAdmin && !isComposing && (
+                  <button onClick={() => setIsComposing(true)} className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg flex items-center gap-2">
+                    <span>+</span> New Transmission
+                  </button>
+                )}
+                {isAdmin && isComposing && (
+                  <button onClick={() => setIsComposing(false)} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg">
+                    Cancel & Return
+                  </button>
+                )}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className={`space-y-6 ${isAdmin ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
+          {isComposing ? (
+            /* COMPOSER & PREVIEW LAYOUT */
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <form onSubmit={handleAddPost} className="bg-black/60 border border-white/10 p-5 rounded-xl shadow-xl space-y-5 sticky top-28">
+                  <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Transmission Console</h3>
+                  
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Headline</label>
+                    <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Enter transmission headline..." className="w-full bg-black/80 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Classification</label>
+                        <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full bg-black/80 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 cursor-pointer">
+                          <option value="Game News">Game News</option>
+                          <option value="App Update">App Update</option>
+                          <option value="Content Update">Content Update</option>
+                          <option value="Intel Report">Intel Report</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Header Banner (Optional)</label>
+                        <input id="headerFileInput" type="file" accept="image/*" onChange={e => setHeaderFile(e.target.files[0])} className="w-full bg-black/80 border border-white/20 rounded p-2 text-sm text-slate-300 outline-none focus:border-sky-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-700 file:text-white hover:file:bg-slate-600 cursor-pointer" />
+                      </div>
+                  </div>
+                  
+                  <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex justify-between items-center">
+                        <span>Body Content <span className="text-[9px] text-sky-400 ml-2 normal-case tracking-normal font-normal bg-sky-900/30 px-2 py-0.5 rounded border border-sky-500/30">Use tags: [IMG]url[/IMG] or [YOUTUBE]id[/YOUTUBE]</span></span>
+                        {isInlineUploading && <span className="text-sky-400 animate-pulse text-[10px]">Uploading Media...</span>}
+                    </label>
+                    <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Draft transmission here..." rows="12" className="w-full bg-black/80 border border-white/20 rounded p-4 text-sm text-white outline-none focus:border-sky-500 resize-y leading-relaxed font-mono"></textarea>
+                    
+                    <div className="flex items-center justify-between border-t border-white/10 pt-3 mt-1">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden min-[350px]:inline">Attach Image to Body:</span>
+                        <input type="file" accept="image/*" onChange={handleInlineUpload} disabled={isInlineUploading} className="text-[10px] text-slate-300 outline-none file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-sky-900/50 file:text-sky-300 hover:file:bg-sky-800 cursor-pointer disabled:opacity-50 w-full sm:w-[220px]" />
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={isUploading} className={`w-full py-4 rounded font-black font-orbitron text-sm md:text-base uppercase tracking-widest transition-all shadow-lg ${isUploading ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : theme.accent}`}>
+                    {isUploading ? 'Transmitting to Network...' : 'PUBLISH BROADCAST'}
+                  </button>
+                </form>
+                
+                {/* LIVE PREVIEW COLUMN */}
+                <div className="space-y-4">
+                   <h3 className="font-orbitron font-bold text-lg text-slate-400 uppercase border-b border-white/5 pb-2 pl-2">Display Output</h3>
+                   <PostCard 
+                     isPreview={true}
+                     post={{
+                       title: newTitle,
+                       category: newCategory,
+                       headerImage: headerPreviewUrl,
+                       author: "UNN Command",
+                       date: "Right Now",
+                       content: newContent
+                     }} 
+                   />
+                </div>
+            </div>
+          ) : (
+            /* STANDARD FEED LAYOUT */
+            <div className="max-w-4xl mx-auto space-y-8">
               {posts.length === 0 && (
                 <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
                   UNN Broadcast System Online.<br/><span className="text-xs text-slate-600">Awaiting transmissions...</span>
                 </div>
               )}
-              {posts.map(post => (
-                <div key={post.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden shadow-lg transition-transform hover:border-white/20 relative group flex flex-col">
-                  {post.headerImage && (
-                    <div className="w-full h-48 md:h-64 overflow-hidden border-b border-white/10 bg-black shrink-0">
-                      <img src={post.headerImage} alt="Header" className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" />
-                    </div>
-                  )}
-                  <div className="bg-gradient-to-r from-slate-900 to-black p-4 md:p-5 border-b border-white/10 shrink-0">
-                    <div className="flex justify-between items-start gap-4 flex-wrap mb-2">
-                      <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide">{post.title}</h3>
-                      <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest shrink-0">{post.category}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-500">
-                      <span>{post.date}</span>
-                      <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
-                      <span>By: <span className="text-slate-300">{post.author}</span></span>
-                    </div>
-                  </div>
-                  <div className="p-4 md:p-5">
-                    <div className="text-sm md:text-base text-slate-300 leading-relaxed">{renderContent(post.content)}</div>
-                  </div>
-                  {isAdmin && (
-                    <button onClick={() => handleDeletePost(post.id)} className="absolute top-4 right-4 bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                      Delete
-                    </button>
-                  )}
-                </div>
-              ))}
+              {posts.map(post => <PostCard key={post.id} post={post} />)}
             </div>
-
-            {isAdmin && (
-              <div className="xl:col-span-1">
-                <form onSubmit={handleAddPost} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
-                  <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Publish Broadcast</h3>
-                  <div><input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Headline..." className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" /></div>
-                  
-                  <div>
-                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Upload Header Image</label>
-                    <input id="headerFileInput" type="file" accept="image/*" onChange={e => setHeaderFile(e.target.files[0])} className="w-full bg-black/60 border border-white/20 rounded p-2 text-sm text-slate-300 outline-none focus:border-sky-500 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-700 file:text-white hover:file:bg-slate-600 cursor-pointer" />
-                  </div>
-
-                  <div>
-                    <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500">
-                      <option value="Game News">Game News</option>
-                      <option value="App Update">App Update</option>
-                      <option value="Content Update">Content Update</option>
-                      <option value="Intel Report">Intel Report</option>
-                    </select>
-                  </div>
-                  
-                  <div className="bg-black/40 border border-white/10 p-3 rounded mt-2">
-                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex justify-between items-center">
-                        <span>Message Content <span className="text-[9px] text-sky-500 ml-2 normal-case tracking-normal opacity-80">(Tags: [IMG]url[/IMG] or [YOUTUBE]id[/YOUTUBE])</span></span>
-                        {isInlineUploading && <span className="text-sky-400 animate-pulse">Uploading Media...</span>}
-                    </label>
-                    <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Message content..." rows="8" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none mb-2"></textarea>
-                    
-                    <div className="flex items-center justify-between border-t border-white/10 pt-2">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden min-[350px]:inline">Attach Inline Image:</span>
-                        <input type="file" accept="image/*" onChange={handleInlineUpload} disabled={isInlineUploading} className="text-[10px] text-slate-300 outline-none file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-sky-900/50 file:text-sky-300 hover:file:bg-sky-800 cursor-pointer disabled:opacity-50 w-[180px]" />
-                    </div>
-                  </div>
-
-                  <button type="submit" disabled={isUploading} className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${isUploading ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : theme.accent}`}>
-                    {isUploading ? 'Transmitting...' : 'Broadcast to UNN'}
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       );
     };
