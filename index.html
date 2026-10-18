@@ -363,7 +363,25 @@
       "Psi Lightning": "Each Unit Within 2\" of one or more Friendly Force Wall tokens suffers 1 Damage.",
       "Bound by the Khala": "Use when the Current Supply Value of another Friendly Unit Within 8\" of this Unit is reduced. Return one Non-Unique Exhausted Tactical Card to the Ready state.",
       "Warp-In": "Resolve the PLACE (6) effect.",
-      "Psionic Gale": "Set a Psionic Storm token Within 10\" and Line of Sight of this Unit. This token is not removed if this Unit is Destroyed. At the End of each Phase, set a Psionic Storm Blast Template on the centre of this token. For each Unit that has at least one model whose base is partially covered by the template, roll 3 dice, plus 1 additional die for each model in that Unit whose base is partially covered. For each result of 5+, that Unit suffers an effect depending on the current Phase: Movement Phase: NON-LETHAL DAMAGE (1). Assault Phase: 1 Damage. If multiple effects trigger at the End of the Assault Phase, resolve them in the order specified in Part 8.9.4."
+      "Psionic Gale": "Set a Psionic Storm token Within 10\" and Line of Sight of this Unit. This token is not removed if this Unit is Destroyed. At the End of each Phase, set a Psionic Storm Blast Template on the centre of this token. For each Unit that has at least one model whose base is partially covered by the template, roll 3 dice, plus 1 additional die for each model in that Unit whose base is partially covered. For each result of 5+, that Unit suffers an effect depending on the current Phase: Movement Phase: NON-LETHAL DAMAGE (1). Assault Phase: 1 Damage. If multiple effects trigger at the End of the Assault Phase, resolve them in the order specified in Part 8.9.4.",
+"Instinctive Reaction": "Use when an Enemy Unit declares a Close Combat Attack against a Friendly Unit. That Friendly Unit becomes eligible to make an Evade Roll against that attack.",
+      "Scourge Queen": "If the active Unit contains more models than the combined number of models in all Engaged Enemy Units, its Close Combat Weapons gain INSTANT and PRECISION (4).",
+      "Reactive Tissue": "While a Friendly Zerg Unit is ON CREEP, it gains DODGE (1) against any attacks targeting it.",
+      "Poisonous Essence": "Set a Faction Indicator on the active Friendly Unit. At the end of the Assault Phase, all Biological Enemy Units Engaged with the marked Unit suffer NON-LETHAL DAMAGE (2).",
+      "Tunnel Network": "The active, Unengaged Ground Unit is returned to Reserves instead of performing an action.",
+"Biological Structure": "This Unit cannot gain the BURROWED Status, cannot be returned to Reserves, and is immune to the IMPACT keyword.",
+      "Bombard": "Set a Bile Bomb token on the battlefield Within 24\" of this Unit. When this Unit resolves a Ranged Attack using the Bile Bomb weapon profile this Round, it may choose to ignore the weapon's standard Range characteristic. If it does, it may target an Enemy Unit that is Within 3\" of that token (Line of Sight is not required), ignoring the HIDDEN Status. After the attack is fully resolved, remove the Bile Bomb token from the battlefield. When the Bile Bomb token is about to be removed, set a Creep Tumor token in base-to-base contact with it. The Bile Bomb token has DISPLACEMENT.",
+      "Consume": "When this Unit resolves a Special Ability that costs BM, it can remove one model from a Friendly Unit Within 4\" to generate 1 BM to spend towards that ability's cost.",
+      "Gestate Dark Swarm": "Set a Dark Swarm token in an unoccupied space Within 4\" and Line of Sight of this Unit. The Dark Swarm token has DISPLACEMENT.",
+      "Dark Swarm": "REPEATABLE. Use when a Friendly Unit Within 4\" of a Friendly Dark Swarm token is selected as the target of an attack. If this Unit is Within 4\" of the same token, the Targeted Friendly Unit is eligible to make an Evade Roll against that attack. If the targeted Unit is a Size 1, it gains a +1 Modifier to this Evade Roll.",
+      "Devastating Charge (Defiler)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 4+ effect.",
+      "Plague": "You may spend 1 to 3 BM to activate this ability. Set a Plague Blast Template Wholly Within 10\" and Line of Sight of this Unit. For each Unit that has at least one model whose base is partially covered by the template, roll 2 dice, plus 1 additional die for each model in that Unit whose base is partially covered. That Unit loses its HIDDEN Status, and, depending on the BM spent, it suffers NON-LETHAL DAMAGE (1) for: 1 BM: each result of 5+. 2 BM: each result of 4+. 3 BM: each result of 3+.",
+      "Cancerous Bite": "Equips the Cancerous Bite close combat weapon (Rng: E | Tgt: Ground | RoA: 2 | Hit: 3+ | Dmg: 2 | Keywords: CRITICAL HIT (1), SIDEARM).",
+      "Devastating Charge (Vileling)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (1) 5+ effect.",
+      "Debilitating Claws": "After an Enemy Unit suffers Damage from this Unit, apply DEBUFF Hit (1) to each of that Unit's Weapons.",
+      "Broodmother": "Apply one of the following effects to all Friendly units (Line of Sight is not required). You cannot apply the effect chosen in the previous Game Round: Units of Size 1 gain a +1 Modifier to all IMPACT Rolls. All weapons of Size 2 Units gain CRITICAL HIT (1). Units of Size 3 or more gain TOUGH (1).",
+      "Infested Drop": "The base of the Zagara counts as an Entry Edge. Each Round, Friendly Units with a combined Supply cost of 1 may be Deployed via this Entry Edge.",
+      "Devastating Charge (Zagara)": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (6) 3+ effect."
     };
 
     const WEAPON_MAP = {
@@ -393,7 +411,8 @@
       "Energy Blast": { name: "Energy Blast", range: "8", target: "All", roa: 5, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
       "Blades": { name: "Blades", range: "E", target: "Ground", roa: 6, hit: "4+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2)", phase: "COMBAT PHASE" },
       "Shredding Claws": { name: "Shredding Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" },
-      "Plasma Discharge": { name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }
+      "Plasma Discharge": { name: "Plasma Discharge", range: "12", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" },
+"Cancerous Bite": { name: "Cancerous Bite", range: "E", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (1), SIDEARM", phase: "COMBAT PHASE" }
     };
 
     const FACTION_CARDS = [
@@ -405,7 +424,8 @@
       { faction: "Terran", subFaction: "Generic", name: "Terran Armed Forces", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Tactical Retreat", "Terran Tenacity"] },
 { faction: "Terran", subFaction: "Nova Covert Ops", name: "Nova Covert Ops", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 CP | 1x Hero, 1x Elite, 3x Core, 1x Support Slot", abilities: ["Griffin Support", "Mark for Death"] },
       { faction: "Zerg", subFaction: "Kerrigan's Swarm", name: "Kerrigan's Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Hero, 2x Elite, 3x Core Slot", abilities: ["Wild Mutation", "Zerg Creep", "Omega Network"] },
-      { faction: "Zerg", subFaction: "Generic", name: "Zerg Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Brood Instinct", "Zerg Creep", "Rapid Burrowing"] }
+      { faction: "Zerg", subFaction: "Generic", name: "Zerg Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Elite, 3x Core, 1x Support Slot", abilities: ["Brood Instinct", "Zerg Creep", "Rapid Burrowing"] },
+{ faction: "Zerg", subFaction: "Zagara's Swarm", name: "Zagara's Swarm", type: "Faction Card", tags: "Unique", vespene: 0, provides: "Resource: +1 BM | 1x Hero, 4x Core, 1x Support Slot", abilities: ["Instinctive Reaction", "Zerg Creep", "Scourge Queen"] }
     ];
 
     const TACTICAL_CARDS = [
@@ -445,7 +465,9 @@
       { faction: "Zerg", name: "Overseer", type: "Tactical Card", tags: "Unique", vespene: 25, provides: "Resource: +1 BM | 1x Support Slot", abilities: ["Oversight Mode", "Pneumatized Carapace"] },
       { faction: "Zerg", name: "Roach Warren", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Nasty Surprise"] },
       { faction: "Zerg", name: "Spawning Pool", type: "Tactical Card", tags: "Standard", vespene: 25, provides: "Resource: +1 BM | 1x Core Slot", abilities: ["Feral Rage"] },
-      { faction: "Zerg", name: "Spawning Pool (Six Pool)", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "Resource: +2 BM | 2x Core Slot", abilities: ["Timing Push", "Feral Rage"] }
+      { faction: "Zerg", name: "Spawning Pool (Six Pool)", type: "Tactical Card", tags: "Unique", vespene: 35, provides: "Resource: +2 BM | 2x Core Slot", abilities: ["Timing Push", "Feral Rage"] },
+{ faction: "Zerg", name: "Reactive Creep", type: "Tactical Card", tags: "10 Gas, Unique", vespene: 10, provides: null, abilities: ["Reactive Tissue", "Living Glob of Tissue", "Creep Removal"] },
+      { faction: "Zerg", name: "Defiler Mound", type: "Tactical Card", tags: "35 Gas, Unique", vespene: 35, provides: "Resource: +1 BM | 1x Elite, 1x Support Slot", abilities: ["Poisonous Essence", "Tunnel Network"] }
     ];
 
     const UNITS_DATABASE = [
@@ -489,7 +511,11 @@
       { faction: "Zerg", name: "Roachling", tags: "Biological, Light, Ground", slot: "Summoned", compositions: [{ models: 3, minerals: 0, supply: 0 }], supplyProfile: [{ max: 3, supply: 0 }], stats: { shield: "-", speed: "4/7", armour: "6+", evade: "6+", hitPoints: 1, size: 1 }, weapons: [{ name: "Basic Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Underdeveloped Claws"], upgrades: [] },
       { faction: "Zerg", name: "Swarmling (Zergling)", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 18, minerals: 210, supply: 1 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 18, supply: 1 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "5+", hitPoints: 1, size: 1 }, weapons: [{ name: "Swarmling Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Zergling Reconstitution", "Metabolic Boost", "Devastating Charge (Swarmling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20] }] },
       { faction: "Zerg", name: "Vile (Roach)", tags: "Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 3, minerals: 190, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 3, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "3+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Acid Saliva (Vile)", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Vile Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Debilitating Saliva", "Burrow", "Regeneration", "Devastating Charge (Vile)"], upgrades: [{ name: "Tunneling Claws", type: "Standard", costs: [10] }, { name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Glial Reconstitution", type: "Standard", costs: [10] }, { name: "Hydriodic Bile (Vile)", type: "Replacement", costs: [10], replaces: "Acid Saliva (Vile)" }] },
-      { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 150, supply: 1 }, { models: 18, minerals: 210, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Zergling Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Metabolic Boost", "Devastating Charge (Zergling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Zergling Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] }
+      { faction: "Zerg", name: "Zergling", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 12, minerals: 150, supply: 1 }, { models: 18, minerals: 210, supply: 2 }], supplyProfile: [{ max: 6, supply: 0 }, { max: 12, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "4+", hitPoints: 1, size: 1 }, weapons: [{ name: "Zergling Claws", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Metabolic Boost", "Devastating Charge (Zergling)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20, 30] }, { name: "Shredding Claws", type: "Replacement", costs: [10, 10], replaces: "Zergling Claws" }, { name: "Adrenal Glands", type: "Standard", costs: [20, 20] }] },
+{ faction: "Zerg", name: "Bile Launcher", tags: "Armoured, Biological, Ground, Unique", slot: "Support", compositions: [{ models: 1, minerals: 150, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "-", armour: "4+", evade: "-", hitPoints: 10, size: 3 }, weapons: [{ name: "Bile Bomb", range: "12", target: "Ground", roa: 6, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "PIERCE Armoured (2), PINPOINT", phase: "ASSAULT PHASE" }], abilities: ["Biological Structure", "Source of Creep", "Detection", "Burrow Ambush", "Bombard", "Indomitable"], upgrades: [] },
+      { faction: "Zerg", name: "Defiler", tags: "Biological, Light, Psionic, Ground", slot: "Support", compositions: [{ models: 1, minerals: 130, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Consume", "Gestate Dark Swarm", "Dark Swarm", "Devastating Charge (Defiler)"], upgrades: [{ name: "Burrow Ambush", type: "Standard", costs: [20] }, { name: "Plague", type: "Standard", costs: [20] }, { name: "Cancerous Bite", type: "Standard", costs: [20] }] },
+      { faction: "Zerg", subFaction: "Zagara's Swarm", name: "Vileling (Zergling)", tags: "Zerg, Zagara's Swarm, Biological, Light, Ground", slot: "Core", compositions: [{ models: 18, minerals: 180, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 6, supply: 1 }, { max: 18, supply: 2 }], stats: { shield: "-", speed: "4/8", armour: "6+", evade: "5+", hitPoints: 1, size: 1 }, weapons: [{ name: "Claws", range: "E", target: "Ground", roa: 2, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Squadron", "Burrow Ambush", "Zergling Reconstitution", "Metabolic Boost", "Devastating Charge (Vileling)", "Debilitating Claws"], upgrades: [] },
+      { faction: "Zerg", name: "Zagara", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 250, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "4+", evade: "6+", hitPoints: 10, size: 3 }, weapons: [{ name: "Zagara's Talons", range: "8", target: "Ground", roa: 4, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 2, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Zagara's Acid Spines", range: "14", target: "Flying", roa: 8, hit: "3+", surge: "Light, Armoured", sDice: "D3", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }, { name: "Talons", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Commander", "Transfusion", "Psionic Link", "Broodmother", "Infested Drop", "Indomitable", "Devastating Charge (Zagara)"], upgrades: [] }
     ];
 const ABILITY_MAP = {
       "Structure": { type: "PASSIVE", phase: "ANY PHASE" },
@@ -537,7 +563,36 @@ const ABILITY_MAP = {
       "Bound by the Khala": { type: "ACTIVE", phase: "MOVEMENT PHASE" },
       "Bound by the Khala (Templar)": { type: "REACTION (0 PSIONIC ENERGY)", phase: "ANY PHASE" },
       "Warp-In": { type: "ACTIVE (1 PSIONIC ENERGY)", phase: "MOVEMENT PHASE" },
-      "Psionic Gale": { type: "ACTIVE (2 PSIONIC ENERGY)", phase: "MOVEMENT PHASE" }
+      "Psionic Gale": { type: "ACTIVE (2 PSIONIC ENERGY)", phase: "MOVEMENT PHASE" },
+"Instinctive Reaction": { type: "REACTION", phase: "ANY PHASE" },
+      "Zerg Creep": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Scourge Queen": { type: "ACTIVE", phase: "COMBAT PHASE" },
+      "Reactive Tissue": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Living Glob of Tissue": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Creep Removal": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Poisonous Essence": { type: "ACTIVE", phase: "MOVEMENT PHASE" },
+      "Tunnel Network": { type: "ACTIVE", phase: "MOVEMENT PHASE" },
+"Biological Structure": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Source of Creep": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Burrow Ambush": { type: "PASSIVE", phase: "MOVEMENT PHASE" },
+      "Bombard": { type: "ACTIVE (1 BIOMASS)", phase: "MOVEMENT PHASE" },
+      "Indomitable": { type: "PASSIVE", phase: "ASSAULT PHASE" },
+      "Consume": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Gestate Dark Swarm": { type: "ACTIVE (0 BIOMASS)", phase: "MOVEMENT PHASE" },
+      "Dark Swarm": { type: "REACTION (1 BIOMASS)", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Defiler)": { type: "PASSIVE", phase: "ASSAULT PHASE" },
+      "Plague": { type: "ACTIVE (X BIOMASS)", phase: "ASSAULT PHASE" },
+      "Squadron": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Zergling Reconstitution": { type: "ACTIVE (1 BIOMASS)", phase: "MOVEMENT PHASE" },
+      "Metabolic Boost": { type: "ACTIVE (1 BIOMASS)", phase: "ASSAULT PHASE" },
+      "Devastating Charge (Vileling)": { type: "PASSIVE", phase: "ASSAULT PHASE" },
+      "Debilitating Claws": { type: "PASSIVE", phase: "COMBAT PHASE" },
+      "Commander": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Transfusion": { type: "REACTION (1 BIOMASS)", phase: "ANY PHASE" },
+      "Psionic Link": { type: "PASSIVE", phase: "ANY PHASE" },
+      "Broodmother": { type: "ACTIVE (1 BIOMASS)", phase: "MOVEMENT PHASE" },
+      "Infested Drop": { type: "PASSIVE", phase: "MOVEMENT PHASE" },
+      "Devastating Charge (Zagara)": { type: "PASSIVE", phase: "ASSAULT PHASE" }
     };
 
     const PhaseSection = ({ phase, title, unitWeapons, unitAbilities, openRule, defaultOpen }) => {
