@@ -479,12 +479,12 @@
       { faction: "Terran", name: "Siege Tank", tags: "Armoured, Mechanical, Ground", slot: "Elite", compositions: [{ models: 1, minerals: 220, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 2 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "-", hitPoints: 14, size: 2 }, weapons: [{ name: "Twin Cannon", range: "12", target: "Ground", roa: 8, hit: "3+", surge: "Armoured", sDice: "D6", dmg: 1, keyword: "PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Shock Cannon", range: "18", target: "Ground", roa: "BT+4", hit: "4+", surge: "Light, Armoured", sDice: "BT", dmg: 1, keyword: "SIEGE MODE Status", phase: "ASSAULT PHASE" }, { name: "Rolling Over", range: "E", target: "Ground", roa: 2, hit: "2+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Large", "Heavy Plating", "Indomitable", "Point Blank", "Aftershock Rounds", "Devastating Charge (Goliath)"], upgrades: [{ name: "Mode Transformation", type: "Standard", costs: [20] }, { name: "Coordinated Strike", type: "Standard", costs: [20] }, { name: "Shaped Blast", type: "Standard", costs: [10] }, { name: "Smart Shells", type: "Standard", costs: [10] }] },
       { faction: "Terran", name: "Jim Raynor", tags: "Biological, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 280, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "4+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Commando Rifle", range: "18", target: "All", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "BULKY, PIERCE Armoured (3)", phase: "ASSAULT PHASE" }, { name: "\"Justice\" Revolver", range: "6", target: "Ground", roa: 2, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "ANTI-EVADE (2), SIDEARM, PINPOINT", phase: "ASSAULT PHASE" }, { name: "Bayonet", range: "E", target: "Ground", roa: 2, hit: "4+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Commander", "Freedom Fighters", "Orders"], upgrades: [{ name: "C-14 rifle", type: "Replacement", costs: [0], replaces: "Commando Rifle" }] },
       { faction: "Terran", subFaction: "Raynor's Raiders", name: "Point Defense Drone", tags: "Raynor's Raiders, Armoured, Flying, Mechanical", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "6+", evade: "6+", hitPoints: 3, size: "-" }, weapons: [], abilities: ["Point Defense Laser", "Gliding", "Structure"], upgrades: [] },
-{ faction: "Terran", subFaction: "Nova Covert Ops", name: "Sabotage Drone", tags: "Armoured, Mechanical, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "6+", evade: "6+", hitPoints: 3, size: 1 }, weapons: [], abilities: ["Structure", "Have a Nice Day"], upgrades: [] },
+{ faction: "Terran", name: "Sabotage Drone", tags: "Armoured, Mechanical, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "6+", evade: "6+", hitPoints: 3, size: 1 }, weapons: [], abilities: ["Structure", "Have a Nice Day"], upgrades: [] },
       { faction: "Terran", name: "Auto-Turret", tags: "Armoured, Mechanical, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { shield: "-", speed: "-", armour: "5+", evade: "-", hitPoints: 3, size: 2 }, weapons: [{ name: "Gauss Cannon", range: "8\"", target: "All", roa: 6, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "PINPOINT", phase: "ASSAULT PHASE" }], abilities: ["Timed Life", "Structure", "Overwatch"], upgrades: [] },
       { faction: "Terran", name: "Raven", tags: "Light, Mechanical, Flying", slot: "Support", compositions: [{ models: 1, minerals: 170, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "6+", hitPoints: 8, size: "-" }, weapons: [{ name: "Railguns", range: "12\"", target: "Ground", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "ASSAULT PHASE" }], abilities: ["Detection", "Deploy Auto-Turret", "Anti-Armour Missile"], upgrades: [{ name: "Corvid Reactor", type: "Standard", costs: [30] }, { name: "Internal Tech Module", type: "Standard", costs: [20] }, { name: "Seeker Missile", type: "Standard", costs: [20] }, { name: "Explosive Shrapnel Shells", type: "Standard", costs: [10] }] },
       { faction: "Terran", subFaction: "Nova Covert Ops", name: "Spec Ops Marauder", tags: "Terran, Nova Covert Ops, Armoured, Biological, Ground", slot: "Core", compositions: [{ models: 2, minerals: 230, supply: 1 }], supplyProfile: [{ max: 1, supply: 0 }, { max: 2, supply: 1 }], stats: { shield: "-", speed: "4/7", armour: "4+", evade: "6+", hitPoints: 5, size: 2 }, weapons: [{ name: "Quad K12", range: "12", target: "Ground", roa: 3, hit: "3+", surge: "Armoured", sDice: "D3", dmg: 1, keyword: "LONG RANGE (16\"), PIERCE Armoured (2)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 3, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Spec Ops Armour", "Commando Stimpack", "Magrail Munitions", "Suppression Shells"], upgrades: [] },
-      { faction: "Terran", subFaction: "Nova Covert Ops", name: "Nova Assault Mode", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 260, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Hellfire Shotgun", range: "8", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3", dmg: 2, keyword: "ANTI-EVADE (1), BURST FIRE 4\" (3)", phase: "ASSAULT PHASE" }, { name: "Monomolecular Blade", range: "E", target: "Ground", roa: 8, hit: "3+", surge: "Light, Armoured", sDice: "D6", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Battle Preparation", "Ghost Visor", "Holo Decoy", "Super Stimpack", "Phase Reactor Suit", "Devastating Charge"], upgrades: [] },
-      { faction: "Terran", subFaction: "Nova Covert Ops", name: "Nova Stealth Mode", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 240, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "C-20A Canister Rifle", range: "12", target: "All", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2), LONG RANGE (18\")", phase: "ASSAULT PHASE" }, { name: "Combat Knife", range: "E", target: "Ground", roa: 3, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Battle Preparation", "Tactical Stealth Suit", "Ghost Visor", "Super Stimpack", "Holo Decoy", "Operational Efficiency", "Head Shot"], upgrades: [] },
+     { faction: "Terran", name: "Nova Assault Mode", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 260, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "Hellfire Shotgun", range: "8", target: "Ground", roa: 3, hit: "4+", surge: "Light", sDice: "D3", dmg: 2, keyword: "ANTI-EVADE (1), BURST FIRE 4\" (3)", phase: "ASSAULT PHASE" }, { name: "Monomolecular Blade", range: "E", target: "Ground", roa: 8, hit: "3+", surge: "Light, Armoured", sDice: "D6", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Battle Preparation", "Ghost Visor", "Holo Decoy", "Super Stimpack", "Phase Reactor Suit", "Devastating Charge"], upgrades: [] },
+      { faction: "Terran", name: "Nova Stealth Mode", tags: "Biological, Psionic, Ground, Unique", slot: "Hero", compositions: [{ models: 1, minerals: 240, supply: 1 }], supplyProfile: [{ max: 1, supply: 1 }], stats: { shield: "-", speed: "7", armour: "5+", evade: "5+", hitPoints: 8, size: 2 }, weapons: [{ name: "C-20A Canister Rifle", range: "12", target: "All", roa: 4, hit: "3+", surge: "-", sDice: "-", dmg: 2, keyword: "CRITICAL HIT (2), LONG RANGE (18\")", phase: "ASSAULT PHASE" }, { name: "Combat Knife", range: "E", target: "Ground", roa: 3, hit: "5+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Battle Preparation", "Tactical Stealth Suit", "Ghost Visor", "Super Stimpack", "Holo Decoy", "Operational Efficiency", "Head Shot"], upgrades: [] },
       { faction: "Terran", subFaction: "Nova Covert Ops", name: "Holo Decoy", tags: "Biological, Psionic, Ground", slot: "Summoned", compositions: [{ models: 1, minerals: 0, supply: 0 }], supplyProfile: [{ max: 1, supply: 0 }], stats: { shield: "-", speed: "7", armour: "6+", evade: "6+", hitPoints: 1, size: 2 }, weapons: [], abilities: ["Lethal Hologram", "Timed Life", "Decoy", "Surprise!"], upgrades: [] },     
 { faction: "Protoss", name: "Zealot", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 3, minerals: 170, supply: 2 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 1, supply: 1 }, { max: 3, supply: 2 }], stats: { shield: 3, speed: "4/7", armour: "5+", evade: "5+", hitPoints: 4, size: 2 }, weapons: [{ name: "Psi Blades", range: "E", target: "Ground", roa: 4, hit: "3+", surge: "Light", sDice: "D3", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Charge", "Devastating Charge (Zealot)"], upgrades: [{ name: "My Life for Aiur", type: "Standard", costs: [10] }, { name: "Leg Enhancements (Zealot)", type: "Standard", costs: [20] }, { name: "Zealous Round", type: "Standard", costs: [10] }, { name: "We Stand as One", type: "Standard", costs: [20] }] },
       { faction: "Protoss", name: "Adept", tags: "Biological, Light, Ground", slot: "Core", compositions: [{ models: 4, minerals: 160, supply: 1 }], supplyProfile: [{ max: 0, supply: 0 }, { max: 2, supply: 0 }, { max: 4, supply: 1 }], stats: { shield: 2, speed: "5/8", armour: "5+", evade: "5+", hitPoints: 3, size: 2 }, weapons: [{ name: "Glaive Cannon", range: "8", target: "All", roa: 2, hit: "3+", surge: "Light", sDice: "D3+1", dmg: 1, keyword: "ANTI-EVADE (1)", phase: "ASSAULT PHASE" }, { name: "Strike", range: "E", target: "Ground", roa: 1, hit: "4+", surge: "-", sDice: "-", dmg: 1, keyword: "-", phase: "COMBAT PHASE" }], abilities: ["Psionic Presence", "Psionic Transfer"], upgrades: [{ name: "Resonating Glaives", type: "Standard", costs: [20] }, { name: "Guidance", type: "Standard", costs: [10] }, { name: "Glaive Strike", type: "Replacement", costs: [20], replaces: "Strike" }] },
@@ -1435,6 +1435,45 @@ const DeploymentsView = ({ theme }) => (
         setActiveModal(null);
       };
 
+const exportRosterText = () => {
+        let text = `=== STARCRAFT TMG ARMY ROSTER ===\n`;
+        text += `Faction: ${selectedFaction} (${currentSubFaction})\n`;
+        text += `Scale: ${scale}\n`;
+        text += `Total Minerals: ${totalMinerals} | Total Vespene: ${totalVespene} | Total Supply: ${totalSupply}\n`;
+        text += `-----------------------------------\n\n`;
+        
+        text += `[ UNITS ]\n`;
+        if (roster.length === 0) {
+          text += `  (No units drafted)\n`;
+        } else {
+          sortedRoster.forEach((u, i) => {
+            const unitSupply = getUnitSupply(u);
+            text += `${i + 1}. ${u.name} [${u.slot}]\n`;
+            text += `   - Models: ${u.models} | Minerals: ${u.minerals} | Supply: ${unitSupply}\n`;
+            if (u.appliedUpgrades && u.appliedUpgrades.length > 0) {
+              text += `   - Upgrades: ${u.appliedUpgrades.join(", ")}\n`;
+            }
+          });
+        }
+        
+        text += `\n[ TACTICAL & FACTION CARDS ]\n`;
+        if (tacticalCards.length === 0) {
+          text += `  (No cards drafted)\n`;
+        } else {
+          tacticalCards.forEach((c) => {
+            text += `- ${c.name} (${c.type === "Faction Card" ? "Faction" : `${c.vespene} Gas`})\n`;
+          });
+        }
+        
+        text += `\n===================================`;
+
+        navigator.clipboard.writeText(text).then(() => {
+          showToast("Roster copied to clipboard as text!");
+        }).catch(err => {
+          console.error("Clipboard write failed", err);
+          showToast("Failed to copy roster text.", true);
+        });
+      };
       const limits = ENGAGEMENT_SCALES[scale] || ENGAGEMENT_SCALES["Free Build"];
       const totalMinerals = roster.reduce((sum, item) => sum + (item.minerals || 0), 0);
       const totalVespene = tacticalCards.reduce((sum, card) => sum + (card.vespene || 0), 0);
@@ -1730,10 +1769,11 @@ const DeploymentsView = ({ theme }) => (
             </div>
 
             <div className="flex flex-wrap items-center gap-2 md:gap-4 ml-auto">
-              {!isPlayMode && (
+             {!isPlayMode && (
                 <div className="flex gap-2 mr-0 md:mr-2">
                   <button onClick={() => { if(cloudUser && !isGuest) setShowSaveModal(true); else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 h-8 md:h-10 ${cloudUser && !isGuest ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser && !isGuest ? "Save to Cloud" : "Cloud offline"}>☁️ Save</button>
                   <button onClick={() => { if(cloudUser && !isGuest) { fetchCloudRosters(); setShowLoadModal(true); } else showToast("Cloud Sync offline.", true); }} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 h-8 md:h-10 ${cloudUser && !isGuest ? 'bg-sky-900/60 text-sky-300 hover:bg-sky-800' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`} title={cloudUser && !isGuest ? "Load from Cloud" : "Cloud offline"}>☁️ Load</button>
+                  <button onClick={exportRosterText} className="text-[10px] uppercase font-bold px-3 py-1.5 rounded transition-colors shadow-sm flex items-center gap-1 border border-white/10 h-8 md:h-10 bg-emerald-950/60 text-emerald-300 border-emerald-900/50 hover:bg-emerald-900" title="Export Roster as Text">📋 Export</button>
                 </div>
               )}
               {!isPlayMode && (
