@@ -766,9 +766,22 @@ const ABILITY_MAP = {
       );
     };
 
-    const MissionsView = ({ theme }) => {
+const DeploymentsView = ({ theme }) => (
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg shadow-md">
+          <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Deployment Maps</h2>
+        </div>
+        <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
+          Deployment Subsystems Offline.<br/><span className="text-xs text-slate-600">Awaiting tactical cartography...</span>
+        </div>
+      </div>
+    );
+   
+ const MissionsView = ({ theme }) => {
       const [filter, setFilter] = useState("All");
-      const filteredMissions = MISSION_CARDS.filter(m => filter === "All" || m.type === filter);
+      const filteredMissions = MISSION_CARDS
+        .filter(m => filter === "All" || m.type === filter)
+        .sort((a, b) => a.name.localeCompare(b.name) || a.type.localeCompare(b.type));
 
       return (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
@@ -1336,11 +1349,11 @@ const ABILITY_MAP = {
       const activeFactionCard = tacticalCards.find(c => c.type === "Faction Card");
       const currentSubFaction = activeFactionCard ? activeFactionCard.subFaction : (selectedFaction === "Protoss" ? "Daelaam" : "Generic");
 
-     const factionUnits = UNITS_DATABASE.filter(u => {
+    const factionUnits = UNITS_DATABASE.filter(u => {
         if (u.faction !== selectedFaction) return false;
         if (u.subFaction && u.subFaction !== "Generic" && u.subFaction !== currentSubFaction) return false;
         return true;
-      });
+      }).sort((a, b) => a.name.localeCompare(b.name));
       
       const availableFactionCards = FACTION_CARDS.filter(c => c.faction === selectedFaction);
       const availableTacticalCards = TACTICAL_CARDS.filter(c => 
@@ -2158,10 +2171,29 @@ const ABILITY_MAP = {
             </div>
             
             <div className="space-y-8">
+              {/* Hyperion Cantina (Moved to Top) */}
+              <div className="bg-black/40 border border-blue-900/30 rounded-xl p-5 md:p-6 shadow-lg">
+                <h2 className="text-xl md:text-2xl font-orbitron font-black uppercase text-blue-400 border-b border-blue-900/50 pb-2 mb-4 flex items-center gap-3"><span className="text-2xl md:text-3xl">🍻</span> Hyperion Cantina</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                  <button onClick={() => setActiveTab('unn')} className="group relative bg-black/60 border border-blue-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-blue-500">
+                    <div className="absolute inset-0 bg-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">📡</span>
+                    <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-blue-300 transition-colors">UNN Broadcast</h3>
+                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Catch up on the latest patches, intel reports, and community news.</p>
+                  </button>
+                  <button onClick={() => setActiveTab('profile')} className="group relative bg-black/60 border border-blue-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-blue-500">
+                    <div className="absolute inset-0 bg-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">🪪</span>
+                    <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-blue-300 transition-colors">Cmdr. Dossier</h3>
+                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Manage your combat record, set your allegiance, and pin saved rosters.</p>
+                  </button>
+                </div>
+              </div>
+
               {/* Evolution Chamber */}
               <div className="bg-black/40 border border-fuchsia-900/30 rounded-xl p-5 md:p-6 shadow-lg">
                 <h2 className="text-xl md:text-2xl font-orbitron font-black uppercase text-fuchsia-400 border-b border-fuchsia-900/50 pb-2 mb-4 flex items-center gap-3"><span className="text-2xl md:text-3xl">🧬</span> Evolution Chamber</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                   <button onClick={() => setActiveTab('builder')} className="group relative bg-black/60 border border-fuchsia-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-fuchsia-500">
                     <div className="absolute inset-0 bg-fuchsia-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">⚔️</span>
@@ -2172,7 +2204,13 @@ const ABILITY_MAP = {
                     <div className="absolute inset-0 bg-fuchsia-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">🎯</span>
                     <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-fuchsia-300 transition-colors">Missions</h3>
-                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Review parameters, escalation, and scoring for Standard and Skirmish modes.</p>
+                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Review parameters, escalation, and scoring modes.</p>
+                  </button>
+                  <button onClick={() => setActiveTab('deployments')} className="group relative bg-black/60 border border-fuchsia-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-fuchsia-500">
+                    <div className="absolute inset-0 bg-fuchsia-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">🗺️</span>
+                    <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-fuchsia-300 transition-colors">Deployments</h3>
+                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Review tactical maps and deployment zone layouts.</p>
                   </button>
                 </div>
               </div>
@@ -2196,24 +2234,6 @@ const ABILITY_MAP = {
                 </div>
               </div>
 
-              {/* Hyperion Cantina */}
-              <div className="bg-black/40 border border-blue-900/30 rounded-xl p-5 md:p-6 shadow-lg">
-                <h2 className="text-xl md:text-2xl font-orbitron font-black uppercase text-blue-400 border-b border-blue-900/50 pb-2 mb-4 flex items-center gap-3"><span className="text-2xl md:text-3xl">🍻</span> Hyperion Cantina</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                  <button onClick={() => setActiveTab('unn')} className="group relative bg-black/60 border border-blue-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-blue-500">
-                    <div className="absolute inset-0 bg-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">📡</span>
-                    <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-blue-300 transition-colors">UNN Broadcast</h3>
-                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Catch up on the latest patches, intel reports, and community news.</p>
-                  </button>
-                  <button onClick={() => setActiveTab('profile')} className="group relative bg-black/60 border border-blue-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-blue-500">
-                    <div className="absolute inset-0 bg-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">🪪</span>
-                    <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-blue-300 transition-colors">Cmdr. Dossier</h3>
-                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Manage your combat record, set your allegiance, and pin saved rosters.</p>
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -2494,6 +2514,20 @@ const ABILITY_MAP = {
               </div>
 
               <div className="space-y-6">
+                {/* Cantina Group (Moved to Top) */}
+                <div>
+                  <h3 className="text-[10px] uppercase font-black tracking-widest text-blue-500 mb-1 px-5 drop-shadow-md">🍻 Hyperion Cantina</h3>
+                  <div className="px-4 space-y-1">
+                    <button onClick={() => handleNav("unn")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "unn" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
+                      <span className="text-base shrink-0">📡</span> <span>UNN Broadcast</span>
+                    </button>
+                    <button onClick={() => handleNav("profile")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "profile" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
+                      <span className="text-base shrink-0">🪪</span> <span>Cmdr. Dossier</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Evolution Chamber Group */}
                 <div>
                   <h3 className="text-[10px] uppercase font-black tracking-widest text-fuchsia-500 mb-1 px-5 drop-shadow-md">🧬 Evolution Chamber</h3>
                   <div className="px-4 space-y-1">
@@ -2503,9 +2537,13 @@ const ABILITY_MAP = {
                     <button onClick={() => handleNav("missions")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "missions" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
                       <span className="text-base shrink-0">🎯</span> <span>Missions</span>
                     </button>
+                    <button onClick={() => handleNav("deployments")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "deployments" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
+                      <span className="text-base shrink-0">🗺️</span> <span>Deployments</span>
+                    </button>
                   </div>
                 </div>
 
+                {/* Templar Archives Group */}
                 <div>
                   <h3 className="text-[10px] uppercase font-black tracking-widest text-amber-500 mb-1 px-5 drop-shadow-md">💠 Templar Archives</h3>
                   <div className="px-4 space-y-1">
@@ -2518,17 +2556,6 @@ const ABILITY_MAP = {
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-[10px] uppercase font-black tracking-widest text-blue-500 mb-1 px-5 drop-shadow-md">🍻 Hyperion Cantina</h3>
-                  <div className="px-4 space-y-1">
-                    <button onClick={() => handleNav("unn")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "unn" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
-                      <span className="text-base shrink-0">📡</span> <span>UNN Broadcast</span>
-                    </button>
-                    <button onClick={() => handleNav("profile")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "profile" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
-                      <span className="text-base shrink-0">🪪</span> <span>Cmdr. Dossier</span>
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -2559,6 +2586,7 @@ const ABILITY_MAP = {
             {activeTab === "home" && <HomeView setActiveTab={setActiveTab} theme={theme} />}
             {activeTab === "builder" && <ArmyBuilderView theme={theme} selectedFaction={faction} setSelectedFaction={setFaction} isPlayMode={isPlayMode} setIsPlayMode={setIsPlayMode} cloudUser={cloudUser} isGuest={isGuest} />}
             {activeTab === "missions" && <MissionsView theme={theme} />}
+            {activeTab === "deployments" && <DeploymentsView theme={theme} />}
             {activeTab === "keywords" && <KeywordsView theme={theme} />}
             {activeTab === "rules" && <RulesView theme={theme} cloudUser={cloudUser} />}
             {activeTab === "unn" && <UNNView theme={theme} cloudUser={cloudUser} isGuest={isGuest} />}
