@@ -1755,7 +1755,7 @@ const exportRosterText = () => {
       const usedSlots = useMemo(() => {
         const totals = { Hero: 0, Core: 0, Elite: 0, Support: 0, Summoned: 0 };
         roster.forEach(unit => {
-          if (totals[unit.slot] !== undefined) totals[unit.slot] += 1;
+          if (totals[unit.slot] !== undefined) totals[unit.slot] += unit.supply;
         });
         return totals;
       }, [roster]);
