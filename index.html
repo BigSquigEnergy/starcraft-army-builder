@@ -2517,18 +2517,15 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [adminUid, setAdminUid] = useState(null);
       const [userProfile, setUserProfile] = useState({ displayName: "", mainFaction: "Protoss" });
       
-      // Phase 2 State
       const [myCloudRosters, setMyCloudRosters] = useState([]);
       const [selectedRosterId, setSelectedRosterId] = useState("");
       const [inspectingReg, setInspectingReg] = useState(null);
       const [opToast, setOpToast] = useState(null);
 
-      // Phase 3 State
       const [eventTab, setEventTab] = useState("roster"); 
       const [scoreModalMatch, setScoreModalMatch] = useState(null); 
       const [scoreForm, setScoreForm] = useState({ p1VP: 0, p1Supply: 0, p2VP: 0, p2Supply: 0 });
 
-      // Phase A State: Media Uploads
       const [thumbnailFile, setThumbnailFile] = useState(null);
       const [playerPackFile, setPlayerPackFile] = useState(null);
       const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -2536,6 +2533,22 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const showOpToast = (msg, isError = false) => {
         setOpToast({ msg, isError });
         setTimeout(() => setOpToast(null), 3500);
+      };
+
+      // PHASE B: Deep Link Listener
+      useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const evtId = urlParams.get('event');
+        if (evtId) {
+          setSelectedEventId(evtId);
+          // Clean the URL bar so it doesn't get stuck
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }, []);
+
+      const handleCopyInvite = (id) => {
+        const url = `${window.location.origin}${window.location.pathname}?event=${id}`;
+        navigator.clipboard.writeText(url).then(() => showOpToast("Invite Link Copied to Clipboard!"));
       };
 
       const uniqueMissions = useMemo(() => [...new Set(MISSION_CARDS.map(m => m.name))], []);
@@ -2605,7 +2618,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         }
       }, [cloudUser, isGuest]);
 
-      // --- PARSING HELPERS ---
       const parseRegs = (ev) => {
         if (!ev || !ev.registrations) return [];
         try { return typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []); } catch (e) { return []; }
@@ -2628,7 +2640,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         return { units, cards, minerals, vespene, supply, subFaction };
       };
 
-      // --- EVENT HOSTING HELPERS ---
       const handleScaleChange = (newScale) => {
         let min = formData.customMinerals; let vesp = formData.customVespene;
         if (newScale === "Skirmish") { min = 1000; vesp = 100; }
@@ -2724,10 +2735,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             showOpToast("Tactical Event created!");
           }
           setIsModalOpen(false);
-        } catch (err) { 
-          console.error("Failed to save event:", err);
-          showOpToast("Failed to save event or upload media.", true); 
-        }
+        } catch (err) { showOpToast("Failed to save event or upload media.", true); }
         setIsUploadingMedia(false);
       };
 
@@ -2746,7 +2754,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (selectedEventId === evId) setSelectedEventId(null);
       };
 
-      // --- PHASE 2: REGISTRATION HELPERS ---
       const handleRegisterPlayer = async (ev) => {
         if (!cloudUser || !window.fbDb || isGuest) return;
         const regs = parseRegs(ev);
@@ -2839,7 +2846,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         navigator.clipboard.writeText(text).then(() => showOpToast("Army List copied to clipboard!"));
       };
 
-      // --- PHASE 3: SCORING ENGINE ---
       const calculateStandings = (ev) => {
         const regs = parseRegs(ev).slice(0, ev.maxPlayers || 16); 
         const rounds = parseRoundsData(ev);
@@ -2952,7 +2958,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         setScoreModalMatch(null);
       };
 
-      // --- UI HELPERS ---
       const getStatusBadge = (status) => {
         if (status === "Registration Open") return "bg-emerald-950/80 text-emerald-300 border-emerald-500/50";
         if (status === "Registration Closed") return "bg-amber-950/80 text-amber-300 border-amber-500/50";
@@ -3042,11 +3047,11 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     <div className="relative z-10 p-4 border-b border-white/10 flex justify-between items-start gap-2">
                       <div>
                         <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                          <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border ${getStatusBadge(ev.status)}`}>
+                          <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border shadow-sm ${getStatusBadge(ev.status)}`}>
                             {ev.status}
                           </span>
                           {isRegistered && (
-                            <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-sky-900/70 text-sky-300 border border-sky-500/40 shadow-md">
+                            <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-sky-900/70 text-sky-300 border border-sky-500/40 shadow-sm">
                               ✓ Registered
                             </span>
                           )}
@@ -3054,7 +3059,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                         <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide group-hover:text-sky-400 transition-colors leading-snug drop-shadow-md">{ev.name}</h3>
                       </div>
                       {isOwner && (
-                        <button onClick={(e) => { e.stopPropagation(); openEditModal(ev); }} className="px-2.5 py-1 rounded bg-black/60 hover:bg-black/80 text-[10px] font-bold uppercase tracking-wider text-sky-300 shrink-0 border border-sky-500/30 backdrop-blur-sm">
+                        <button onClick={(e) => { e.stopPropagation(); openEditModal(ev); }} className="px-2.5 py-1 rounded bg-black/60 hover:bg-black/80 text-[10px] font-bold uppercase tracking-wider text-sky-300 shrink-0 border border-sky-500/30 backdrop-blur-sm shadow-sm">
                           ✏️ Edit
                         </button>
                       )}
@@ -3063,7 +3068,10 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     <div className="relative z-10 p-4 flex-1 flex flex-col gap-3 text-xs text-slate-300">
                       <div className="flex items-center justify-between text-slate-400 border-b border-white/10 pb-3">
                         <span className="bg-black/50 px-2 py-1 rounded border border-white/10 shadow-inner">📅 <strong className="text-white">{ev.date}</strong></span>
-                        <span className="bg-black/50 px-2 py-1 rounded border border-white/10 shadow-inner">📍 <strong className="text-white">{ev.location}</strong></span>
+                        {/* PHASE B: Google Maps Link */}
+                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="bg-black/50 hover:bg-sky-900/40 px-2 py-1 rounded border border-white/10 hover:border-sky-500/50 shadow-inner transition-colors">
+                          📍 <strong className="text-sky-300 underline decoration-sky-500/50">{ev.location}</strong>
+                        </a>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 text-center bg-black/60 p-2.5 rounded-lg border border-white/10 shadow-inner backdrop-blur-sm">
@@ -3133,17 +3141,26 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                             <span className="text-[10px] uppercase font-bold tracking-widest bg-black/60 px-3 py-1 rounded shadow-inner border border-white/10 text-slate-300">
                               📅 {selectedEvent.date}
                             </span>
-                            <span className="text-[10px] uppercase font-bold tracking-widest bg-black/60 px-3 py-1 rounded shadow-inner border border-white/10 text-slate-300">
+                            {/* PHASE B: Google Maps Link */}
+                            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.location)}`} target="_blank" rel="noopener noreferrer" className="text-[10px] uppercase font-bold tracking-widest bg-black/60 hover:bg-sky-900/60 px-3 py-1 rounded shadow-inner border border-white/10 hover:border-sky-500/50 text-sky-300 transition-colors">
                               📍 {selectedEvent.location}
-                            </span>
+                            </a>
                             <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded shadow-md border ${selectedEvent.listsRevealed ? 'bg-sky-950/80 text-sky-300 border-sky-500/40' : 'bg-slate-900 text-slate-400 border-white/10'}`}>
                               {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🔒 Lists Hidden (TO Only)'}
                             </span>
                           </div>
-                          <h3 className="text-3xl md:text-4xl font-orbitron font-black uppercase text-white tracking-wide drop-shadow-lg">{selectedEvent.name}</h3>
-                          <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mt-2">
-                            Tournament Organizer: <span className="text-sky-400 bg-black/40 px-2 py-0.5 rounded border border-white/5">{selectedEvent.hostName}</span>
-                          </p>
+                          <div className="flex items-center gap-4 mb-2">
+                            <h3 className="text-3xl md:text-4xl font-orbitron font-black uppercase text-white tracking-wide drop-shadow-lg leading-tight">{selectedEvent.name}</h3>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-4 mt-2">
+                            <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">
+                              Tournament Organizer: <span className="text-sky-400 bg-black/40 px-2 py-0.5 rounded border border-white/5">{selectedEvent.hostName}</span>
+                            </p>
+                            {/* PHASE B: Copy Invite Link Button */}
+                            <button onClick={() => handleCopyInvite(selectedEvent.id)} className="text-[10px] uppercase font-bold tracking-widest bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded shadow-md border border-slate-600 text-white transition-colors">
+                              🔗 Copy Invite Link
+                            </button>
+                          </div>
                         </div>
 
                         {isOwner && (
@@ -3791,7 +3808,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           )}
         </div>
       );
-    };   
+    };
 const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, handleLogout }) => {
       const [profileData, setProfileData] = useState({
         displayName: '', bio: '', mainFaction: 'Protoss',
@@ -3971,7 +3988,9 @@ const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, ha
 
     const App = () => {
       const [faction, setFaction] = useState("Protoss");
-      const [activeTab, setActiveTab] = useState("home");
+      const [activeTab, setActiveTab] = useState(() => {
+        return new URLSearchParams(window.location.search).get("event") ? "events" : "home";
+      });
       const [isPlayMode, setIsPlayMode] = useState(false);
       const [cloudUser, setCloudUser] = useState(null);
       const [isGuest, setIsGuest] = useState(true);
