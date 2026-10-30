@@ -3773,7 +3773,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </div>
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Venue / Location</label>
-                      <div ref={locationInputRef} className="w-full bg-black/70 border border-white/20 rounded overflow-hidden focus-within:border-sky-500 min-h-[42px] flex items-center">
+                      <div ref={locationInputRef} className="w-full bg-black/70 border border-white/20 rounded focus-within:border-sky-500 min-h-[42px] flex items-center relative z-[9999]">
                         <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Start typing address..." className="w-full bg-transparent p-2.5 text-sm text-white outline-none" />
                       </div>
                     </div>
