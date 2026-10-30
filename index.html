@@ -2540,58 +2540,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [playerPackFile, setPlayerPackFile] = useState(null);
       const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
-     // Phase B: Google Maps Autocomplete Ref (Updated for Places API New)
+      // Phase B: Google Maps Autocomplete Ref (Updated for Places API New)
       const locationInputRef = React.useRef(null);
       const placePickerRef = React.useRef(null);
-
-      useEffect(() => {
-        // Initialize the new Google Web Component only once when the modal opens
-        if (isModalOpen && window.google && window.google.maps && window.google.maps.places && locationInputRef.current && !placePickerRef.current) {
-          
-          // Clear the fallback standard input
-          locationInputRef.current.innerHTML = "";
-
-          // Create the new 2025+ Place Autocomplete Element
-          const picker = new window.google.maps.places.PlaceAutocompleteElement();
-          
-          // Inject CSS variables directly to theme it to our dark sci-fi UI
-          picker.style.setProperty('--pac-background-color', '#0B0E14');
-          picker.style.setProperty('--pac-text-color', '#e2e8f0');
-          picker.style.setProperty('--pac-empty-text-color', '#94a3b8');
-          picker.style.setProperty('--pac-icon-color', '#38bdf8');
-          picker.style.width = '100%';
-          
-          // Set initial value if editing an existing event
-          if (formData.location) picker.inputValue = formData.location;
-
-          // Listen for when a user clicks a dropdown suggestion
-          picker.addEventListener('gmp-placeselect', async (e) => {
-            if (!e.place) {
-               setFormData(prev => ({ ...prev, location: picker.inputValue }));
-               return;
-            }
-            // The New API requires manually fetching the fields you need
-            await e.place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
-            
-            const pName = e.place.displayName ? e.place.displayName.text : "";
-            const addr = e.place.formattedAddress || "";
-            const finalLocation = pName && !addr.includes(pName) ? `${pName}, ${addr}` : addr;
-            
-            setFormData(prev => ({ ...prev, location: finalLocation }));
-          });
-
-          // Capture manual typing if they click away without selecting a suggestion
-          picker.addEventListener('change', () => {
-             setFormData(prev => ({ ...prev, location: picker.inputValue }));
-          });
-
-          locationInputRef.current.appendChild(picker);
-          placePickerRef.current = picker;
-        }
-
-        // Clean up the ref when modal closes
-        if (!isModalOpen) placePickerRef.current = null;
-      }, [isModalOpen]);
 
       const showOpToast = (msg, isError = false) => {
         setOpToast({ msg, isError });
@@ -2604,7 +2555,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         const evtId = urlParams.get('event');
         if (evtId) {
           setSelectedEventId(evtId);
-          // Clean the URL bar so it doesn't get stuck
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       }, []);
@@ -2680,6 +2630,55 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           return () => unsubEvents();
         }
       }, [cloudUser, isGuest]);
+
+      useEffect(() => {
+        // Initialize the new Google Web Component only once when the modal opens
+        if (isModalOpen && window.google && window.google.maps && window.google.maps.places && window.google.maps.places.PlaceAutocompleteElement && locationInputRef.current && !placePickerRef.current) {
+          
+          // Clear the fallback standard input
+          locationInputRef.current.innerHTML = "";
+
+          // Create the new 2025+ Place Autocomplete Element
+          const picker = new window.google.maps.places.PlaceAutocompleteElement();
+          
+          // Inject CSS variables directly to theme it to our dark sci-fi UI
+          picker.style.setProperty('--pac-background-color', '#0B0E14');
+          picker.style.setProperty('--pac-text-color', '#e2e8f0');
+          picker.style.setProperty('--pac-empty-text-color', '#94a3b8');
+          picker.style.setProperty('--pac-icon-color', '#38bdf8');
+          picker.style.width = '100%';
+          
+          // Set initial value if editing an existing event
+          if (formData.location) picker.inputValue = formData.location;
+
+          // Listen for when a user clicks a dropdown suggestion
+          picker.addEventListener('gmp-placeselect', async (e) => {
+            if (!e.place) {
+               setFormData(prev => ({ ...prev, location: picker.inputValue }));
+               return;
+            }
+            // The New API requires manually fetching the fields you need
+            await e.place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
+            
+            const pName = e.place.displayName ? e.place.displayName.text : "";
+            const addr = e.place.formattedAddress || "";
+            const finalLocation = pName && !addr.includes(pName) ? `${pName}, ${addr}` : addr;
+            
+            setFormData(prev => ({ ...prev, location: finalLocation }));
+          });
+
+          // Capture manual typing if they click away without selecting a suggestion
+          picker.addEventListener('change', () => {
+             setFormData(prev => ({ ...prev, location: picker.inputValue }));
+          });
+
+          locationInputRef.current.appendChild(picker);
+          placePickerRef.current = picker;
+        }
+
+        // Clean up the ref when modal closes
+        if (!isModalOpen) placePickerRef.current = null;
+      }, [isModalOpen, formData.location]);
 
       const parseRegs = (ev) => {
         if (!ev || !ev.registrations) return [];
@@ -3775,10 +3774,10 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Venue / Location</label>
                       <div ref={locationInputRef} className="w-full bg-black/70 border border-white/20 rounded overflow-hidden focus-within:border-sky-500 min-h-[42px] flex items-center">
-                        {/* Fallback input for when Maps API is blocked or offline */}
-                        <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="e.g., Good Games Town Hall" className="w-full bg-transparent p-2.5 text-sm text-white outline-none" />
+                        <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Start typing address..." className="w-full bg-transparent p-2.5 text-sm text-white outline-none" />
                       </div>
                     </div>
+                  </div>
                   
                   {/* PHASE A: MEDIA UPLOADS */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/40 border border-white/10 p-4 rounded-lg">
