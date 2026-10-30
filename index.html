@@ -2515,7 +2515,18 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [editingEventId, setEditingEventId] = useState(null);
       const [statusFilter, setStatusFilter] = useState("All");
       const [adminUid, setAdminUid] = useState(null);
-      const [userProfile, setUserProfile] = useState({ displayName: "" });
+      const [userProfile, setUserProfile] = useState({ displayName: "", mainFaction: "Protoss" });
+      
+      // Phase 2 State: Cloud Rosters, List Submission & Inspector
+      const [myCloudRosters, setMyCloudRosters] = useState([]);
+      const [selectedRosterId, setSelectedRosterId] = useState("");
+      const [inspectingReg, setInspectingReg] = useState(null);
+      const [opToast, setOpToast] = useState(null);
+
+      const showOpToast = (msg, isError = false) => {
+        setOpToast({ msg, isError });
+        setTimeout(() => setOpToast(null), 3500);
+      };
 
       const uniqueMissions = useMemo(() => [...new Set(MISSION_CARDS.map(m => m.name))], []);
 
@@ -2531,6 +2542,8 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         maxPlayers: 16,
         benchSize: 4,
         roundsCount: 3,
+        listsRevealed: false,
+        listsLocked: false,
         roundConfigs: [
           { round: 1, mission: "Frontlines", map: "TBD" },
           { round: 2, mission: "Hold Position", map: "TBD" },
@@ -2543,31 +2556,76 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       useEffect(() => {
         if (!cloudUser || !window.fbDb) return;
 
-        // Fetch User Profile for Host Name
+        // Fetch User Profile for Host/Player Name
         const profRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
         window.fbHelpers.getDoc(profRef).then(snap => {
-          if (snap.exists()) setUserProfile(snap.data());
+          if (snap.exists()) setUserProfile(prev => ({ ...prev, ...snap.data() }));
         });
 
-        // Fetch Admin UID
-        const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
-        const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (snap) => {
-          if (snap.exists()) setAdminUid(snap.data().uid || null);
-        });
+        // Fetch User's Saved Cloud Rosters for List Submission
+        if (!isGuest) {
+          const rostersRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'rosters');
+          const unsubRosters = window.fbHelpers.onSnapshot(rostersRef, (snap) => {
+            const list = [];
+            if (snap.forEach) {
+              snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+              list.sort((a, b) => b.createdAt - a.createdAt);
+              setMyCloudRosters(list);
+            }
+          });
 
-        // Listen to Organized Play Events
-        const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
-        const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
-          const fetched = [];
-          if (snap.forEach) {
-            snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
-            fetched.sort((a, b) => (a.date || "").localeCompare(b.date || "") || b.createdAt - a.createdAt);
-            setEvents(fetched);
-          }
-        }, (err) => console.error("Events sync error:", err));
+          // Fetch Admin UID
+          const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
+          const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (snap) => {
+            if (snap.exists()) setAdminUid(snap.data().uid || null);
+          });
 
-        return () => { unsubAdmin(); unsubEvents(); };
-      }, [cloudUser]);
+          // Listen to Organized Play Events
+          const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
+          const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
+            const fetched = [];
+            if (snap.forEach) {
+              snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
+              fetched.sort((a, b) => (a.date || "").localeCompare(b.date || "") || b.createdAt - a.createdAt);
+              setEvents(fetched);
+            }
+          }, (err) => console.error("Events sync error:", err));
+
+          return () => { unsubRosters(); unsubAdmin(); unsubEvents(); };
+        } else {
+          // Guest listener for events only
+          const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
+          const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
+            const fetched = [];
+            if (snap.forEach) {
+              snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
+              fetched.sort((a, b) => (a.date || "").localeCompare(b.date || "") || b.createdAt - a.createdAt);
+              setEvents(fetched);
+            }
+          });
+          return () => unsubEvents();
+        }
+      }, [cloudUser, isGuest]);
+
+      const parseRegs = (ev) => {
+        if (!ev || !ev.registrations) return [];
+        try {
+          return typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []);
+        } catch (e) { return []; }
+      };
+
+      const getRosterMetrics = (cloudRoster) => {
+        let units = [];
+        let cards = [];
+        try { units = typeof cloudRoster.roster === 'string' ? JSON.parse(cloudRoster.roster) : (cloudRoster.roster || []); } catch(e) {}
+        try { cards = typeof cloudRoster.tacticalCards === 'string' ? JSON.parse(cloudRoster.tacticalCards) : (cloudRoster.tacticalCards || []); } catch(e) {}
+        const minerals = units.reduce((s, u) => s + (u.minerals || 0), 0);
+        const vespene = cards.reduce((s, c) => s + (c.vespene || 0), 0);
+        const supply = units.reduce((s, u) => s + (u.supply || 0), 0);
+        const factionCard = cards.find(c => c.type === "Faction Card");
+        const subFaction = factionCard ? factionCard.subFaction : (cloudRoster.faction === "Protoss" ? "Daelaam" : "Generic");
+        return { units, cards, minerals, vespene, supply, subFaction };
+      };
 
       const handleScaleChange = (newScale) => {
         let min = formData.customMinerals;
@@ -2622,6 +2680,8 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           maxPlayers: ev.maxPlayers !== undefined ? ev.maxPlayers : 16,
           benchSize: ev.benchSize !== undefined ? ev.benchSize : 4,
           roundsCount: ev.roundsCount !== undefined ? ev.roundsCount : 3,
+          listsRevealed: Boolean(ev.listsRevealed),
+          listsLocked: Boolean(ev.listsLocked),
           roundConfigs: parsedConfigs.length > 0 ? parsedConfigs : defaultForm.roundConfigs
         });
         setIsModalOpen(true);
@@ -2631,7 +2691,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         e.preventDefault();
         if (!cloudUser || !window.fbDb || isGuest) return;
         if (!formData.name.trim() || !formData.date) {
-          alert("Please provide at least an Event Name and Date.");
+          showOpToast("Please provide at least an Event Name and Date.", true);
           return;
         }
 
@@ -2647,6 +2707,8 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           maxPlayers: Math.max(2, Number(formData.maxPlayers) || 2),
           benchSize: Math.max(0, Number(formData.benchSize) || 0),
           roundsCount: Math.max(1, Number(formData.roundsCount) || 1),
+          listsRevealed: Boolean(formData.listsRevealed),
+          listsLocked: Boolean(formData.listsLocked),
           roundConfigs: JSON.stringify(formData.roundConfigs),
           updatedAt: Date.now()
         };
@@ -2655,6 +2717,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           if (editingEventId) {
             const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', editingEventId);
             await window.fbHelpers.updateDoc(docRef, payload);
+            showOpToast("Event parameters updated!");
           } else {
             payload.hostUid = cloudUser.uid;
             payload.hostName = userProfile.displayName || cloudUser.displayName || "Commander";
@@ -2664,18 +2727,20 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
             const docAdded = await window.fbHelpers.addDoc(colRef, payload);
             if (docAdded && docAdded.id) setSelectedEventId(docAdded.id);
+            showOpToast("Tactical Event created!");
           }
           setIsModalOpen(false);
         } catch (err) {
           console.error("Failed to save event:", err);
-          alert("Failed to save event. Check console for details.");
+          showOpToast("Failed to save event.", true);
         }
       };
 
-      const handleQuickStatusChange = async (ev, newStatus) => {
+      const handleQuickFieldUpdate = async (ev, fieldObj, toastMsg) => {
         if (!cloudUser || !window.fbDb) return;
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
-        await window.fbHelpers.updateDoc(docRef, { status: newStatus, updatedAt: Date.now() });
+        await window.fbHelpers.updateDoc(docRef, { ...fieldObj, updatedAt: Date.now() });
+        if (toastMsg) showOpToast(toastMsg);
       };
 
       const handleDeleteEvent = async (evId) => {
@@ -2686,17 +2751,164 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (selectedEventId === evId) setSelectedEventId(null);
       };
 
+      // --- PHASE 2: REGISTRATION & LIST SUBMISSION HANDLERS ---
+      const handleRegisterPlayer = async (ev) => {
+        if (!cloudUser || !window.fbDb || isGuest) return;
+        const regs = parseRegs(ev);
+        if (regs.some(r => r.uid === cloudUser.uid)) {
+          showOpToast("You are already registered for this event.", true);
+          return;
+        }
+        const totalCapacity = (ev.maxPlayers || 16) + (ev.benchSize || 0);
+        if (regs.length >= totalCapacity) {
+          showOpToast("Event and Reserve Bench are completely full!", true);
+          return;
+        }
+
+        const defaultName = userProfile.displayName || cloudUser.displayName || "Commander";
+        const enteredName = window.prompt("Confirm your Commander Name for the event roster:", defaultName);
+        if (!enteredName || !enteredName.trim()) return;
+
+        const isBenchSpot = regs.length >= (ev.maxPlayers || 16);
+        const newReg = {
+          uid: cloudUser.uid,
+          playerName: enteredName.trim(),
+          faction: userProfile.mainFaction || "Protoss",
+          subFaction: "",
+          registeredAt: Date.now(),
+          rosterSubmitted: false,
+          rosterId: "",
+          rosterName: "",
+          minerals: 0,
+          vespene: 0,
+          supply: 0,
+          rosterUnits: [],
+          rosterCards: []
+        };
+
+        const updatedRegs = [...regs, newReg];
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+        await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
+        showOpToast(isBenchSpot ? "Added to the Reserve Bench (Waitlist)!" : "Registered on the Main Roster!");
+      };
+
+      const handleDropPlayer = async (ev, targetUid, targetName) => {
+        if (!cloudUser || !window.fbDb) return;
+        const isSelf = targetUid === cloudUser.uid;
+        if (!window.confirm(isSelf ? "Withdraw from this event? If a Bench player is waiting, they will automatically take your spot." : `Remove ${targetName} from this event?`)) return;
+
+        const regs = parseRegs(ev);
+        const updatedRegs = regs.filter(r => r.uid !== targetUid);
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+        await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
+        showOpToast(isSelf ? "You have withdrawn from the event." : `Removed ${targetName} from the roster.`);
+      };
+
+      const handlePromoteFromBench = async (ev, benchUid) => {
+        if (!cloudUser || !window.fbDb) return;
+        const regs = parseRegs(ev);
+        const targetIdx = regs.findIndex(r => r.uid === benchUid);
+        if (targetIdx === -1 || targetIdx < (ev.maxPlayers || 16)) return;
+
+        // Swap the bench player into the last Main Roster slot
+        const updatedRegs = [...regs];
+        const [movedPlayer] = updatedRegs.splice(targetIdx, 1);
+        updatedRegs.splice((ev.maxPlayers || 16) - 1, 0, movedPlayer);
+
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+        await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
+        showOpToast(`Promoted ${movedPlayer.playerName} to Main Roster!`);
+      };
+
+      const handleSubmitArmyList = async (ev) => {
+        if (!cloudUser || !window.fbDb || isGuest) return;
+        if (!selectedRosterId) {
+          showOpToast("Please select a saved Cloud Roster first.", true);
+          return;
+        }
+        const chosenRoster = myCloudRosters.find(r => r.id === selectedRosterId);
+        if (!chosenRoster) {
+          showOpToast("Could not find the selected Cloud Roster.", true);
+          return;
+        }
+
+        const metrics = getRosterMetrics(chosenRoster);
+        const overMin = metrics.minerals > (ev.customMinerals || 2000);
+        const overVesp = metrics.vespene > (ev.customVespene || 200);
+
+        if (overMin || overVesp) {
+          const confirmOver = window.confirm(`⚠️ Warning: "${chosenRoster.name}" (${metrics.minerals}M / ${metrics.vespene}G) exceeds this event's limits (${ev.customMinerals}M / ${ev.customVespene}G).\n\nSubmit it anyway?`);
+          if (!confirmOver) return;
+        }
+
+        const regs = parseRegs(ev);
+        const updatedRegs = regs.map(r => {
+          if (r.uid !== cloudUser.uid) return r;
+          return {
+            ...r,
+            faction: chosenRoster.faction,
+            subFaction: metrics.subFaction,
+            rosterSubmitted: true,
+            rosterId: chosenRoster.id,
+            rosterName: chosenRoster.name,
+            minerals: metrics.minerals,
+            vespene: metrics.vespene,
+            supply: metrics.supply,
+            rosterUnits: metrics.units,
+            rosterCards: metrics.cards,
+            submittedAt: Date.now()
+          };
+        });
+
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+        await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
+        showOpToast(`Army List "${chosenRoster.name}" locked in!`);
+      };
+
+      const copyInspectedListText = (reg) => {
+        if (!reg || !reg.rosterSubmitted) return;
+        let text = `=== EVENT ARMY LIST: ${reg.rosterName} ===\n`;
+        text += `Commander: ${reg.playerName}\n`;
+        text += `Faction: ${reg.faction} (${reg.subFaction || "Generic"})\n`;
+        text += `Minerals: ${reg.minerals} | Vespene: ${reg.vespene} | Supply: ${reg.supply}\n`;
+        text += `-----------------------------------\n\n[ UNITS ]\n`;
+        (reg.rosterUnits || []).forEach((u, i) => {
+          text += `${i + 1}. ${u.name} [${u.slot}] - ${u.models} Models | ${u.minerals} Min | ${u.supply} Supply\n`;
+          if (u.appliedUpgrades && u.appliedUpgrades.length > 0) {
+            text += `   - Upgrades: ${u.appliedUpgrades.join(", ")}\n`;
+          }
+        });
+        text += `\n[ TACTICAL & FACTION CARDS ]\n`;
+        (reg.rosterCards || []).forEach(c => {
+          text += `- ${c.name} (${c.type === "Faction Card" ? "Faction" : `${c.vespene} Gas`})\n`;
+        });
+        navigator.clipboard.writeText(text).then(() => showOpToast("Army List copied to clipboard!"));
+      };
+
       const getStatusBadge = (status) => {
         if (status === "Registration Open") return "bg-emerald-950/80 text-emerald-300 border-emerald-500/50";
         if (status === "Registration Closed") return "bg-amber-950/80 text-amber-300 border-amber-500/50";
         return "bg-slate-800 text-slate-400 border-slate-600/50";
       };
 
+      const getFactionBadge = (fac) => {
+        if (fac === "Protoss") return "bg-amber-950/70 text-amber-300 border-amber-500/40";
+        if (fac === "Terran") return "bg-blue-950/70 text-blue-300 border-blue-500/40";
+        if (fac === "Zerg") return "bg-fuchsia-950/70 text-fuchsia-300 border-fuchsia-500/40";
+        return "bg-slate-800 text-slate-300 border-slate-600";
+      };
+
       const selectedEvent = events.find(e => e.id === selectedEventId);
       const filteredEvents = events.filter(e => statusFilter === "All" || e.status === statusFilter);
 
       return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6 relative">
+          {opToast && (
+            <div className={`fixed top-4 right-4 z-[100] px-6 py-3 rounded shadow-2xl font-bold text-sm uppercase tracking-wider font-orbitron transition-all ${opToast.isError ? 'bg-rose-600 text-white' : 'bg-emerald-500 text-black'}`}>
+              {opToast.msg}
+            </div>
+          )}
+
           {/* TOP HEADER BAR */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-20 p-4 rounded-lg shadow-md">
             <div className="flex items-center gap-3">
@@ -2744,19 +2956,26 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
               )}
 
               {filteredEvents.map(ev => {
-                let regs = [];
-                try { regs = typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []); } catch(e) {}
+                const regs = parseRegs(ev);
                 const activeCount = Math.min(regs.length, ev.maxPlayers || 16);
                 const benchCount = Math.max(0, regs.length - (ev.maxPlayers || 16));
                 const isOwner = cloudUser && (ev.hostUid === cloudUser.uid || adminUid === cloudUser.uid);
+                const isRegistered = cloudUser && regs.some(r => r.uid === cloudUser.uid);
 
                 return (
                   <div key={ev.id} onClick={() => setSelectedEventId(ev.id)} className="bg-black/50 border border-white/10 hover:border-sky-500/50 rounded-xl overflow-hidden shadow-lg flex flex-col cursor-pointer transition-all hover:-translate-y-1 group">
                     <div className="bg-gradient-to-r from-slate-900 to-black p-4 border-b border-white/10 flex justify-between items-start gap-2">
                       <div>
-                        <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border mb-2 ${getStatusBadge(ev.status)}`}>
-                          {ev.status}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                          <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border ${getStatusBadge(ev.status)}`}>
+                            {ev.status}
+                          </span>
+                          {isRegistered && (
+                            <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-sky-900/70 text-sky-300 border border-sky-500/40">
+                              ✓ Registered
+                            </span>
+                          )}
+                        </div>
                         <h3 className="font-orbitron font-black text-lg text-white uppercase tracking-wide group-hover:text-sky-400 transition-colors leading-snug">{ev.name}</h3>
                       </div>
                       {isOwner && (
@@ -2810,10 +3029,19 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
               const isOwner = cloudUser && (selectedEvent.hostUid === cloudUser.uid || adminUid === cloudUser.uid);
               let roundConfigs = [];
               try { roundConfigs = typeof selectedEvent.roundConfigs === 'string' ? JSON.parse(selectedEvent.roundConfigs) : (selectedEvent.roundConfigs || []); } catch(e) {}
-              let regs = [];
-              try { regs = typeof selectedEvent.registrations === 'string' ? JSON.parse(selectedEvent.registrations) : (selectedEvent.registrations || []); } catch(e) {}
-              const activeCount = Math.min(regs.length, selectedEvent.maxPlayers || 16);
-              const benchCount = Math.max(0, regs.length - (selectedEvent.maxPlayers || 16));
+              
+              const regs = parseRegs(selectedEvent);
+              const maxCap = selectedEvent.maxPlayers || 16;
+              const benchCap = selectedEvent.benchSize || 0;
+              const mainRoster = regs.slice(0, maxCap);
+              const benchRoster = regs.slice(maxCap, maxCap + benchCap);
+              const activeCount = mainRoster.length;
+              const benchCount = benchRoster.length;
+
+              const myRegIndex = cloudUser ? regs.findIndex(r => r.uid === cloudUser.uid) : -1;
+              const myReg = myRegIndex !== -1 ? regs[myRegIndex] : null;
+              const isMyRegOnBench = myRegIndex >= maxCap;
+              const isEventFull = regs.length >= (maxCap + benchCap);
 
               return (
                 <div className="space-y-6">
@@ -2831,6 +3059,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                           <span className="text-xs uppercase font-bold tracking-widest bg-black/50 px-3 py-1 rounded border border-white/10 text-slate-300">
                             📍 {selectedEvent.location}
                           </span>
+                          <span className={`text-xs uppercase font-bold tracking-widest px-3 py-1 rounded border ${selectedEvent.listsRevealed ? 'bg-sky-950/80 text-sky-300 border-sky-500/40' : 'bg-slate-900 text-slate-400 border-white/10'}`}>
+                            {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🔒 Lists Hidden (TO Only)'}
+                          </span>
                         </div>
                         <h3 className="text-2xl md:text-3xl font-orbitron font-black uppercase text-white tracking-wide">{selectedEvent.name}</h3>
                         <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mt-1">
@@ -2840,19 +3071,25 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
                       {isOwner && (
                         <div className="flex flex-wrap items-center gap-2 bg-black/40 p-2.5 rounded-lg border border-white/10 w-full lg:w-auto">
-                          <div className="flex flex-col mr-2">
+                          <div className="flex flex-col mr-1">
                             <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400">Event Status</span>
-                            <select value={selectedEvent.status} onChange={(e) => handleQuickStatusChange(selectedEvent, e.target.value)} className="bg-black/80 border border-white/20 rounded px-2 py-1 text-xs font-bold text-white outline-none focus:border-sky-500 mt-0.5 cursor-pointer">
+                            <select value={selectedEvent.status} onChange={(e) => handleQuickFieldUpdate(selectedEvent, { status: e.target.value }, `Status set to ${e.target.value}`)} className="bg-black/80 border border-white/20 rounded px-2 py-1 text-xs font-bold text-white outline-none focus:border-sky-500 mt-0.5 cursor-pointer">
                               <option value="Registration Open">Registration Open</option>
                               <option value="Registration Closed">Registration Closed</option>
                               <option value="Event Finished">Event Finished</option>
                             </select>
                           </div>
+                          <button onClick={() => handleQuickFieldUpdate(selectedEvent, { listsRevealed: !selectedEvent.listsRevealed }, !selectedEvent.listsRevealed ? "Army Lists are now PUBLIC!" : "Army Lists are now HIDDEN.")} className={`px-3 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-colors ${selectedEvent.listsRevealed ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900' : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-slate-700'}`}>
+                            {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🕶️ Reveal Lists'}
+                          </button>
+                          <button onClick={() => handleQuickFieldUpdate(selectedEvent, { listsLocked: !selectedEvent.listsLocked }, !selectedEvent.listsLocked ? "List submissions LOCKED." : "List submissions UNLOCKED.")} className={`px-3 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-colors ${selectedEvent.listsLocked ? 'bg-amber-950/70 text-amber-300 border-amber-500/40 hover:bg-amber-900' : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-slate-700'}`}>
+                            {selectedEvent.listsLocked ? '🔒 Lists Locked' : '🔓 Lock Lists'}
+                          </button>
                           <button onClick={() => openEditModal(selectedEvent)} className="px-3 py-2 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 border border-sky-500/40 text-xs font-bold uppercase tracking-wider">
-                            ✏️ Edit Event
+                            ✏️ Edit
                           </button>
                           <button onClick={() => handleDeleteEvent(selectedEvent.id)} className="px-3 py-2 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 text-xs font-bold uppercase tracking-wider">
-                            🗑️ Delete
+                            🗑️
                           </button>
                         </div>
                       )}
@@ -2872,12 +3109,12 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                       </div>
                       <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
                         <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Main Roster Cap</span>
-                        <span className="font-orbitron font-black text-lg text-emerald-400">{activeCount} / {selectedEvent.maxPlayers}</span>
-                        <span className="block text-xs text-slate-400 mt-0.5">{Math.max(0, selectedEvent.maxPlayers - activeCount)} Spots Remaining</span>
+                        <span className="font-orbitron font-black text-lg text-emerald-400">{activeCount} / {maxCap}</span>
+                        <span className="block text-xs text-slate-400 mt-0.5">{Math.max(0, maxCap - activeCount)} Spots Remaining</span>
                       </div>
                       <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
                         <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Reserve Bench</span>
-                        <span className="font-orbitron font-black text-lg text-amber-400">{benchCount} / {selectedEvent.benchSize}</span>
+                        <span className="font-orbitron font-black text-lg text-amber-400">{benchCount} / {benchCap}</span>
                         <span className="block text-xs text-slate-400 mt-0.5">Waitlist Capacity</span>
                       </div>
                     </div>
@@ -2890,8 +3127,109 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     )}
                   </div>
 
-                  {/* ROUND SCHEDULE & MAPS */}
+                  {/* COMMANDER REGISTRATION & ARMY SUBMISSION CONSOLE */}
+                  <div className="bg-black/50 border border-sky-500/30 rounded-xl p-5 shadow-lg">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                      <div>
+                        <h4 className="font-orbitron font-black text-base uppercase text-sky-400 flex items-center gap-2">
+                          <span>⚔️</span> Commander Registration & List Submission
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {myReg
+                            ? isMyRegOnBench
+                              ? `You are currently #${myRegIndex - maxCap + 1} on the Reserve Bench. Submit your list so you are ready if a spot opens!`
+                              : `You are registered on the Main Roster (${myReg.playerName}). Lock in your saved Cloud Roster below.`
+                            : selectedEvent.status !== "Registration Open"
+                              ? "Registration is currently closed for this event."
+                              : activeCount >= maxCap && benchCap > benchCount
+                                ? "Main Roster is full — registering now will place you on the Reserve Bench (Waitlist)."
+                                : "Claim your spot in this event and submit your army list from your Cloud Rosters."}
+                        </p>
+                      </div>
+
+                      {/* ACTION CONTROLS */}
+                      <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                        {isGuest ? (
+                          <button onClick={handleGoogleLogin} className="px-5 py-2.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-black text-xs uppercase tracking-widest shadow-lg">
+                            Sign In to Register
+                          </button>
+                        ) : !myReg ? (
+                          <button
+                            disabled={selectedEvent.status !== "Registration Open" || isEventFull}
+                            onClick={() => handleRegisterPlayer(selectedEvent)}
+                            className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg transition-all ${
+                              selectedEvent.status !== "Registration Open" || isEventFull
+                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
+                                : activeCount >= maxCap
+                                  ? 'bg-amber-500 hover:bg-amber-400 text-stone-950'
+                                  : theme.accent
+                            }`}
+                          >
+                            {isEventFull
+                              ? "Event & Bench Full"
+                              : activeCount >= maxCap
+                                ? "Join Reserve Bench"
+                                : "Register for Event"}
+                          </button>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+                            {!selectedEvent.listsLocked && selectedEvent.status !== "Event Finished" ? (
+                              <>
+                                <select
+                                  value={selectedRosterId}
+                                  onChange={e => setSelectedRosterId(e.target.value)}
+                                  className="bg-black/80 border border-white/20 rounded px-3 py-2 text-xs text-white outline-none focus:border-sky-500 min-w-[230px]"
+                                >
+                                  <option value="">-- Select Saved Cloud Roster --</option>
+                                  {myCloudRosters.map(r => {
+                                    const m = getRosterMetrics(r);
+                                    const valid = m.minerals <= (selectedEvent.customMinerals || 2000) && m.vespene <= (selectedEvent.customVespene || 200);
+                                    return (
+                                      <option key={r.id} value={r.id}>
+                                        {r.name} ({r.faction} - {m.minerals}M / {m.vespene}G) {valid ? '✓' : '⚠️ Over Limit'}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <button
+                                  onClick={() => handleSubmitArmyList(selectedEvent)}
+                                  className="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white font-orbitron font-bold text-xs uppercase tracking-wider shadow-md shrink-0"
+                                >
+                                  {myReg.rosterSubmitted ? "Update List" : "Submit List"}
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-xs font-bold uppercase tracking-widest px-3 py-2 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
+                                🔒 List Submissions Locked
+                              </span>
+                            )}
+
+                            {myReg.rosterSubmitted && (
+                              <button
+                                onClick={() => setInspectingReg(myReg)}
+                                className="px-3 py-2 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider shrink-0"
+                              >
+                                📜 My List
+                              </button>
+                            )}
+
+                            {selectedEvent.status !== "Event Finished" && (
+                              <button
+                                onClick={() => handleDropPlayer(selectedEvent, cloudUser.uid, myReg.playerName)}
+                                className="px-3 py-2 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 text-xs font-bold uppercase tracking-wider shrink-0"
+                              >
+                                Drop Out
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ROUND SCHEDULE & REGISTERED PLAYERS */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* LEFT COLUMN: ROUND SCHEDULE */}
                     <div className="lg:col-span-1 bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg h-fit">
                       <h4 className="font-orbitron font-black text-base uppercase text-sky-400 border-b border-white/10 pb-2 mb-4">Round Operations</h4>
                       <div className="space-y-3">
@@ -2907,18 +3245,262 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                       </div>
                     </div>
 
-                    {/* PLACEHOLDER FOR PHASE 2 & 3 (REGISTRATIONS & STANDINGS) */}
-                    <div className="lg:col-span-2 bg-black/40 border border-white/10 rounded-xl p-6 shadow-lg flex flex-col items-center justify-center text-center min-h-[260px]">
-                      <span className="text-4xl mb-3">📋</span>
-                      <h4 className="font-orbitron font-black text-lg uppercase text-slate-300 mb-1">Player Roster & Reserve Bench</h4>
-                      <p className="text-xs text-slate-400 max-w-md">
-                        Ready for Phase 2: Players will register here, automatically spill over into the {selectedEvent.benchSize}-player Reserve Bench if full, and submit their Cloud Army Lists.
-                      </p>
+                    {/* RIGHT COLUMN: MAIN ROSTER & RESERVE BENCH */}
+                    <div className="lg:col-span-2 space-y-6">
+                      {/* MAIN ROSTER LIST */}
+                      <div className="bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg">
+                        <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+                          <h4 className="font-orbitron font-black text-base uppercase text-emerald-400 flex items-center gap-2">
+                            <span>🛡️</span> Registered Commanders ({activeCount} / {maxCap})
+                          </h4>
+                          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+                            {mainRoster.filter(r => r.rosterSubmitted).length} / {activeCount} Lists Submitted
+                          </span>
+                        </div>
+
+                        {mainRoster.length === 0 ? (
+                          <div className="p-8 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">
+                            No Commanders Registered Yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {mainRoster.map((reg, idx) => {
+                              const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
+                              return (
+                                <div key={reg.uid} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-white/20 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <span className="w-7 h-7 rounded bg-white/5 border border-white/10 flex items-center justify-center font-orbitron font-black text-xs text-slate-400 shrink-0">
+                                      #{idx + 1}
+                                    </span>
+                                    <div>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>
+                                          {reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}
+                                        </span>
+                                      </div>
+                                      <div className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                        {reg.rosterSubmitted ? (
+                                          <>
+                                            <span className="text-emerald-400 font-bold">✓ List Locked</span>
+                                            {canViewList && (
+                                              <span className="text-slate-300 font-mono">
+                                                • "{reg.rosterName}" ({reg.minerals}M / {reg.vespene}G / {reg.supply} Sup)
+                                              </span>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <span className="text-amber-400/80 italic">⏳ Awaiting Army List Submission</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                    {canViewList && (
+                                      <button
+                                        onClick={() => setInspectingReg(reg)}
+                                        className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest"
+                                      >
+                                        📜 View List
+                                      </button>
+                                    )}
+                                    {isOwner && (
+                                      <button
+                                        onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)}
+                                        className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase"
+                                        title="Remove Player"
+                                      >
+                                        ✖
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* RESERVE BENCH (WAITLIST) */}
+                      {(benchCap > 0 || benchRoster.length > 0) && (
+                        <div className="bg-black/40 border border-amber-500/30 rounded-xl p-5 shadow-lg">
+                          <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+                            <div>
+                              <h4 className="font-orbitron font-black text-base uppercase text-amber-400 flex items-center gap-2">
+                                <span>⏳</span> Reserve Bench / Waitlist ({benchCount} / {benchCap})
+                              </h4>
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                If a Main Roster player drops out, #1 on the Reserve Bench is automatically promoted into the Main Roster.
+                              </p>
+                            </div>
+                          </div>
+
+                          {benchRoster.length === 0 ? (
+                            <div className="p-6 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">
+                              Reserve Bench Empty ({benchCap} Waitlist Spots Available)
+                            </div>
+                          ) : (
+                            <div className="space-y-2.5">
+                              {benchRoster.map((reg, bIdx) => {
+                                const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
+                                return (
+                                  <div key={reg.uid} className="bg-amber-950/10 border border-amber-500/30 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                      <span className="px-2 py-1 rounded bg-amber-950/80 border border-amber-500/40 font-orbitron font-black text-[10px] text-amber-300 shrink-0 uppercase">
+                                        Bench #{bIdx + 1}
+                                      </span>
+                                      <div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
+                                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>
+                                            {reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}
+                                          </span>
+                                        </div>
+                                        <div className="text-[11px] text-slate-400 mt-0.5">
+                                          {reg.rosterSubmitted ? (
+                                            <span className="text-emerald-400 font-bold">✓ Standby List Ready ({reg.minerals}M / {reg.vespene}G)</span>
+                                          ) : (
+                                            <span className="text-slate-500 italic">No Standby List Submitted</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                      {canViewList && (
+                                        <button
+                                          onClick={() => setInspectingReg(reg)}
+                                          className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest"
+                                        >
+                                          📜 View List
+                                        </button>
+                                      )}
+                                      {isOwner && (
+                                        <>
+                                          <button
+                                            onClick={() => handlePromoteFromBench(selectedEvent, reg.uid)}
+                                            className="px-2.5 py-1.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider"
+                                            title="Swap into Main Roster"
+                                          >
+                                            ⬆ Promote
+                                          </button>
+                                          <button
+                                            onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)}
+                                            className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase"
+                                            title="Remove from Bench"
+                                          >
+                                            ✖
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })()
+          )}
+
+          {/* ARMY LIST INSPECTOR MODAL */}
+          {inspectingReg && (
+            <div className="fixed inset-0 z-[80] bg-black/85 flex items-center justify-center p-4" onClick={() => setInspectingReg(null)}>
+              <div className={`max-w-2xl w-full p-5 md:p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-start border-b border-white/10 pb-3 mb-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border ${getFactionBadge(inspectingReg.faction)}`}>
+                        {inspectingReg.faction} ({inspectingReg.subFaction || "Generic"})
+                      </span>
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                        Commander: <strong className="text-white">{inspectingReg.playerName}</strong>
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-orbitron font-black uppercase text-sky-400">{inspectingReg.rosterName || "Submitted Roster"}</h3>
+                  </div>
+                  <button onClick={() => setInspectingReg(null)} className="text-slate-400 hover:text-white font-bold text-lg">✖</button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center bg-black/50 p-3 rounded-lg border border-white/10 mb-4 shrink-0">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">Minerals</span>
+                    <span className="font-orbitron font-black text-lg text-sky-400">{inspectingReg.minerals}</span>
+                  </div>
+                  <div className="border-x border-white/10">
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">Vespene Gas</span>
+                    <span className="font-orbitron font-black text-lg text-emerald-400">{inspectingReg.vespene}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">Total Supply</span>
+                    <span className="font-orbitron font-black text-lg text-amber-300">{inspectingReg.supply}</span>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                  <div>
+                    <h4 className="font-orbitron font-bold text-xs uppercase tracking-widest text-amber-400 border-b border-white/10 pb-1 mb-2">
+                      Drafted Units ({(inspectingReg.rosterUnits || []).length})
+                    </h4>
+                    <div className="space-y-2">
+                      {(inspectingReg.rosterUnits || []).map((u, i) => (
+                        <div key={i} className="bg-black/40 border border-white/10 p-3 rounded-lg flex justify-between items-start gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-orbitron font-bold text-sm text-white uppercase">{u.name}</span>
+                              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-white/10 text-slate-300">{u.slot}</span>
+                            </div>
+                            <span className="text-xs text-slate-400 block mt-0.5">
+                              {u.models} Models • Supply: {u.supply}
+                            </span>
+                            {u.appliedUpgrades && u.appliedUpgrades.length > 0 && (
+                              <span className="text-xs text-sky-300 block mt-1">
+                                + {u.appliedUpgrades.join(", ")}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-mono font-bold text-xs text-sky-400 shrink-0">{u.minerals} Min</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-orbitron font-bold text-xs uppercase tracking-widest text-emerald-400 border-b border-white/10 pb-1 mb-2">
+                      Faction & Tactical Cards ({(inspectingReg.rosterCards || []).length})
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(inspectingReg.rosterCards || []).map((c, i) => (
+                        <div key={i} className="bg-black/40 border border-white/10 p-2.5 rounded-lg flex justify-between items-center">
+                          <div>
+                            <span className="font-orbitron font-bold text-xs text-white uppercase block">{c.name}</span>
+                            <span className="text-[10px] text-slate-400">{c.provides || c.type}</span>
+                          </div>
+                          <span className="font-mono font-bold text-xs text-emerald-400 shrink-0">
+                            {c.type === "Faction Card" ? "Faction" : `${c.vespene} Gas`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/10 shrink-0">
+                  <button onClick={() => copyInspectedListText(inspectingReg)} className="px-4 py-2 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider">
+                    📋 Copy Text
+                  </button>
+                  <button onClick={() => setInspectingReg(null)} className={`px-6 py-2 rounded font-orbitron font-bold text-xs uppercase tracking-widest ${theme.accent}`}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* CREATE / EDIT EVENT MODAL */}
