@@ -2517,11 +2517,16 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [adminUid, setAdminUid] = useState(null);
       const [userProfile, setUserProfile] = useState({ displayName: "", mainFaction: "Protoss" });
       
-      // Phase 2 State: Cloud Rosters, List Submission & Inspector
+      // Phase 2 State
       const [myCloudRosters, setMyCloudRosters] = useState([]);
       const [selectedRosterId, setSelectedRosterId] = useState("");
       const [inspectingReg, setInspectingReg] = useState(null);
       const [opToast, setOpToast] = useState(null);
+
+      // Phase 3 State: Tabs & Score Entry
+      const [eventTab, setEventTab] = useState("roster"); // roster, pairings, standings
+      const [scoreModalMatch, setScoreModalMatch] = useState(null); // { roundNum, matchIndex, matchData }
+      const [scoreForm, setScoreForm] = useState({ p1VP: 0, p1Supply: 0, p2VP: 0, p2Supply: 0 });
 
       const showOpToast = (msg, isError = false) => {
         setOpToast({ msg, isError });
@@ -2556,13 +2561,11 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       useEffect(() => {
         if (!cloudUser || !window.fbDb) return;
 
-        // Fetch User Profile for Host/Player Name
         const profRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
         window.fbHelpers.getDoc(profRef).then(snap => {
           if (snap.exists()) setUserProfile(prev => ({ ...prev, ...snap.data() }));
         });
 
-        // Fetch User's Saved Cloud Rosters for List Submission
         if (!isGuest) {
           const rostersRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'rosters');
           const unsubRosters = window.fbHelpers.onSnapshot(rostersRef, (snap) => {
@@ -2574,13 +2577,11 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             }
           });
 
-          // Fetch Admin UID
           const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
           const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (snap) => {
             if (snap.exists()) setAdminUid(snap.data().uid || null);
           });
 
-          // Listen to Organized Play Events
           const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
           const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
             const fetched = [];
@@ -2593,7 +2594,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
           return () => { unsubRosters(); unsubAdmin(); unsubEvents(); };
         } else {
-          // Guest listener for events only
           const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
           const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
             const fetched = [];
@@ -2607,16 +2607,19 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         }
       }, [cloudUser, isGuest]);
 
+      // --- PARSING HELPERS ---
       const parseRegs = (ev) => {
         if (!ev || !ev.registrations) return [];
-        try {
-          return typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []);
-        } catch (e) { return []; }
+        try { return typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []); } catch (e) { return []; }
+      };
+
+      const parseRoundsData = (ev) => {
+        if (!ev || !ev.roundsData) return [];
+        try { return typeof ev.roundsData === 'string' ? JSON.parse(ev.roundsData) : (ev.roundsData || []); } catch (e) { return []; }
       };
 
       const getRosterMetrics = (cloudRoster) => {
-        let units = [];
-        let cards = [];
+        let units = []; let cards = [];
         try { units = typeof cloudRoster.roster === 'string' ? JSON.parse(cloudRoster.roster) : (cloudRoster.roster || []); } catch(e) {}
         try { cards = typeof cloudRoster.tacticalCards === 'string' ? JSON.parse(cloudRoster.tacticalCards) : (cloudRoster.tacticalCards || []); } catch(e) {}
         const minerals = units.reduce((s, u) => s + (u.minerals || 0), 0);
@@ -2627,6 +2630,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         return { units, cards, minerals, vespene, supply, subFaction };
       };
 
+      // --- EVENT HOSTING HELPERS ---
       const handleScaleChange = (newScale) => {
         let min = formData.customMinerals;
         let vesp = formData.customVespene;
@@ -2650,39 +2654,22 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
       const updateRoundConfig = (roundNum, key, val) => {
         setFormData(prev => ({
-          ...prev,
-          roundConfigs: prev.roundConfigs.map(rc => rc.round === roundNum ? { ...rc, [key]: val } : rc)
+          ...prev, roundConfigs: prev.roundConfigs.map(rc => rc.round === roundNum ? { ...rc, [key]: val } : rc)
         }));
       };
 
-      const openCreateModal = () => {
-        setEditingEventId(null);
-        setFormData(defaultForm);
-        setIsModalOpen(true);
-      };
+      const openCreateModal = () => { setEditingEventId(null); setFormData(defaultForm); setIsModalOpen(true); };
 
       const openEditModal = (ev) => {
         setEditingEventId(ev.id);
         let parsedConfigs = [];
-        try {
-          parsedConfigs = typeof ev.roundConfigs === 'string' ? JSON.parse(ev.roundConfigs) : (ev.roundConfigs || []);
-        } catch (e) { parsedConfigs = []; }
-
+        try { parsedConfigs = typeof ev.roundConfigs === 'string' ? JSON.parse(ev.roundConfigs) : (ev.roundConfigs || []); } catch (e) { parsedConfigs = []; }
         setFormData({
-          name: ev.name || "",
-          date: ev.date || "",
-          location: ev.location || "",
-          description: ev.description || "",
-          status: ev.status || "Registration Open",
-          scale: ev.scale || "Standard",
-          customMinerals: ev.customMinerals !== undefined ? ev.customMinerals : 2000,
-          customVespene: ev.customVespene !== undefined ? ev.customVespene : 200,
-          maxPlayers: ev.maxPlayers !== undefined ? ev.maxPlayers : 16,
-          benchSize: ev.benchSize !== undefined ? ev.benchSize : 4,
-          roundsCount: ev.roundsCount !== undefined ? ev.roundsCount : 3,
-          listsRevealed: Boolean(ev.listsRevealed),
-          listsLocked: Boolean(ev.listsLocked),
-          roundConfigs: parsedConfigs.length > 0 ? parsedConfigs : defaultForm.roundConfigs
+          name: ev.name || "", date: ev.date || "", location: ev.location || "", description: ev.description || "",
+          status: ev.status || "Registration Open", scale: ev.scale || "Standard", customMinerals: ev.customMinerals !== undefined ? ev.customMinerals : 2000,
+          customVespene: ev.customVespene !== undefined ? ev.customVespene : 200, maxPlayers: ev.maxPlayers !== undefined ? ev.maxPlayers : 16,
+          benchSize: ev.benchSize !== undefined ? ev.benchSize : 4, roundsCount: ev.roundsCount !== undefined ? ev.roundsCount : 3,
+          listsRevealed: Boolean(ev.listsRevealed), listsLocked: Boolean(ev.listsLocked), roundConfigs: parsedConfigs.length > 0 ? parsedConfigs : defaultForm.roundConfigs
         });
         setIsModalOpen(true);
       };
@@ -2690,27 +2677,13 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const handleSaveEvent = async (e) => {
         e.preventDefault();
         if (!cloudUser || !window.fbDb || isGuest) return;
-        if (!formData.name.trim() || !formData.date) {
-          showOpToast("Please provide at least an Event Name and Date.", true);
-          return;
-        }
+        if (!formData.name.trim() || !formData.date) { showOpToast("Please provide at least an Event Name and Date.", true); return; }
 
         const payload = {
-          name: formData.name.trim(),
-          date: formData.date,
-          location: formData.location.trim() || "TBA",
-          description: formData.description.trim(),
-          status: formData.status,
-          scale: formData.scale,
-          customMinerals: Number(formData.customMinerals) || 0,
-          customVespene: Number(formData.customVespene) || 0,
-          maxPlayers: Math.max(2, Number(formData.maxPlayers) || 2),
-          benchSize: Math.max(0, Number(formData.benchSize) || 0),
-          roundsCount: Math.max(1, Number(formData.roundsCount) || 1),
-          listsRevealed: Boolean(formData.listsRevealed),
-          listsLocked: Boolean(formData.listsLocked),
-          roundConfigs: JSON.stringify(formData.roundConfigs),
-          updatedAt: Date.now()
+          name: formData.name.trim(), date: formData.date, location: formData.location.trim() || "TBA", description: formData.description.trim(),
+          status: formData.status, scale: formData.scale, customMinerals: Number(formData.customMinerals) || 0, customVespene: Number(formData.customVespene) || 0,
+          maxPlayers: Math.max(2, Number(formData.maxPlayers) || 2), benchSize: Math.max(0, Number(formData.benchSize) || 0), roundsCount: Math.max(1, Number(formData.roundsCount) || 1),
+          listsRevealed: Boolean(formData.listsRevealed), listsLocked: Boolean(formData.listsLocked), roundConfigs: JSON.stringify(formData.roundConfigs), updatedAt: Date.now()
         };
 
         try {
@@ -2719,21 +2692,15 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             await window.fbHelpers.updateDoc(docRef, payload);
             showOpToast("Event parameters updated!");
           } else {
-            payload.hostUid = cloudUser.uid;
-            payload.hostName = userProfile.displayName || cloudUser.displayName || "Commander";
-            payload.createdAt = Date.now();
-            payload.registrations = JSON.stringify([]);
-            payload.roundsData = JSON.stringify([]);
+            payload.hostUid = cloudUser.uid; payload.hostName = userProfile.displayName || cloudUser.displayName || "Commander";
+            payload.createdAt = Date.now(); payload.registrations = JSON.stringify([]); payload.roundsData = JSON.stringify([]);
             const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
             const docAdded = await window.fbHelpers.addDoc(colRef, payload);
             if (docAdded && docAdded.id) setSelectedEventId(docAdded.id);
             showOpToast("Tactical Event created!");
           }
           setIsModalOpen(false);
-        } catch (err) {
-          console.error("Failed to save event:", err);
-          showOpToast("Failed to save event.", true);
-        }
+        } catch (err) { showOpToast("Failed to save event.", true); }
       };
 
       const handleQuickFieldUpdate = async (ev, fieldObj, toastMsg) => {
@@ -2751,19 +2718,13 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (selectedEventId === evId) setSelectedEventId(null);
       };
 
-      // --- PHASE 2: REGISTRATION & LIST SUBMISSION HANDLERS ---
+      // --- PHASE 2: REGISTRATION HELPERS ---
       const handleRegisterPlayer = async (ev) => {
         if (!cloudUser || !window.fbDb || isGuest) return;
         const regs = parseRegs(ev);
-        if (regs.some(r => r.uid === cloudUser.uid)) {
-          showOpToast("You are already registered for this event.", true);
-          return;
-        }
+        if (regs.some(r => r.uid === cloudUser.uid)) { showOpToast("You are already registered for this event.", true); return; }
         const totalCapacity = (ev.maxPlayers || 16) + (ev.benchSize || 0);
-        if (regs.length >= totalCapacity) {
-          showOpToast("Event and Reserve Bench are completely full!", true);
-          return;
-        }
+        if (regs.length >= totalCapacity) { showOpToast("Event and Reserve Bench are completely full!", true); return; }
 
         const defaultName = userProfile.displayName || cloudUser.displayName || "Commander";
         const enteredName = window.prompt("Confirm your Commander Name for the event roster:", defaultName);
@@ -2771,21 +2732,10 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
         const isBenchSpot = regs.length >= (ev.maxPlayers || 16);
         const newReg = {
-          uid: cloudUser.uid,
-          playerName: enteredName.trim(),
-          faction: userProfile.mainFaction || "Protoss",
-          subFaction: "",
-          registeredAt: Date.now(),
-          rosterSubmitted: false,
-          rosterId: "",
-          rosterName: "",
-          minerals: 0,
-          vespene: 0,
-          supply: 0,
-          rosterUnits: [],
-          rosterCards: []
+          uid: cloudUser.uid, playerName: enteredName.trim(), faction: userProfile.mainFaction || "Protoss", subFaction: "",
+          registeredAt: Date.now(), rosterSubmitted: false, rosterId: "", rosterName: "",
+          minerals: 0, vespene: 0, supply: 0, rosterUnits: [], rosterCards: []
         };
-
         const updatedRegs = [...regs, newReg];
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
         await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
@@ -2796,7 +2746,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (!cloudUser || !window.fbDb) return;
         const isSelf = targetUid === cloudUser.uid;
         if (!window.confirm(isSelf ? "Withdraw from this event? If a Bench player is waiting, they will automatically take your spot." : `Remove ${targetName} from this event?`)) return;
-
         const regs = parseRegs(ev);
         const updatedRegs = regs.filter(r => r.uid !== targetUid);
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
@@ -2809,12 +2758,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         const regs = parseRegs(ev);
         const targetIdx = regs.findIndex(r => r.uid === benchUid);
         if (targetIdx === -1 || targetIdx < (ev.maxPlayers || 16)) return;
-
-        // Swap the bench player into the last Main Roster slot
         const updatedRegs = [...regs];
         const [movedPlayer] = updatedRegs.splice(targetIdx, 1);
         updatedRegs.splice((ev.maxPlayers || 16) - 1, 0, movedPlayer);
-
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
         await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
         showOpToast(`Promoted ${movedPlayer.playerName} to Main Roster!`);
@@ -2822,15 +2768,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
       const handleSubmitArmyList = async (ev) => {
         if (!cloudUser || !window.fbDb || isGuest) return;
-        if (!selectedRosterId) {
-          showOpToast("Please select a saved Cloud Roster first.", true);
-          return;
-        }
+        if (!selectedRosterId) { showOpToast("Please select a saved Cloud Roster first.", true); return; }
         const chosenRoster = myCloudRosters.find(r => r.id === selectedRosterId);
-        if (!chosenRoster) {
-          showOpToast("Could not find the selected Cloud Roster.", true);
-          return;
-        }
+        if (!chosenRoster) { showOpToast("Could not find the selected Cloud Roster.", true); return; }
 
         const metrics = getRosterMetrics(chosenRoster);
         const overMin = metrics.minerals > (ev.customMinerals || 2000);
@@ -2845,21 +2785,11 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         const updatedRegs = regs.map(r => {
           if (r.uid !== cloudUser.uid) return r;
           return {
-            ...r,
-            faction: chosenRoster.faction,
-            subFaction: metrics.subFaction,
-            rosterSubmitted: true,
-            rosterId: chosenRoster.id,
-            rosterName: chosenRoster.name,
-            minerals: metrics.minerals,
-            vespene: metrics.vespene,
-            supply: metrics.supply,
-            rosterUnits: metrics.units,
-            rosterCards: metrics.cards,
-            submittedAt: Date.now()
+            ...r, faction: chosenRoster.faction, subFaction: metrics.subFaction, rosterSubmitted: true, rosterId: chosenRoster.id,
+            rosterName: chosenRoster.name, minerals: metrics.minerals, vespene: metrics.vespene, supply: metrics.supply,
+            rosterUnits: metrics.units, rosterCards: metrics.cards, submittedAt: Date.now()
           };
         });
-
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
         await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
         showOpToast(`Army List "${chosenRoster.name}" locked in!`);
@@ -2874,17 +2804,132 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         text += `-----------------------------------\n\n[ UNITS ]\n`;
         (reg.rosterUnits || []).forEach((u, i) => {
           text += `${i + 1}. ${u.name} [${u.slot}] - ${u.models} Models | ${u.minerals} Min | ${u.supply} Supply\n`;
-          if (u.appliedUpgrades && u.appliedUpgrades.length > 0) {
-            text += `   - Upgrades: ${u.appliedUpgrades.join(", ")}\n`;
-          }
+          if (u.appliedUpgrades && u.appliedUpgrades.length > 0) { text += `   - Upgrades: ${u.appliedUpgrades.join(", ")}\n`; }
         });
         text += `\n[ TACTICAL & FACTION CARDS ]\n`;
-        (reg.rosterCards || []).forEach(c => {
-          text += `- ${c.name} (${c.type === "Faction Card" ? "Faction" : `${c.vespene} Gas`})\n`;
-        });
+        (reg.rosterCards || []).forEach(c => { text += `- ${c.name} (${c.type === "Faction Card" ? "Faction" : `${c.vespene} Gas`})\n`; });
         navigator.clipboard.writeText(text).then(() => showOpToast("Army List copied to clipboard!"));
       };
 
+      // --- PHASE 3: SCORING & STANDINGS ENGINE ---
+      const calculateStandings = (ev) => {
+        const regs = parseRegs(ev).slice(0, ev.maxPlayers || 16); // Only main roster competes
+        const rounds = parseRoundsData(ev);
+        let stats = regs.map(r => ({ 
+          uid: r.uid, playerName: r.playerName, faction: r.faction, subFaction: r.subFaction,
+          tp: 0, vpScored: 0, vpGiven: 0, supplyKilled: 0, wins: 0, draws: 0, losses: 0 
+        }));
+
+        rounds.forEach(rd => {
+          (rd.matches || []).forEach(m => {
+            if (!m.reported) return;
+            let p1 = stats.find(s => s.uid === m.p1Uid);
+            let p2 = stats.find(s => s.uid === m.p2Uid);
+            
+            const p1Score = Number(m.p1VP) || 0;
+            const p2Score = Number(m.p2VP) || 0;
+            const p1SK = Number(m.p1Supply) || 0;
+            const p2SK = Number(m.p2Supply) || 0;
+
+            if (p1) {
+              p1.vpScored += p1Score; p1.vpGiven += p2Score; p1.supplyKilled += p1SK;
+              if (m.p2Uid === "BYE") { p1.wins++; p1.tp += 3; }
+              else if (p1Score > p2Score) { p1.wins++; p1.tp += 3; }
+              else if (p1Score === p2Score) { p1.draws++; p1.tp += 1; }
+              else { p1.losses++; }
+            }
+            if (p2 && m.p2Uid !== "BYE") {
+              p2.vpScored += p2Score; p2.vpGiven += p1Score; p2.supplyKilled += p2SK;
+              if (p2Score > p1Score) { p2.wins++; p2.tp += 3; }
+              else if (p2Score === p1Score) { p2.draws++; p2.tp += 1; }
+              else { p2.losses++; }
+            }
+          });
+        });
+
+        stats.forEach(s => s.vpDiff = s.vpScored - s.vpGiven);
+        
+        // Sorting: TP -> VP Diff -> VP Scored -> Supply Killed
+        stats.sort((a, b) => {
+          if (b.tp !== a.tp) return b.tp - a.tp;
+          if (b.vpDiff !== a.vpDiff) return b.vpDiff - a.vpDiff;
+          if (b.vpScored !== a.vpScored) return b.vpScored - a.vpScored;
+          return b.supplyKilled - a.supplyKilled;
+        });
+        
+        return stats;
+      };
+
+      const handleGeneratePairings = async (ev, roundNum) => {
+        if (!cloudUser || !window.fbDb) return;
+        const standings = calculateStandings(ev);
+        if (standings.length === 0) { showOpToast("No players on Main Roster to pair.", true); return; }
+
+        let playersToPair = [...standings];
+        // If Round 1, shuffle them randomly to avoid pairing by sign-up order
+        if (roundNum === 1) {
+          for (let i = playersToPair.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [playersToPair[i], playersToPair[j]] = [playersToPair[j], playersToPair[i]];
+          }
+        } // Else they are already correctly sorted by Swiss Standings
+
+        const matches = [];
+        for (let i = 0; i < playersToPair.length; i += 2) {
+          if (i + 1 < playersToPair.length) {
+            matches.push({
+              p1Uid: playersToPair[i].uid, p1Name: playersToPair[i].playerName, p1Faction: playersToPair[i].faction, p1VP: 0, p1Supply: 0,
+              p2Uid: playersToPair[i+1].uid, p2Name: playersToPair[i+1].playerName, p2Faction: playersToPair[i+1].faction, p2VP: 0, p2Supply: 0,
+              reported: false
+            });
+          } else {
+            matches.push({
+              p1Uid: playersToPair[i].uid, p1Name: playersToPair[i].playerName, p1Faction: playersToPair[i].faction, p1VP: 0, p1Supply: 0,
+              p2Uid: "BYE", p2Name: "BYE (Auto-Win)", p2Faction: "-", p2VP: 0, p2Supply: 0,
+              reported: true
+            });
+          }
+        }
+
+        let roundsDataArray = parseRoundsData(ev);
+        const existingIdx = roundsDataArray.findIndex(r => r.round === roundNum);
+        if (existingIdx >= 0) roundsDataArray[existingIdx].matches = matches;
+        else roundsDataArray.push({ round: roundNum, matches });
+
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+        await window.fbHelpers.updateDoc(docRef, { roundsData: JSON.stringify(roundsDataArray), updatedAt: Date.now() });
+        showOpToast(`Round ${roundNum} Pairings Generated!`);
+      };
+
+      const openScoreModal = (roundNum, matchIndex, matchData) => {
+        setScoreModalMatch({ roundNum, matchIndex });
+        setScoreForm({
+          p1VP: matchData.p1VP || 0, p1Supply: matchData.p1Supply || 0,
+          p2VP: matchData.p2VP || 0, p2Supply: matchData.p2Supply || 0
+        });
+      };
+
+      const handleSaveScore = async (e) => {
+        e.preventDefault();
+        if (!cloudUser || !window.fbDb || !selectedEvent) return;
+
+        let roundsDataArray = parseRoundsData(selectedEvent);
+        const roundObj = roundsDataArray.find(r => r.round === scoreModalMatch.roundNum);
+        if (roundObj && roundObj.matches[scoreModalMatch.matchIndex]) {
+          roundObj.matches[scoreModalMatch.matchIndex] = {
+            ...roundObj.matches[scoreModalMatch.matchIndex],
+            p1VP: Number(scoreForm.p1VP), p1Supply: Number(scoreForm.p1Supply),
+            p2VP: Number(scoreForm.p2VP), p2Supply: Number(scoreForm.p2Supply),
+            reported: true
+          };
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', selectedEvent.id);
+          await window.fbHelpers.updateDoc(docRef, { roundsData: JSON.stringify(roundsDataArray), updatedAt: Date.now() });
+          showOpToast("Score Locked!");
+        }
+        setScoreModalMatch(null);
+      };
+
+      // --- UI HELPERS ---
       const getStatusBadge = (status) => {
         if (status === "Registration Open") return "bg-emerald-950/80 text-emerald-300 border-emerald-500/50";
         if (status === "Registration Closed") return "bg-amber-950/80 text-amber-300 border-amber-500/50";
@@ -3031,6 +3076,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
               try { roundConfigs = typeof selectedEvent.roundConfigs === 'string' ? JSON.parse(selectedEvent.roundConfigs) : (selectedEvent.roundConfigs || []); } catch(e) {}
               
               const regs = parseRegs(selectedEvent);
+              const eventRoundsData = parseRoundsData(selectedEvent);
               const maxCap = selectedEvent.maxPlayers || 16;
               const benchCap = selectedEvent.benchSize || 0;
               const mainRoster = regs.slice(0, maxCap);
@@ -3042,6 +3088,8 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
               const myReg = myRegIndex !== -1 ? regs[myRegIndex] : null;
               const isMyRegOnBench = myRegIndex >= maxCap;
               const isEventFull = regs.length >= (maxCap + benchCap);
+
+              const standings = calculateStandings(selectedEvent);
 
               return (
                 <div className="space-y-6">
@@ -3095,7 +3143,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                       )}
                     </div>
 
-                    {/* KEY METRICS ROW */}
+                    {/* EVENT METRICS */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
                         <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Engagement Scale</span>
@@ -3154,70 +3202,39 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                             Sign In to Register
                           </button>
                         ) : !myReg ? (
-                          <button
-                            disabled={selectedEvent.status !== "Registration Open" || isEventFull}
-                            onClick={() => handleRegisterPlayer(selectedEvent)}
-                            className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg transition-all ${
-                              selectedEvent.status !== "Registration Open" || isEventFull
-                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
-                                : activeCount >= maxCap
-                                  ? 'bg-amber-500 hover:bg-amber-400 text-stone-950'
-                                  : theme.accent
-                            }`}
-                          >
-                            {isEventFull
-                              ? "Event & Bench Full"
-                              : activeCount >= maxCap
-                                ? "Join Reserve Bench"
-                                : "Register for Event"}
+                          <button disabled={selectedEvent.status !== "Registration Open" || isEventFull} onClick={() => handleRegisterPlayer(selectedEvent)} className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg transition-all ${selectedEvent.status !== "Registration Open" || isEventFull ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' : activeCount >= maxCap ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : theme.accent}`}>
+                            {isEventFull ? "Event & Bench Full" : activeCount >= maxCap ? "Join Reserve Bench" : "Register for Event"}
                           </button>
                         ) : (
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
                             {!selectedEvent.listsLocked && selectedEvent.status !== "Event Finished" ? (
                               <>
-                                <select
-                                  value={selectedRosterId}
-                                  onChange={e => setSelectedRosterId(e.target.value)}
-                                  className="bg-black/80 border border-white/20 rounded px-3 py-2 text-xs text-white outline-none focus:border-sky-500 min-w-[230px]"
-                                >
+                                <select value={selectedRosterId} onChange={e => setSelectedRosterId(e.target.value)} className="bg-black/80 border border-white/20 rounded px-3 py-2 text-xs text-white outline-none focus:border-sky-500 min-w-[230px]">
                                   <option value="">-- Select Saved Cloud Roster --</option>
                                   {myCloudRosters.map(r => {
                                     const m = getRosterMetrics(r);
                                     const valid = m.minerals <= (selectedEvent.customMinerals || 2000) && m.vespene <= (selectedEvent.customVespene || 200);
                                     return (
-                                      <option key={r.id} value={r.id}>
-                                        {r.name} ({r.faction} - {m.minerals}M / {m.vespene}G) {valid ? '✓' : '⚠️ Over Limit'}
-                                      </option>
+                                      <option key={r.id} value={r.id}>{r.name} ({r.faction} - {m.minerals}M / {m.vespene}G) {valid ? '✓' : '⚠️ Over Limit'}</option>
                                     );
                                   })}
                                 </select>
-                                <button
-                                  onClick={() => handleSubmitArmyList(selectedEvent)}
-                                  className="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white font-orbitron font-bold text-xs uppercase tracking-wider shadow-md shrink-0"
-                                >
+                                <button onClick={() => handleSubmitArmyList(selectedEvent)} className="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white font-orbitron font-bold text-xs uppercase tracking-wider shadow-md shrink-0">
                                   {myReg.rosterSubmitted ? "Update List" : "Submit List"}
                                 </button>
                               </>
                             ) : (
-                              <span className="text-xs font-bold uppercase tracking-widest px-3 py-2 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
-                                🔒 List Submissions Locked
-                              </span>
+                              <span className="text-xs font-bold uppercase tracking-widest px-3 py-2 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">🔒 Lists Locked</span>
                             )}
 
                             {myReg.rosterSubmitted && (
-                              <button
-                                onClick={() => setInspectingReg(myReg)}
-                                className="px-3 py-2 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider shrink-0"
-                              >
+                              <button onClick={() => setInspectingReg(myReg)} className="px-3 py-2 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider shrink-0">
                                 📜 My List
                               </button>
                             )}
 
                             {selectedEvent.status !== "Event Finished" && (
-                              <button
-                                onClick={() => handleDropPlayer(selectedEvent, cloudUser.uid, myReg.playerName)}
-                                className="px-3 py-2 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 text-xs font-bold uppercase tracking-wider shrink-0"
-                              >
+                              <button onClick={() => handleDropPlayer(selectedEvent, cloudUser.uid, myReg.playerName)} className="px-3 py-2 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 text-xs font-bold uppercase tracking-wider shrink-0">
                                 Drop Out
                               </button>
                             )}
@@ -3227,187 +3244,285 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </div>
                   </div>
 
-                  {/* ROUND SCHEDULE & REGISTERED PLAYERS */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* LEFT COLUMN: ROUND SCHEDULE */}
-                    <div className="lg:col-span-1 bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg h-fit">
-                      <h4 className="font-orbitron font-black text-base uppercase text-sky-400 border-b border-white/10 pb-2 mb-4">Round Operations</h4>
-                      <div className="space-y-3">
-                        {roundConfigs.map((rc) => (
-                          <div key={rc.round} className="bg-black/60 border border-white/10 p-3 rounded-lg flex items-center justify-between">
-                            <div>
-                              <span className="text-[10px] font-orbitron font-bold uppercase tracking-widest text-amber-400 block">Round {rc.round}</span>
-                              <span className="text-sm font-bold text-white block mt-0.5">🎯 {rc.mission}</span>
-                              <span className="text-xs text-slate-400 block">🗺️ Map: {rc.map}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  {/* EVENT CONTENT TABS */}
+                  <div>
+                    <div className="flex items-center gap-2 border-b border-white/10 mb-4 px-2">
+                      <button onClick={() => setEventTab("roster")} className={`px-4 py-3 text-xs font-orbitron font-bold uppercase tracking-widest border-b-2 transition-colors ${eventTab === "roster" ? 'border-sky-500 text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>📋 Event Roster</button>
+                      <button onClick={() => setEventTab("pairings")} className={`px-4 py-3 text-xs font-orbitron font-bold uppercase tracking-widest border-b-2 transition-colors ${eventTab === "pairings" ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>⚔️ Round Pairings</button>
+                      <button onClick={() => setEventTab("standings")} className={`px-4 py-3 text-xs font-orbitron font-bold uppercase tracking-widest border-b-2 transition-colors ${eventTab === "standings" ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>🏆 Live Standings</button>
                     </div>
 
-                    {/* RIGHT COLUMN: MAIN ROSTER & RESERVE BENCH */}
-                    <div className="lg:col-span-2 space-y-6">
-                      {/* MAIN ROSTER LIST */}
-                      <div className="bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg">
-                        <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
-                          <h4 className="font-orbitron font-black text-base uppercase text-emerald-400 flex items-center gap-2">
-                            <span>🛡️</span> Registered Commanders ({activeCount} / {maxCap})
-                          </h4>
-                          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-                            {mainRoster.filter(r => r.rosterSubmitted).length} / {activeCount} Lists Submitted
-                          </span>
+                    {/* TAB: EVENT ROSTER */}
+                    {eventTab === "roster" && (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-1 bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg h-fit">
+                          <h4 className="font-orbitron font-black text-base uppercase text-sky-400 border-b border-white/10 pb-2 mb-4">Round Operations</h4>
+                          <div className="space-y-3">
+                            {roundConfigs.map((rc) => (
+                              <div key={rc.round} className="bg-black/60 border border-white/10 p-3 rounded-lg flex items-center justify-between">
+                                <div>
+                                  <span className="text-[10px] font-orbitron font-bold uppercase tracking-widest text-amber-400 block">Round {rc.round}</span>
+                                  <span className="text-sm font-bold text-white block mt-0.5">🎯 {rc.mission}</span>
+                                  <span className="text-xs text-slate-400 block">🗺️ Map: {rc.map}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
 
-                        {mainRoster.length === 0 ? (
-                          <div className="p-8 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">
-                            No Commanders Registered Yet.
-                          </div>
-                        ) : (
-                          <div className="space-y-2.5">
-                            {mainRoster.map((reg, idx) => {
-                              const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
-                              return (
-                                <div key={reg.uid} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-white/20 transition-colors">
-                                  <div className="flex items-center gap-3">
-                                    <span className="w-7 h-7 rounded bg-white/5 border border-white/10 flex items-center justify-center font-orbitron font-black text-xs text-slate-400 shrink-0">
-                                      #{idx + 1}
-                                    </span>
-                                    <div>
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
-                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>
-                                          {reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}
-                                        </span>
+                        <div className="lg:col-span-2 space-y-6">
+                          <div className="bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg">
+                            <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+                              <h4 className="font-orbitron font-black text-base uppercase text-emerald-400 flex items-center gap-2"><span>🛡️</span> Registered Commanders ({activeCount} / {maxCap})</h4>
+                              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{mainRoster.filter(r => r.rosterSubmitted).length} / {activeCount} Lists Submitted</span>
+                            </div>
+                            {mainRoster.length === 0 ? (
+                              <div className="p-8 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">No Commanders Registered Yet.</div>
+                            ) : (
+                              <div className="space-y-2.5">
+                                {mainRoster.map((reg, idx) => {
+                                  const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
+                                  return (
+                                    <div key={reg.uid} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-white/20 transition-colors">
+                                      <div className="flex items-center gap-3">
+                                        <span className="w-7 h-7 rounded bg-white/5 border border-white/10 flex items-center justify-center font-orbitron font-black text-xs text-slate-400 shrink-0">#{idx + 1}</span>
+                                        <div>
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
+                                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>{reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}</span>
+                                          </div>
+                                          <div className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                            {reg.rosterSubmitted ? (
+                                              <><span className="text-emerald-400 font-bold">✓ List Locked</span>{canViewList && <span className="text-slate-300 font-mono">• "{reg.rosterName}" ({reg.minerals}M / {reg.vespene}G / {reg.supply} Sup)</span>}</>
+                                            ) : <span className="text-amber-400/80 italic">⏳ Awaiting Army List Submission</span>}
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
-                                        {reg.rosterSubmitted ? (
-                                          <>
-                                            <span className="text-emerald-400 font-bold">✓ List Locked</span>
-                                            {canViewList && (
-                                              <span className="text-slate-300 font-mono">
-                                                • "{reg.rosterName}" ({reg.minerals}M / {reg.vespene}G / {reg.supply} Sup)
-                                              </span>
-                                            )}
-                                          </>
-                                        ) : (
-                                          <span className="text-amber-400/80 italic">⏳ Awaiting Army List Submission</span>
-                                        )}
+                                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                        {canViewList && <button onClick={() => setInspectingReg(reg)} className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest">📜 View List</button>}
+                                        {isOwner && <button onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)} className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase" title="Remove Player">✖</button>}
                                       </div>
                                     </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                    {canViewList && (
-                                      <button
-                                        onClick={() => setInspectingReg(reg)}
-                                        className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest"
-                                      >
-                                        📜 View List
-                                      </button>
-                                    )}
-                                    {isOwner && (
-                                      <button
-                                        onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)}
-                                        className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase"
-                                        title="Remove Player"
-                                      >
-                                        ✖
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-
-                      {/* RESERVE BENCH (WAITLIST) */}
-                      {(benchCap > 0 || benchRoster.length > 0) && (
-                        <div className="bg-black/40 border border-amber-500/30 rounded-xl p-5 shadow-lg">
-                          <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
-                            <div>
-                              <h4 className="font-orbitron font-black text-base uppercase text-amber-400 flex items-center gap-2">
-                                <span>⏳</span> Reserve Bench / Waitlist ({benchCount} / {benchCap})
-                              </h4>
-                              <p className="text-[11px] text-slate-400 mt-0.5">
-                                If a Main Roster player drops out, #1 on the Reserve Bench is automatically promoted into the Main Roster.
-                              </p>
-                            </div>
-                          </div>
-
-                          {benchRoster.length === 0 ? (
-                            <div className="p-6 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">
-                              Reserve Bench Empty ({benchCap} Waitlist Spots Available)
-                            </div>
-                          ) : (
-                            <div className="space-y-2.5">
-                              {benchRoster.map((reg, bIdx) => {
-                                const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
-                                return (
-                                  <div key={reg.uid} className="bg-amber-950/10 border border-amber-500/30 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                      <span className="px-2 py-1 rounded bg-amber-950/80 border border-amber-500/40 font-orbitron font-black text-[10px] text-amber-300 shrink-0 uppercase">
-                                        Bench #{bIdx + 1}
-                                      </span>
-                                      <div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
-                                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>
-                                            {reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}
-                                          </span>
+                          {(benchCap > 0 || benchRoster.length > 0) && (
+                            <div className="bg-black/40 border border-amber-500/30 rounded-xl p-5 shadow-lg">
+                              <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+                                <div><h4 className="font-orbitron font-black text-base uppercase text-amber-400 flex items-center gap-2"><span>⏳</span> Reserve Bench / Waitlist ({benchCount} / {benchCap})</h4><p className="text-[11px] text-slate-400 mt-0.5">If a Main Roster player drops out, #1 on the Reserve Bench is automatically promoted.</p></div>
+                              </div>
+                              {benchRoster.length === 0 ? (
+                                <div className="p-6 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">Reserve Bench Empty ({benchCap} Spots Available)</div>
+                              ) : (
+                                <div className="space-y-2.5">
+                                  {benchRoster.map((reg, bIdx) => {
+                                    const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
+                                    return (
+                                      <div key={reg.uid} className="bg-amber-950/10 border border-amber-500/30 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                          <span className="px-2 py-1 rounded bg-amber-950/80 border border-amber-500/40 font-orbitron font-black text-[10px] text-amber-300 shrink-0 uppercase">Bench #{bIdx + 1}</span>
+                                          <div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
+                                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>{reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}</span>
+                                            </div>
+                                            <div className="text-[11px] text-slate-400 mt-0.5">{reg.rosterSubmitted ? <span className="text-emerald-400 font-bold">✓ Standby List Ready ({reg.minerals}M / {reg.vespene}G)</span> : <span className="text-slate-500 italic">No Standby List Submitted</span>}</div>
+                                          </div>
                                         </div>
-                                        <div className="text-[11px] text-slate-400 mt-0.5">
-                                          {reg.rosterSubmitted ? (
-                                            <span className="text-emerald-400 font-bold">✓ Standby List Ready ({reg.minerals}M / {reg.vespene}G)</span>
-                                          ) : (
-                                            <span className="text-slate-500 italic">No Standby List Submitted</span>
+                                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                          {canViewList && <button onClick={() => setInspectingReg(reg)} className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest">📜 View List</button>}
+                                          {isOwner && (
+                                            <><button onClick={() => handlePromoteFromBench(selectedEvent, reg.uid)} className="px-2.5 py-1.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider" title="Swap into Main Roster">⬆ Promote</button>
+                                            <button onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)} className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase" title="Remove from Bench">✖</button></>
                                           )}
                                         </div>
                                       </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                      {canViewList && (
-                                        <button
-                                          onClick={() => setInspectingReg(reg)}
-                                          className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest"
-                                        >
-                                          📜 View List
-                                        </button>
-                                      )}
-                                      {isOwner && (
-                                        <>
-                                          <button
-                                            onClick={() => handlePromoteFromBench(selectedEvent, reg.uid)}
-                                            className="px-2.5 py-1.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider"
-                                            title="Swap into Main Roster"
-                                          >
-                                            ⬆ Promote
-                                          </button>
-                                          <button
-                                            onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)}
-                                            className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase"
-                                            title="Remove from Bench"
-                                          >
-                                            ✖
-                                          </button>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+
+                    {/* TAB: ROUND PAIRINGS & SCORING */}
+                    {eventTab === "pairings" && (
+                      <div className="space-y-6">
+                        {roundConfigs.map((rc) => {
+                          const roundObj = eventRoundsData.find(rd => rd.round === rc.round);
+                          const hasPairings = roundObj && roundObj.matches && roundObj.matches.length > 0;
+                          return (
+                            <div key={rc.round} className="bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg">
+                              <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-3 mb-4 gap-3">
+                                <div>
+                                  <h4 className="font-orbitron font-black text-lg uppercase text-amber-400 flex items-center gap-2">Round {rc.round} Pairings</h4>
+                                  <span className="text-xs font-bold text-slate-300 uppercase tracking-widest mt-1 block">Mission: {rc.mission} | Map: {rc.map}</span>
+                                </div>
+                                {isOwner && (
+                                  <button onClick={() => handleGeneratePairings(selectedEvent, rc.round)} className="px-4 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white font-orbitron font-bold text-[10px] uppercase tracking-widest shadow-md whitespace-nowrap">
+                                    {hasPairings ? "Regenerate Pairings" : "Generate Pairings"}
+                                  </button>
+                                )}
+                              </div>
+                              
+                              {!hasPairings ? (
+                                <div className="p-8 text-center text-slate-500 text-xs font-orbitron uppercase tracking-widest border border-dashed border-white/5 rounded-lg">Pairings not generated yet.</div>
+                              ) : (
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                  {roundObj.matches.map((m, mIdx) => {
+                                    const isBye = m.p2Uid === "BYE";
+                                    const p1Winner = m.p1VP > m.p2VP || isBye;
+                                    const p2Winner = m.p2VP > m.p1VP;
+                                    return (
+                                      <div key={mIdx} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col md:flex-row items-center gap-4 relative overflow-hidden">
+                                        {m.reported && <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-bl-lg">Score Locked</div>}
+                                        
+                                        <div className={`flex-1 text-center w-full p-2 rounded border ${m.reported && p1Winner ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-black/40 border-white/5'}`}>
+                                          <span className="font-orbitron font-bold text-sm text-white block uppercase truncate">{m.p1Name}</span>
+                                          <span className={`text-[9px] uppercase font-bold tracking-widest ${getFactionBadge(m.p1Faction).replace('border', '')}`}>{m.p1Faction}</span>
+                                          {m.reported && <span className="block mt-2 font-orbitron font-black text-2xl text-sky-400">{m.p1VP} <span className="text-[10px] font-sans text-slate-400">VP</span></span>}
+                                        </div>
+
+                                        <div className="font-orbitron font-black text-slate-600 text-lg">VS</div>
+
+                                        <div className={`flex-1 text-center w-full p-2 rounded border ${isBye ? 'bg-slate-900/40 border-slate-700/50 opacity-50' : (m.reported && p2Winner ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-black/40 border-white/5')}`}>
+                                          <span className="font-orbitron font-bold text-sm text-white block uppercase truncate">{m.p2Name}</span>
+                                          <span className={`text-[9px] uppercase font-bold tracking-widest ${getFactionBadge(m.p2Faction).replace('border', '')}`}>{m.p2Faction}</span>
+                                          {m.reported && !isBye && <span className="block mt-2 font-orbitron font-black text-2xl text-sky-400">{m.p2VP} <span className="text-[10px] font-sans text-slate-400">VP</span></span>}
+                                        </div>
+
+                                        {!isBye && (isOwner || (cloudUser && (m.p1Uid === cloudUser.uid || m.p2Uid === cloudUser.uid))) && (
+                                          <button onClick={() => openScoreModal(rc.round, mIdx, m)} className={`md:absolute md:bottom-2 md:right-2 w-full md:w-auto px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${m.reported ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-sky-600 text-white hover:bg-sky-500 shadow-md'}`}>
+                                            {m.reported ? 'Edit Score' : 'Report Score'}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* TAB: LIVE STANDINGS */}
+                    {eventTab === "standings" && (
+                      <div className="bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg overflow-x-auto">
+                        <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4 min-w-[600px]">
+                          <h4 className="font-orbitron font-black text-base uppercase text-emerald-400 flex items-center gap-2"><span>🏆</span> Live Leaderboard</h4>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Ranked by: TP ➔ VP Diff ➔ Total VP ➔ Supply Killed</span>
+                        </div>
+                        {standings.length === 0 ? (
+                          <div className="p-8 text-center text-slate-500 text-xs font-orbitron uppercase tracking-widest">No Standings Data.</div>
+                        ) : (
+                          <table className="w-full text-left min-w-[600px] border-collapse">
+                            <thead>
+                              <tr className="bg-black/60 border-b-2 border-white/10">
+                                <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400">Rank</th>
+                                <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400">Commander</th>
+                                <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400 text-center">W-D-L</th>
+                                <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-amber-400 text-center">TP</th>
+                                <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-sky-400 text-center">VP Diff</th>
+                                <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400 text-center">Total VP</th>
+                                <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400 text-center">Sup. Killed</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {standings.map((s, idx) => (
+                                <tr key={s.uid} className="border-b border-white/5 bg-black/20 hover:bg-black/40 transition-colors">
+                                  <td className="p-3">
+                                    <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center font-orbitron font-black text-xs text-white">
+                                      {idx + 1}
+                                    </div>
+                                  </td>
+                                  <td className="p-3">
+                                    <span className="font-orbitron font-bold text-sm text-white uppercase block">{s.playerName}</span>
+                                    <span className={`text-[9px] uppercase font-bold tracking-widest ${getFactionBadge(s.faction).replace('border', '')}`}>{s.faction} {s.subFaction ? `(${s.subFaction})` : ''}</span>
+                                  </td>
+                                  <td className="p-3 text-center font-mono text-sm text-slate-300">{s.wins}-{s.draws}-{s.losses}</td>
+                                  <td className="p-3 text-center font-orbitron font-black text-amber-300 text-lg">{s.tp}</td>
+                                  <td className="p-3 text-center font-mono font-bold text-sky-400">{s.vpDiff > 0 ? `+${s.vpDiff}` : s.vpDiff}</td>
+                                  <td className="p-3 text-center font-mono text-sm text-slate-300">{s.vpScored}</td>
+                                  <td className="p-3 text-center font-mono text-sm text-slate-300">{s.supplyKilled}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })()
           )}
+
+          {/* SCORE REPORTING MODAL */}
+          {scoreModalMatch && (() => {
+            const roundsDataArray = parseRoundsData(selectedEvent);
+            const roundObj = roundsDataArray.find(r => r.round === scoreModalMatch.roundNum);
+            const match = roundObj?.matches[scoreModalMatch.matchIndex];
+            if (!match) return null;
+            return (
+              <div className="fixed inset-0 z-[80] bg-black/85 flex items-center justify-center p-4" onClick={() => setScoreModalMatch(null)}>
+                <div className={`max-w-md w-full p-5 md:p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl flex flex-col`} onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-between items-start border-b border-white/10 pb-3 mb-4">
+                    <h3 className="text-xl font-orbitron font-black uppercase text-sky-400">Report Score: Round {scoreModalMatch.roundNum}</h3>
+                    <button onClick={() => setScoreModalMatch(null)} className="text-slate-400 hover:text-white font-bold text-lg">✖</button>
+                  </div>
+                  <form onSubmit={handleSaveScore} className="space-y-6">
+                    {/* PLAYER 1 SCORE BLOCK */}
+                    <div className="bg-black/50 p-4 rounded-lg border border-white/10">
+                      <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${getFactionBadge(match.p1Faction)}`}>{match.p1Faction}</span>
+                        <span className="font-orbitron font-bold text-sm text-white uppercase">{match.p1Name}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Victory Points</label>
+                          <input type="number" min="0" required value={scoreForm.p1VP} onChange={e => setScoreForm({...scoreForm, p1VP: e.target.value})} className="w-full bg-black/80 border border-sky-500/50 rounded p-2 text-xl font-orbitron font-black text-sky-400 text-center outline-none focus:border-sky-400" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Supply Destroyed</label>
+                          <input type="number" min="0" required value={scoreForm.p1Supply} onChange={e => setScoreForm({...scoreForm, p1Supply: e.target.value})} className="w-full bg-black/80 border border-white/20 rounded p-2 text-lg font-mono text-slate-200 text-center outline-none focus:border-sky-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-center font-orbitron font-black text-slate-600 text-sm">VS</div>
+
+                    {/* PLAYER 2 SCORE BLOCK */}
+                    <div className="bg-black/50 p-4 rounded-lg border border-white/10">
+                      <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${getFactionBadge(match.p2Faction)}`}>{match.p2Faction}</span>
+                        <span className="font-orbitron font-bold text-sm text-white uppercase">{match.p2Name}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Victory Points</label>
+                          <input type="number" min="0" required value={scoreForm.p2VP} onChange={e => setScoreForm({...scoreForm, p2VP: e.target.value})} className="w-full bg-black/80 border border-rose-500/50 rounded p-2 text-xl font-orbitron font-black text-rose-400 text-center outline-none focus:border-rose-400" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Supply Destroyed</label>
+                          <input type="number" min="0" required value={scoreForm.p2Supply} onChange={e => setScoreForm({...scoreForm, p2Supply: e.target.value})} className="w-full bg-black/80 border border-white/20 rounded p-2 text-lg font-mono text-slate-200 text-center outline-none focus:border-sky-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button type="submit" className={`w-full py-3 rounded font-orbitron font-black text-sm uppercase tracking-widest shadow-lg ${theme.accent}`}>
+                      Submit Match Score
+                    </button>
+                  </form>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ARMY LIST INSPECTOR MODAL */}
           {inspectingReg && (
@@ -3620,8 +3735,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           )}
         </div>
       );
-    };
-   const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, handleLogout }) => {
+    };   const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, handleLogout }) => {
       const [profileData, setProfileData] = useState({
         displayName: '', bio: '', mainFaction: 'Protoss',
         wins: 0, losses: 0, draws: 0, pinnedRoster: '', avatarUrl: ''
