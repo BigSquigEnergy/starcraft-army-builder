@@ -2523,10 +2523,15 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [inspectingReg, setInspectingReg] = useState(null);
       const [opToast, setOpToast] = useState(null);
 
-      // Phase 3 State: Tabs & Score Entry
-      const [eventTab, setEventTab] = useState("roster"); // roster, pairings, standings
-      const [scoreModalMatch, setScoreModalMatch] = useState(null); // { roundNum, matchIndex, matchData }
+      // Phase 3 State
+      const [eventTab, setEventTab] = useState("roster"); 
+      const [scoreModalMatch, setScoreModalMatch] = useState(null); 
       const [scoreForm, setScoreForm] = useState({ p1VP: 0, p1Supply: 0, p2VP: 0, p2Supply: 0 });
+
+      // Phase A State: Media Uploads
+      const [thumbnailFile, setThumbnailFile] = useState(null);
+      const [playerPackFile, setPlayerPackFile] = useState(null);
+      const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
       const showOpToast = (msg, isError = false) => {
         setOpToast({ msg, isError });
@@ -2536,19 +2541,12 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const uniqueMissions = useMemo(() => [...new Set(MISSION_CARDS.map(m => m.name))], []);
 
       const defaultForm = {
-        name: "",
-        date: "",
-        location: "",
-        description: "",
-        status: "Registration Open",
-        scale: "Standard",
-        customMinerals: 2000,
-        customVespene: 200,
-        maxPlayers: 16,
-        benchSize: 4,
-        roundsCount: 3,
-        listsRevealed: false,
-        listsLocked: false,
+        name: "", date: "", location: "", description: "",
+        status: "Registration Open", scale: "Standard",
+        customMinerals: 2000, customVespene: 200,
+        maxPlayers: 16, benchSize: 4, roundsCount: 3,
+        listsRevealed: false, listsLocked: false,
+        thumbnailUrl: "", playerPackUrl: "",
         roundConfigs: [
           { round: 1, mission: "Frontlines", map: "TBD" },
           { round: 2, mission: "Hold Position", map: "TBD" },
@@ -2632,8 +2630,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
       // --- EVENT HOSTING HELPERS ---
       const handleScaleChange = (newScale) => {
-        let min = formData.customMinerals;
-        let vesp = formData.customVespene;
+        let min = formData.customMinerals; let vesp = formData.customVespene;
         if (newScale === "Skirmish") { min = 1000; vesp = 100; }
         else if (newScale === "Standard") { min = 2000; vesp = 200; }
         setFormData(prev => ({ ...prev, scale: newScale, customMinerals: min, customVespene: vesp }));
@@ -2658,10 +2655,18 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         }));
       };
 
-      const openCreateModal = () => { setEditingEventId(null); setFormData(defaultForm); setIsModalOpen(true); };
+      const openCreateModal = () => { 
+        setEditingEventId(null); 
+        setFormData(defaultForm); 
+        setThumbnailFile(null); 
+        setPlayerPackFile(null); 
+        setIsModalOpen(true); 
+      };
 
       const openEditModal = (ev) => {
         setEditingEventId(ev.id);
+        setThumbnailFile(null); 
+        setPlayerPackFile(null);
         let parsedConfigs = [];
         try { parsedConfigs = typeof ev.roundConfigs === 'string' ? JSON.parse(ev.roundConfigs) : (ev.roundConfigs || []); } catch (e) { parsedConfigs = []; }
         setFormData({
@@ -2669,7 +2674,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           status: ev.status || "Registration Open", scale: ev.scale || "Standard", customMinerals: ev.customMinerals !== undefined ? ev.customMinerals : 2000,
           customVespene: ev.customVespene !== undefined ? ev.customVespene : 200, maxPlayers: ev.maxPlayers !== undefined ? ev.maxPlayers : 16,
           benchSize: ev.benchSize !== undefined ? ev.benchSize : 4, roundsCount: ev.roundsCount !== undefined ? ev.roundsCount : 3,
-          listsRevealed: Boolean(ev.listsRevealed), listsLocked: Boolean(ev.listsLocked), roundConfigs: parsedConfigs.length > 0 ? parsedConfigs : defaultForm.roundConfigs
+          listsRevealed: Boolean(ev.listsRevealed), listsLocked: Boolean(ev.listsLocked), 
+          thumbnailUrl: ev.thumbnailUrl || "", playerPackUrl: ev.playerPackUrl || "",
+          roundConfigs: parsedConfigs.length > 0 ? parsedConfigs : defaultForm.roundConfigs
         });
         setIsModalOpen(true);
       };
@@ -2679,14 +2686,31 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (!cloudUser || !window.fbDb || isGuest) return;
         if (!formData.name.trim() || !formData.date) { showOpToast("Please provide at least an Event Name and Date.", true); return; }
 
-        const payload = {
-          name: formData.name.trim(), date: formData.date, location: formData.location.trim() || "TBA", description: formData.description.trim(),
-          status: formData.status, scale: formData.scale, customMinerals: Number(formData.customMinerals) || 0, customVespene: Number(formData.customVespene) || 0,
-          maxPlayers: Math.max(2, Number(formData.maxPlayers) || 2), benchSize: Math.max(0, Number(formData.benchSize) || 0), roundsCount: Math.max(1, Number(formData.roundsCount) || 1),
-          listsRevealed: Boolean(formData.listsRevealed), listsLocked: Boolean(formData.listsLocked), roundConfigs: JSON.stringify(formData.roundConfigs), updatedAt: Date.now()
-        };
+        setIsUploadingMedia(true);
+        let finalThumbUrl = formData.thumbnailUrl;
+        let finalPackUrl = formData.playerPackUrl;
 
         try {
+          if (thumbnailFile && window.fbStorage) {
+            const thumbRef = window.fbStorage.ref().child(`op_media/thumbnails/${Date.now()}_${thumbnailFile.name}`);
+            const thumbSnap = await thumbRef.put(thumbnailFile);
+            finalThumbUrl = await thumbSnap.ref.getDownloadURL();
+          }
+          if (playerPackFile && window.fbStorage) {
+            const packRef = window.fbStorage.ref().child(`op_media/packs/${Date.now()}_${playerPackFile.name}`);
+            const packSnap = await packRef.put(playerPackFile);
+            finalPackUrl = await packSnap.ref.getDownloadURL();
+          }
+
+          const payload = {
+            name: formData.name.trim(), date: formData.date, location: formData.location.trim() || "TBA", description: formData.description.trim(),
+            status: formData.status, scale: formData.scale, customMinerals: Number(formData.customMinerals) || 0, customVespene: Number(formData.customVespene) || 0,
+            maxPlayers: Math.max(2, Number(formData.maxPlayers) || 2), benchSize: Math.max(0, Number(formData.benchSize) || 0), roundsCount: Math.max(1, Number(formData.roundsCount) || 1),
+            listsRevealed: Boolean(formData.listsRevealed), listsLocked: Boolean(formData.listsLocked), roundConfigs: JSON.stringify(formData.roundConfigs), 
+            thumbnailUrl: finalThumbUrl, playerPackUrl: finalPackUrl,
+            updatedAt: Date.now()
+          };
+
           if (editingEventId) {
             const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', editingEventId);
             await window.fbHelpers.updateDoc(docRef, payload);
@@ -2700,7 +2724,11 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             showOpToast("Tactical Event created!");
           }
           setIsModalOpen(false);
-        } catch (err) { showOpToast("Failed to save event.", true); }
+        } catch (err) { 
+          console.error("Failed to save event:", err);
+          showOpToast("Failed to save event or upload media.", true); 
+        }
+        setIsUploadingMedia(false);
       };
 
       const handleQuickFieldUpdate = async (ev, fieldObj, toastMsg) => {
@@ -2811,9 +2839,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         navigator.clipboard.writeText(text).then(() => showOpToast("Army List copied to clipboard!"));
       };
 
-      // --- PHASE 3: SCORING & STANDINGS ENGINE ---
+      // --- PHASE 3: SCORING ENGINE ---
       const calculateStandings = (ev) => {
-        const regs = parseRegs(ev).slice(0, ev.maxPlayers || 16); // Only main roster competes
+        const regs = parseRegs(ev).slice(0, ev.maxPlayers || 16); 
         const rounds = parseRoundsData(ev);
         let stats = regs.map(r => ({ 
           uid: r.uid, playerName: r.playerName, faction: r.faction, subFaction: r.subFaction,
@@ -2848,15 +2876,12 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         });
 
         stats.forEach(s => s.vpDiff = s.vpScored - s.vpGiven);
-        
-        // Sorting: TP -> VP Diff -> VP Scored -> Supply Killed
         stats.sort((a, b) => {
           if (b.tp !== a.tp) return b.tp - a.tp;
           if (b.vpDiff !== a.vpDiff) return b.vpDiff - a.vpDiff;
           if (b.vpScored !== a.vpScored) return b.vpScored - a.vpScored;
           return b.supplyKilled - a.supplyKilled;
         });
-        
         return stats;
       };
 
@@ -2866,14 +2891,12 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (standings.length === 0) { showOpToast("No players on Main Roster to pair.", true); return; }
 
         let playersToPair = [...standings];
-        // If Round 1, shuffle them randomly to avoid pairing by sign-up order
         if (roundNum === 1) {
           for (let i = playersToPair.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [playersToPair[i], playersToPair[j]] = [playersToPair[j], playersToPair[i]];
           }
-        } // Else they are already correctly sorted by Swiss Standings
-
+        } 
         const matches = [];
         for (let i = 0; i < playersToPair.length; i += 2) {
           if (i + 1 < playersToPair.length) {
@@ -3008,60 +3031,59 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                 const isRegistered = cloudUser && regs.some(r => r.uid === cloudUser.uid);
 
                 return (
-                  <div key={ev.id} onClick={() => setSelectedEventId(ev.id)} className="bg-black/50 border border-white/10 hover:border-sky-500/50 rounded-xl overflow-hidden shadow-lg flex flex-col cursor-pointer transition-all hover:-translate-y-1 group">
-                    <div className="bg-gradient-to-r from-slate-900 to-black p-4 border-b border-white/10 flex justify-between items-start gap-2">
+                  <div key={ev.id} onClick={() => setSelectedEventId(ev.id)} className="bg-black/50 border border-white/10 hover:border-sky-500/50 rounded-xl overflow-hidden shadow-lg flex flex-col cursor-pointer transition-all hover:-translate-y-1 group relative min-h-[220px]">
+                    {/* Cinematic Background Image (Phase A) */}
+                    {ev.thumbnailUrl && (
+                      <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-50 transition-opacity duration-500" style={{ backgroundImage: `url(${ev.thumbnailUrl})` }}></div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-[#0B0E14] pointer-events-none"></div>
+
+                    {/* Content */}
+                    <div className="relative z-10 p-4 border-b border-white/10 flex justify-between items-start gap-2">
                       <div>
                         <div className="flex flex-wrap items-center gap-1.5 mb-2">
                           <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border ${getStatusBadge(ev.status)}`}>
                             {ev.status}
                           </span>
                           {isRegistered && (
-                            <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-sky-900/70 text-sky-300 border border-sky-500/40">
+                            <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-sky-900/70 text-sky-300 border border-sky-500/40 shadow-md">
                               ✓ Registered
                             </span>
                           )}
                         </div>
-                        <h3 className="font-orbitron font-black text-lg text-white uppercase tracking-wide group-hover:text-sky-400 transition-colors leading-snug">{ev.name}</h3>
+                        <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide group-hover:text-sky-400 transition-colors leading-snug drop-shadow-md">{ev.name}</h3>
                       </div>
                       {isOwner && (
-                        <button onClick={(e) => { e.stopPropagation(); openEditModal(ev); }} className="px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-[10px] font-bold uppercase tracking-wider text-sky-300 shrink-0 border border-white/10">
+                        <button onClick={(e) => { e.stopPropagation(); openEditModal(ev); }} className="px-2.5 py-1 rounded bg-black/60 hover:bg-black/80 text-[10px] font-bold uppercase tracking-wider text-sky-300 shrink-0 border border-sky-500/30 backdrop-blur-sm">
                           ✏️ Edit
                         </button>
                       )}
                     </div>
 
-                    <div className="p-4 flex-1 flex flex-col gap-3 text-xs text-slate-300">
-                      <div className="flex items-center justify-between text-slate-400 border-b border-white/5 pb-2">
-                        <span>📅 <strong className="text-white">{ev.date}</strong></span>
-                        <span>📍 <strong className="text-white">{ev.location}</strong></span>
+                    <div className="relative z-10 p-4 flex-1 flex flex-col gap-3 text-xs text-slate-300">
+                      <div className="flex items-center justify-between text-slate-400 border-b border-white/10 pb-3">
+                        <span className="bg-black/50 px-2 py-1 rounded border border-white/10 shadow-inner">📅 <strong className="text-white">{ev.date}</strong></span>
+                        <span className="bg-black/50 px-2 py-1 rounded border border-white/10 shadow-inner">📍 <strong className="text-white">{ev.location}</strong></span>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 text-center bg-black/40 p-2.5 rounded-lg border border-white/5">
+                      <div className="grid grid-cols-3 gap-2 text-center bg-black/60 p-2.5 rounded-lg border border-white/10 shadow-inner backdrop-blur-sm">
                         <div>
                           <span className="block text-[9px] uppercase tracking-widest text-slate-500 font-bold">Scale</span>
-                          <span className="font-orbitron font-bold text-sky-400 text-xs">{ev.scale}</span>
-                          <span className="block text-[9px] text-slate-400 font-mono">{ev.customMinerals}M / {ev.customVespene}G</span>
+                          <span className="font-orbitron font-bold text-sky-400 text-sm drop-shadow-sm">{ev.scale}</span>
                         </div>
                         <div className="border-x border-white/10">
                           <span className="block text-[9px] uppercase tracking-widest text-slate-500 font-bold">Rounds</span>
-                          <span className="font-orbitron font-bold text-amber-300 text-sm">{ev.roundsCount}</span>
+                          <span className="font-orbitron font-bold text-amber-300 text-sm drop-shadow-sm">{ev.roundsCount}</span>
                         </div>
                         <div>
                           <span className="block text-[9px] uppercase tracking-widest text-slate-500 font-bold">Players</span>
-                          <span className="font-orbitron font-bold text-emerald-400 text-xs">{activeCount} / {ev.maxPlayers}</span>
-                          {ev.benchSize > 0 && (
-                            <span className="block text-[9px] text-amber-400/80 font-mono">Bench: {benchCount}/{ev.benchSize}</span>
-                          )}
+                          <span className="font-orbitron font-bold text-emerald-400 text-sm drop-shadow-sm">{activeCount} / {ev.maxPlayers}</span>
                         </div>
                       </div>
 
-                      {ev.description && (
-                        <p className="text-xs text-slate-400 line-clamp-2 italic mt-1">{ev.description}</p>
-                      )}
-
-                      <div className="mt-auto pt-2 flex justify-between items-center text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-                        <span>Host: <span className="text-slate-300">{ev.hostName}</span></span>
-                        <span className="text-sky-400 group-hover:translate-x-1 transition-transform">View Hub ➔</span>
+                      <div className="mt-auto pt-3 flex justify-between items-center text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+                        <span className="bg-black/40 px-2 py-1 rounded border border-white/5">Host: <span className="text-slate-200">{ev.hostName}</span></span>
+                        <span className="text-sky-400 group-hover:translate-x-1 transition-transform drop-shadow-md bg-black/40 px-3 py-1 rounded-full border border-sky-500/30">View Hub ➔</span>
                       </div>
                     </div>
                   </div>
@@ -3094,85 +3116,105 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
               return (
                 <div className="space-y-6">
                   {/* EVENT BANNER & OWNER TOOLBAR */}
-                  <div className={`p-5 md:p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-xl`}>
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-white/10 pb-4 mb-4">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded border ${getStatusBadge(selectedEvent.status)}`}>
-                            {selectedEvent.status}
-                          </span>
-                          <span className="text-xs uppercase font-bold tracking-widest bg-black/50 px-3 py-1 rounded border border-white/10 text-slate-300">
-                            📅 {selectedEvent.date}
-                          </span>
-                          <span className="text-xs uppercase font-bold tracking-widest bg-black/50 px-3 py-1 rounded border border-white/10 text-slate-300">
-                            📍 {selectedEvent.location}
-                          </span>
-                          <span className={`text-xs uppercase font-bold tracking-widest px-3 py-1 rounded border ${selectedEvent.listsRevealed ? 'bg-sky-950/80 text-sky-300 border-sky-500/40' : 'bg-slate-900 text-slate-400 border-white/10'}`}>
-                            {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🔒 Lists Hidden (TO Only)'}
-                          </span>
+                  <div className={`relative rounded-xl border ${theme.border} ${theme.panelBg} shadow-xl overflow-hidden`}>
+                    {/* Cinematic Header Background (Phase A) */}
+                    {selectedEvent.thumbnailUrl && (
+                      <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url(${selectedEvent.thumbnailUrl})` }}></div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-[#0B0E14]/90 to-[#0B0E14] pointer-events-none"></div>
+
+                    <div className="relative z-10 p-5 md:p-6">
+                      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-white/10 pb-5 mb-5">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded shadow-md border ${getStatusBadge(selectedEvent.status)}`}>
+                              {selectedEvent.status}
+                            </span>
+                            <span className="text-[10px] uppercase font-bold tracking-widest bg-black/60 px-3 py-1 rounded shadow-inner border border-white/10 text-slate-300">
+                              📅 {selectedEvent.date}
+                            </span>
+                            <span className="text-[10px] uppercase font-bold tracking-widest bg-black/60 px-3 py-1 rounded shadow-inner border border-white/10 text-slate-300">
+                              📍 {selectedEvent.location}
+                            </span>
+                            <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded shadow-md border ${selectedEvent.listsRevealed ? 'bg-sky-950/80 text-sky-300 border-sky-500/40' : 'bg-slate-900 text-slate-400 border-white/10'}`}>
+                              {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🔒 Lists Hidden (TO Only)'}
+                            </span>
+                          </div>
+                          <h3 className="text-3xl md:text-4xl font-orbitron font-black uppercase text-white tracking-wide drop-shadow-lg">{selectedEvent.name}</h3>
+                          <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mt-2">
+                            Tournament Organizer: <span className="text-sky-400 bg-black/40 px-2 py-0.5 rounded border border-white/5">{selectedEvent.hostName}</span>
+                          </p>
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-orbitron font-black uppercase text-white tracking-wide">{selectedEvent.name}</h3>
-                        <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mt-1">
-                          Tournament Organizer: <span className="text-sky-400">{selectedEvent.hostName}</span>
-                        </p>
+
+                        {isOwner && (
+                          <div className="flex flex-wrap items-center gap-2 bg-black/60 p-2.5 rounded-lg border border-white/10 shadow-inner w-full lg:w-auto backdrop-blur-md">
+                            <div className="flex flex-col mr-1">
+                              <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400">Event Status</span>
+                              <select value={selectedEvent.status} onChange={(e) => handleQuickFieldUpdate(selectedEvent, { status: e.target.value }, `Status set to ${e.target.value}`)} className="bg-black/80 border border-white/20 rounded px-2 py-1 text-[10px] font-bold text-white outline-none focus:border-sky-500 mt-0.5 cursor-pointer">
+                                <option value="Registration Open">Registration Open</option>
+                                <option value="Registration Closed">Registration Closed</option>
+                                <option value="Event Finished">Event Finished</option>
+                              </select>
+                            </div>
+                            <button onClick={() => handleQuickFieldUpdate(selectedEvent, { listsRevealed: !selectedEvent.listsRevealed }, !selectedEvent.listsRevealed ? "Army Lists are now PUBLIC!" : "Army Lists are now HIDDEN.")} className={`px-3 py-2 rounded border text-[10px] font-bold uppercase tracking-wider transition-colors ${selectedEvent.listsRevealed ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900' : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-slate-700'}`}>
+                              {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🕶️ Reveal Lists'}
+                            </button>
+                            <button onClick={() => handleQuickFieldUpdate(selectedEvent, { listsLocked: !selectedEvent.listsLocked }, !selectedEvent.listsLocked ? "List submissions LOCKED." : "List submissions UNLOCKED.")} className={`px-3 py-2 rounded border text-[10px] font-bold uppercase tracking-wider transition-colors ${selectedEvent.listsLocked ? 'bg-amber-950/70 text-amber-300 border-amber-500/40 hover:bg-amber-900' : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-slate-700'}`}>
+                              {selectedEvent.listsLocked ? '🔒 Lists Locked' : '🔓 Lock Lists'}
+                            </button>
+                            <button onClick={() => openEditModal(selectedEvent)} className="px-3 py-2 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 border border-sky-500/40 text-[10px] font-bold uppercase tracking-wider shadow-md">
+                              ✏️ Edit
+                            </button>
+                            <button onClick={() => handleDeleteEvent(selectedEvent.id)} className="px-3 py-2 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 text-[10px] font-bold uppercase tracking-wider shadow-md">
+                              🗑️
+                            </button>
+                          </div>
+                        )}
                       </div>
 
-                      {isOwner && (
-                        <div className="flex flex-wrap items-center gap-2 bg-black/40 p-2.5 rounded-lg border border-white/10 w-full lg:w-auto">
-                          <div className="flex flex-col mr-1">
-                            <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400">Event Status</span>
-                            <select value={selectedEvent.status} onChange={(e) => handleQuickFieldUpdate(selectedEvent, { status: e.target.value }, `Status set to ${e.target.value}`)} className="bg-black/80 border border-white/20 rounded px-2 py-1 text-xs font-bold text-white outline-none focus:border-sky-500 mt-0.5 cursor-pointer">
-                              <option value="Registration Open">Registration Open</option>
-                              <option value="Registration Closed">Registration Closed</option>
-                              <option value="Event Finished">Event Finished</option>
-                            </select>
-                          </div>
-                          <button onClick={() => handleQuickFieldUpdate(selectedEvent, { listsRevealed: !selectedEvent.listsRevealed }, !selectedEvent.listsRevealed ? "Army Lists are now PUBLIC!" : "Army Lists are now HIDDEN.")} className={`px-3 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-colors ${selectedEvent.listsRevealed ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900' : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-slate-700'}`}>
-                            {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🕶️ Reveal Lists'}
-                          </button>
-                          <button onClick={() => handleQuickFieldUpdate(selectedEvent, { listsLocked: !selectedEvent.listsLocked }, !selectedEvent.listsLocked ? "List submissions LOCKED." : "List submissions UNLOCKED.")} className={`px-3 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-colors ${selectedEvent.listsLocked ? 'bg-amber-950/70 text-amber-300 border-amber-500/40 hover:bg-amber-900' : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-slate-700'}`}>
-                            {selectedEvent.listsLocked ? '🔒 Lists Locked' : '🔓 Lock Lists'}
-                          </button>
-                          <button onClick={() => openEditModal(selectedEvent)} className="px-3 py-2 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 border border-sky-500/40 text-xs font-bold uppercase tracking-wider">
-                            ✏️ Edit
-                          </button>
-                          <button onClick={() => handleDeleteEvent(selectedEvent.id)} className="px-3 py-2 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 text-xs font-bold uppercase tracking-wider">
-                            🗑️
-                          </button>
+                      {/* EVENT METRICS */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="bg-black/50 border border-white/10 p-4 rounded-lg shadow-inner">
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Engagement Scale</span>
+                          <span className="font-orbitron font-black text-xl text-sky-400 uppercase drop-shadow-sm">{selectedEvent.scale}</span>
+                          <span className="block text-xs text-slate-300 font-mono mt-1 bg-black/40 px-2 py-0.5 rounded w-fit border border-white/5">{selectedEvent.customMinerals}M | {selectedEvent.customVespene}G</span>
+                        </div>
+                        <div className="bg-black/50 border border-white/10 p-4 rounded-lg shadow-inner">
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Tournament Structure</span>
+                          <span className="font-orbitron font-black text-xl text-amber-300 drop-shadow-sm">{selectedEvent.roundsCount} Rounds</span>
+                          <span className="block text-xs text-slate-400 mt-1">Swiss / Tactical Pairings</span>
+                        </div>
+                        <div className="bg-black/50 border border-white/10 p-4 rounded-lg shadow-inner">
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Main Roster Cap</span>
+                          <span className="font-orbitron font-black text-xl text-emerald-400 drop-shadow-sm">{activeCount} / {maxCap}</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-widest text-emerald-500/80 mt-1">{Math.max(0, maxCap - activeCount)} Spots Remaining</span>
+                        </div>
+                        <div className="bg-black/50 border border-white/10 p-4 rounded-lg shadow-inner">
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Reserve Bench</span>
+                          <span className="font-orbitron font-black text-xl text-amber-400 drop-shadow-sm">{benchCount} / {benchCap}</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-widest text-amber-500/80 mt-1">Waitlist Capacity</span>
+                        </div>
+                      </div>
+
+                      {/* Briefing and PDF Download (Phase A) */}
+                      {(selectedEvent.description || selectedEvent.playerPackUrl) && (
+                        <div className="bg-black/50 border border-white/10 p-5 rounded-lg shadow-inner">
+                          {selectedEvent.description && (
+                            <div className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400 block mb-2">Commander Briefing & Rules Notes:</span>
+                              {selectedEvent.description}
+                            </div>
+                          )}
+                          {selectedEvent.playerPackUrl && (
+                            <div className={`${selectedEvent.description ? 'mt-4 pt-4 border-t border-white/10' : ''}`}>
+                              <a href={selectedEvent.playerPackUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 rounded shadow-lg text-[10px] font-orbitron font-black uppercase tracking-widest transition-colors">
+                                <span className="text-base">📥</span> Download Player Pack (PDF)
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-
-                    {/* EVENT METRICS */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Engagement Scale</span>
-                        <span className="font-orbitron font-black text-lg text-sky-400 uppercase">{selectedEvent.scale}</span>
-                        <span className="block text-xs text-slate-300 font-mono mt-0.5">{selectedEvent.customMinerals} Minerals | {selectedEvent.customVespene} Gas</span>
-                      </div>
-                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Tournament Structure</span>
-                        <span className="font-orbitron font-black text-lg text-amber-300">{selectedEvent.roundsCount} Rounds</span>
-                        <span className="block text-xs text-slate-400 mt-0.5">Swiss / Tactical Pairings</span>
-                      </div>
-                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Main Roster Cap</span>
-                        <span className="font-orbitron font-black text-lg text-emerald-400">{activeCount} / {maxCap}</span>
-                        <span className="block text-xs text-slate-400 mt-0.5">{Math.max(0, maxCap - activeCount)} Spots Remaining</span>
-                      </div>
-                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Reserve Bench</span>
-                        <span className="font-orbitron font-black text-lg text-amber-400">{benchCount} / {benchCap}</span>
-                        <span className="block text-xs text-slate-400 mt-0.5">Waitlist Capacity</span>
-                      </div>
-                    </div>
-
-                    {selectedEvent.description && (
-                      <div className="bg-black/30 border border-white/5 p-4 rounded-lg text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400 block mb-1">Commander Briefing & Rules Pack:</span>
-                        {selectedEvent.description}
-                      </div>
-                    )}
                   </div>
 
                   {/* COMMANDER REGISTRATION & ARMY SUBMISSION CONSOLE */}
@@ -3259,7 +3301,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                           <h4 className="font-orbitron font-black text-base uppercase text-sky-400 border-b border-white/10 pb-2 mb-4">Round Operations</h4>
                           <div className="space-y-3">
                             {roundConfigs.map((rc) => (
-                              <div key={rc.round} className="bg-black/60 border border-white/10 p-3 rounded-lg flex items-center justify-between">
+                              <div key={rc.round} className="bg-black/60 border border-white/10 p-3 rounded-lg flex items-center justify-between shadow-inner">
                                 <div>
                                   <span className="text-[10px] font-orbitron font-bold uppercase tracking-widest text-amber-400 block">Round {rc.round}</span>
                                   <span className="text-sm font-bold text-white block mt-0.5">🎯 {rc.mission}</span>
@@ -3274,7 +3316,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                           <div className="bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg">
                             <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
                               <h4 className="font-orbitron font-black text-base uppercase text-emerald-400 flex items-center gap-2"><span>🛡️</span> Registered Commanders ({activeCount} / {maxCap})</h4>
-                              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{mainRoster.filter(r => r.rosterSubmitted).length} / {activeCount} Lists Submitted</span>
+                              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold bg-black/40 px-2 py-1 rounded border border-white/5">{mainRoster.filter(r => r.rosterSubmitted).length} / {activeCount} Lists Submitted</span>
                             </div>
                             {mainRoster.length === 0 ? (
                               <div className="p-8 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">No Commanders Registered Yet.</div>
@@ -3283,24 +3325,24 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                                 {mainRoster.map((reg, idx) => {
                                   const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
                                   return (
-                                    <div key={reg.uid} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-white/20 transition-colors">
+                                    <div key={reg.uid} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-white/20 transition-colors shadow-sm">
                                       <div className="flex items-center gap-3">
-                                        <span className="w-7 h-7 rounded bg-white/5 border border-white/10 flex items-center justify-center font-orbitron font-black text-xs text-slate-400 shrink-0">#{idx + 1}</span>
+                                        <span className="w-8 h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center font-orbitron font-black text-xs text-slate-400 shrink-0">#{idx + 1}</span>
                                         <div>
                                           <div className="flex flex-wrap items-center gap-2">
-                                            <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
-                                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>{reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}</span>
+                                            <span className="font-orbitron font-bold text-sm text-white uppercase drop-shadow-md">{reg.playerName}</span>
+                                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-sm border ${getFactionBadge(reg.faction)}`}>{reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}</span>
                                           </div>
-                                          <div className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                          <div className="text-[11px] text-slate-400 mt-1 flex flex-wrap items-center gap-2">
                                             {reg.rosterSubmitted ? (
-                                              <><span className="text-emerald-400 font-bold">✓ List Locked</span>{canViewList && <span className="text-slate-300 font-mono">• "{reg.rosterName}" ({reg.minerals}M / {reg.vespene}G / {reg.supply} Sup)</span>}</>
+                                              <><span className="text-emerald-400 font-bold bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-500/20">✓ List Locked</span>{canViewList && <span className="text-slate-300 font-mono">• "{reg.rosterName}" ({reg.minerals}M / {reg.vespene}G / {reg.supply} Sup)</span>}</>
                                             ) : <span className="text-amber-400/80 italic">⏳ Awaiting Army List Submission</span>}
                                           </div>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                        {canViewList && <button onClick={() => setInspectingReg(reg)} className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest">📜 View List</button>}
-                                        {isOwner && <button onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)} className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase" title="Remove Player">✖</button>}
+                                        {canViewList && <button onClick={() => setInspectingReg(reg)} className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest shadow-md">📜 View List</button>}
+                                        {isOwner && <button onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)} className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase shadow-sm" title="Remove Player">✖</button>}
                                       </div>
                                     </div>
                                   );
@@ -3311,7 +3353,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                           {(benchCap > 0 || benchRoster.length > 0) && (
                             <div className="bg-black/40 border border-amber-500/30 rounded-xl p-5 shadow-lg">
                               <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
-                                <div><h4 className="font-orbitron font-black text-base uppercase text-amber-400 flex items-center gap-2"><span>⏳</span> Reserve Bench / Waitlist ({benchCount} / {benchCap})</h4><p className="text-[11px] text-slate-400 mt-0.5">If a Main Roster player drops out, #1 on the Reserve Bench is automatically promoted.</p></div>
+                                <div><h4 className="font-orbitron font-black text-base uppercase text-amber-400 flex items-center gap-2"><span>⏳</span> Reserve Bench / Waitlist ({benchCount} / {benchCap})</h4><p className="text-[11px] text-slate-400 mt-1">If a Main Roster player drops out, #1 on the Reserve Bench is automatically promoted.</p></div>
                               </div>
                               {benchRoster.length === 0 ? (
                                 <div className="p-6 text-center border border-dashed border-white/10 rounded-lg text-slate-500 text-xs font-orbitron uppercase tracking-widest">Reserve Bench Empty ({benchCap} Spots Available)</div>
@@ -3320,22 +3362,22 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                                   {benchRoster.map((reg, bIdx) => {
                                     const canViewList = reg.rosterSubmitted && (selectedEvent.listsRevealed || isOwner || (cloudUser && reg.uid === cloudUser.uid));
                                     return (
-                                      <div key={reg.uid} className="bg-amber-950/10 border border-amber-500/30 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                      <div key={reg.uid} className="bg-amber-950/10 border border-amber-500/30 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
                                         <div className="flex items-center gap-3">
-                                          <span className="px-2 py-1 rounded bg-amber-950/80 border border-amber-500/40 font-orbitron font-black text-[10px] text-amber-300 shrink-0 uppercase">Bench #{bIdx + 1}</span>
+                                          <span className="px-2 py-1.5 rounded bg-amber-950/80 border border-amber-500/40 font-orbitron font-black text-[10px] text-amber-300 shrink-0 uppercase shadow-inner">Bench #{bIdx + 1}</span>
                                           <div>
                                             <div className="flex flex-wrap items-center gap-2">
-                                              <span className="font-orbitron font-bold text-sm text-white uppercase">{reg.playerName}</span>
-                                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getFactionBadge(reg.faction)}`}>{reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}</span>
+                                              <span className="font-orbitron font-bold text-sm text-white uppercase drop-shadow-md">{reg.playerName}</span>
+                                              <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-sm border ${getFactionBadge(reg.faction)}`}>{reg.faction} {reg.subFaction ? `(${reg.subFaction})` : ''}</span>
                                             </div>
-                                            <div className="text-[11px] text-slate-400 mt-0.5">{reg.rosterSubmitted ? <span className="text-emerald-400 font-bold">✓ Standby List Ready ({reg.minerals}M / {reg.vespene}G)</span> : <span className="text-slate-500 italic">No Standby List Submitted</span>}</div>
+                                            <div className="text-[11px] text-slate-400 mt-1">{reg.rosterSubmitted ? <span className="text-emerald-400 font-bold bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-500/20">✓ Standby List Ready ({reg.minerals}M / {reg.vespene}G)</span> : <span className="text-slate-500 italic">No Standby List Submitted</span>}</div>
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                          {canViewList && <button onClick={() => setInspectingReg(reg)} className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest">📜 View List</button>}
+                                          {canViewList && <button onClick={() => setInspectingReg(reg)} className="px-3 py-1.5 rounded bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-500/40 text-[10px] font-bold uppercase tracking-widest shadow-md">📜 View List</button>}
                                           {isOwner && (
-                                            <><button onClick={() => handlePromoteFromBench(selectedEvent, reg.uid)} className="px-2.5 py-1.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider" title="Swap into Main Roster">⬆ Promote</button>
-                                            <button onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)} className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase" title="Remove from Bench">✖</button></>
+                                            <><button onClick={() => handlePromoteFromBench(selectedEvent, reg.uid)} className="px-2.5 py-1.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider shadow-sm" title="Swap into Main Roster">⬆ Promote</button>
+                                            <button onClick={() => handleDropPlayer(selectedEvent, reg.uid, reg.playerName)} className="px-2.5 py-1.5 rounded bg-rose-950/50 hover:bg-rose-900 text-rose-400 border border-rose-800/40 text-[10px] font-bold uppercase shadow-sm" title="Remove from Bench">✖</button></>
                                           )}
                                         </div>
                                       </div>
@@ -3360,10 +3402,10 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                               <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-3 mb-4 gap-3">
                                 <div>
                                   <h4 className="font-orbitron font-black text-lg uppercase text-amber-400 flex items-center gap-2">Round {rc.round} Pairings</h4>
-                                  <span className="text-xs font-bold text-slate-300 uppercase tracking-widest mt-1 block">Mission: {rc.mission} | Map: {rc.map}</span>
+                                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1 block bg-black/40 px-2 py-0.5 rounded border border-white/5 w-fit">Mission: {rc.mission} | Map: {rc.map}</span>
                                 </div>
                                 {isOwner && (
-                                  <button onClick={() => handleGeneratePairings(selectedEvent, rc.round)} className="px-4 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white font-orbitron font-bold text-[10px] uppercase tracking-widest shadow-md whitespace-nowrap">
+                                  <button onClick={() => handleGeneratePairings(selectedEvent, rc.round)} className="px-4 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white font-orbitron font-bold text-[10px] uppercase tracking-widest shadow-lg whitespace-nowrap">
                                     {hasPairings ? "Regenerate Pairings" : "Generate Pairings"}
                                   </button>
                                 )}
@@ -3378,25 +3420,25 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                                     const p1Winner = m.p1VP > m.p2VP || isBye;
                                     const p2Winner = m.p2VP > m.p1VP;
                                     return (
-                                      <div key={mIdx} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col md:flex-row items-center gap-4 relative overflow-hidden">
-                                        {m.reported && <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-bl-lg">Score Locked</div>}
+                                      <div key={mIdx} className="bg-black/60 border border-white/10 rounded-lg p-3 flex flex-col md:flex-row items-center gap-4 relative overflow-hidden shadow-inner">
+                                        {m.reported && <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-bl-lg shadow-md">Score Locked</div>}
                                         
-                                        <div className={`flex-1 text-center w-full p-2 rounded border ${m.reported && p1Winner ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-black/40 border-white/5'}`}>
-                                          <span className="font-orbitron font-bold text-sm text-white block uppercase truncate">{m.p1Name}</span>
-                                          <span className={`text-[9px] uppercase font-bold tracking-widest ${getFactionBadge(m.p1Faction).replace('border', '')}`}>{m.p1Faction}</span>
-                                          {m.reported && <span className="block mt-2 font-orbitron font-black text-2xl text-sky-400">{m.p1VP} <span className="text-[10px] font-sans text-slate-400">VP</span></span>}
+                                        <div className={`flex-1 text-center w-full p-2 rounded border shadow-sm ${m.reported && p1Winner ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-black/40 border-white/5'}`}>
+                                          <span className="font-orbitron font-bold text-sm text-white block uppercase truncate drop-shadow-md">{m.p1Name}</span>
+                                          <span className={`text-[9px] uppercase font-bold tracking-widest mt-0.5 inline-block px-1.5 rounded border ${getFactionBadge(m.p1Faction)}`}>{m.p1Faction}</span>
+                                          {m.reported && <span className="block mt-2 font-orbitron font-black text-2xl text-sky-400 drop-shadow-sm">{m.p1VP} <span className="text-[10px] font-sans text-slate-400">VP</span></span>}
                                         </div>
 
-                                        <div className="font-orbitron font-black text-slate-600 text-lg">VS</div>
+                                        <div className="font-orbitron font-black text-slate-600 text-lg drop-shadow-md">VS</div>
 
-                                        <div className={`flex-1 text-center w-full p-2 rounded border ${isBye ? 'bg-slate-900/40 border-slate-700/50 opacity-50' : (m.reported && p2Winner ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-black/40 border-white/5')}`}>
-                                          <span className="font-orbitron font-bold text-sm text-white block uppercase truncate">{m.p2Name}</span>
-                                          <span className={`text-[9px] uppercase font-bold tracking-widest ${getFactionBadge(m.p2Faction).replace('border', '')}`}>{m.p2Faction}</span>
-                                          {m.reported && !isBye && <span className="block mt-2 font-orbitron font-black text-2xl text-sky-400">{m.p2VP} <span className="text-[10px] font-sans text-slate-400">VP</span></span>}
+                                        <div className={`flex-1 text-center w-full p-2 rounded border shadow-sm ${isBye ? 'bg-slate-900/40 border-slate-700/50 opacity-50' : (m.reported && p2Winner ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-black/40 border-white/5')}`}>
+                                          <span className="font-orbitron font-bold text-sm text-white block uppercase truncate drop-shadow-md">{m.p2Name}</span>
+                                          <span className={`text-[9px] uppercase font-bold tracking-widest mt-0.5 inline-block px-1.5 rounded border ${getFactionBadge(m.p2Faction)}`}>{m.p2Faction}</span>
+                                          {m.reported && !isBye && <span className="block mt-2 font-orbitron font-black text-2xl text-sky-400 drop-shadow-sm">{m.p2VP} <span className="text-[10px] font-sans text-slate-400">VP</span></span>}
                                         </div>
 
                                         {!isBye && (isOwner || (cloudUser && (m.p1Uid === cloudUser.uid || m.p2Uid === cloudUser.uid))) && (
-                                          <button onClick={() => openScoreModal(rc.round, mIdx, m)} className={`md:absolute md:bottom-2 md:right-2 w-full md:w-auto px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${m.reported ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-sky-600 text-white hover:bg-sky-500 shadow-md'}`}>
+                                          <button onClick={() => openScoreModal(rc.round, mIdx, m)} className={`md:absolute md:bottom-2 md:right-2 w-full md:w-auto px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-widest transition-colors shadow-md ${m.reported ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-white/10' : 'bg-sky-600 text-white hover:bg-sky-500 border border-sky-400'}`}>
                                             {m.reported ? 'Edit Score' : 'Report Score'}
                                           </button>
                                         )}
@@ -3416,14 +3458,14 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                       <div className="bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg overflow-x-auto">
                         <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4 min-w-[600px]">
                           <h4 className="font-orbitron font-black text-base uppercase text-emerald-400 flex items-center gap-2"><span>🏆</span> Live Leaderboard</h4>
-                          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Ranked by: TP ➔ VP Diff ➔ Total VP ➔ Supply Killed</span>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold bg-black/50 px-2 py-1 rounded border border-white/5">Ranked by: TP ➔ VP Diff ➔ Total VP ➔ Supply Killed</span>
                         </div>
                         {standings.length === 0 ? (
-                          <div className="p-8 text-center text-slate-500 text-xs font-orbitron uppercase tracking-widest">No Standings Data.</div>
+                          <div className="p-8 text-center text-slate-500 text-xs font-orbitron uppercase tracking-widest border border-dashed border-white/10 rounded-lg">No Standings Data.</div>
                         ) : (
                           <table className="w-full text-left min-w-[600px] border-collapse">
                             <thead>
-                              <tr className="bg-black/60 border-b-2 border-white/10">
+                              <tr className="bg-black/60 border-b-2 border-white/10 shadow-sm">
                                 <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400">Rank</th>
                                 <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400">Commander</th>
                                 <th className="p-3 text-[10px] uppercase font-bold tracking-widest text-slate-400 text-center">W-D-L</th>
@@ -3437,17 +3479,17 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                               {standings.map((s, idx) => (
                                 <tr key={s.uid} className="border-b border-white/5 bg-black/20 hover:bg-black/40 transition-colors">
                                   <td className="p-3">
-                                    <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center font-orbitron font-black text-xs text-white">
+                                    <div className="w-6 h-6 rounded bg-black/60 border border-white/10 shadow-inner flex items-center justify-center font-orbitron font-black text-xs text-white">
                                       {idx + 1}
                                     </div>
                                   </td>
                                   <td className="p-3">
-                                    <span className="font-orbitron font-bold text-sm text-white uppercase block">{s.playerName}</span>
-                                    <span className={`text-[9px] uppercase font-bold tracking-widest ${getFactionBadge(s.faction).replace('border', '')}`}>{s.faction} {s.subFaction ? `(${s.subFaction})` : ''}</span>
+                                    <span className="font-orbitron font-bold text-sm text-white uppercase block drop-shadow-md">{s.playerName}</span>
+                                    <span className={`text-[9px] uppercase font-bold tracking-widest px-1.5 rounded border inline-block mt-0.5 shadow-sm ${getFactionBadge(s.faction)}`}>{s.faction} {s.subFaction ? `(${s.subFaction})` : ''}</span>
                                   </td>
                                   <td className="p-3 text-center font-mono text-sm text-slate-300">{s.wins}-{s.draws}-{s.losses}</td>
-                                  <td className="p-3 text-center font-orbitron font-black text-amber-300 text-lg">{s.tp}</td>
-                                  <td className="p-3 text-center font-mono font-bold text-sky-400">{s.vpDiff > 0 ? `+${s.vpDiff}` : s.vpDiff}</td>
+                                  <td className="p-3 text-center font-orbitron font-black text-amber-300 text-lg drop-shadow-md">{s.tp}</td>
+                                  <td className="p-3 text-center font-mono font-bold text-sky-400 drop-shadow-sm">{s.vpDiff > 0 ? `+${s.vpDiff}` : s.vpDiff}</td>
                                   <td className="p-3 text-center font-mono text-sm text-slate-300">{s.vpScored}</td>
                                   <td className="p-3 text-center font-mono text-sm text-slate-300">{s.supplyKilled}</td>
                                 </tr>
@@ -3478,39 +3520,39 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                   </div>
                   <form onSubmit={handleSaveScore} className="space-y-6">
                     {/* PLAYER 1 SCORE BLOCK */}
-                    <div className="bg-black/50 p-4 rounded-lg border border-white/10">
+                    <div className="bg-black/50 p-4 rounded-lg border border-white/10 shadow-inner">
                       <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
-                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${getFactionBadge(match.p1Faction)}`}>{match.p1Faction}</span>
-                        <span className="font-orbitron font-bold text-sm text-white uppercase">{match.p1Name}</span>
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border shadow-sm ${getFactionBadge(match.p1Faction)}`}>{match.p1Faction}</span>
+                        <span className="font-orbitron font-bold text-sm text-white uppercase drop-shadow-md">{match.p1Name}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Victory Points</label>
-                          <input type="number" min="0" required value={scoreForm.p1VP} onChange={e => setScoreForm({...scoreForm, p1VP: e.target.value})} className="w-full bg-black/80 border border-sky-500/50 rounded p-2 text-xl font-orbitron font-black text-sky-400 text-center outline-none focus:border-sky-400" />
+                          <input type="number" min="0" required value={scoreForm.p1VP} onChange={e => setScoreForm({...scoreForm, p1VP: e.target.value})} className="w-full bg-black/80 border border-sky-500/50 rounded p-2 text-xl font-orbitron font-black text-sky-400 text-center outline-none focus:border-sky-400 shadow-inner" />
                         </div>
                         <div>
                           <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Supply Destroyed</label>
-                          <input type="number" min="0" required value={scoreForm.p1Supply} onChange={e => setScoreForm({...scoreForm, p1Supply: e.target.value})} className="w-full bg-black/80 border border-white/20 rounded p-2 text-lg font-mono text-slate-200 text-center outline-none focus:border-sky-500" />
+                          <input type="number" min="0" required value={scoreForm.p1Supply} onChange={e => setScoreForm({...scoreForm, p1Supply: e.target.value})} className="w-full bg-black/80 border border-white/20 rounded p-2 text-lg font-mono text-slate-200 text-center outline-none focus:border-sky-500 shadow-inner" />
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-center font-orbitron font-black text-slate-600 text-sm">VS</div>
+                    <div className="text-center font-orbitron font-black text-slate-600 text-sm drop-shadow-md">VS</div>
 
                     {/* PLAYER 2 SCORE BLOCK */}
-                    <div className="bg-black/50 p-4 rounded-lg border border-white/10">
+                    <div className="bg-black/50 p-4 rounded-lg border border-white/10 shadow-inner">
                       <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
-                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${getFactionBadge(match.p2Faction)}`}>{match.p2Faction}</span>
-                        <span className="font-orbitron font-bold text-sm text-white uppercase">{match.p2Name}</span>
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border shadow-sm ${getFactionBadge(match.p2Faction)}`}>{match.p2Faction}</span>
+                        <span className="font-orbitron font-bold text-sm text-white uppercase drop-shadow-md">{match.p2Name}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Victory Points</label>
-                          <input type="number" min="0" required value={scoreForm.p2VP} onChange={e => setScoreForm({...scoreForm, p2VP: e.target.value})} className="w-full bg-black/80 border border-rose-500/50 rounded p-2 text-xl font-orbitron font-black text-rose-400 text-center outline-none focus:border-rose-400" />
+                          <input type="number" min="0" required value={scoreForm.p2VP} onChange={e => setScoreForm({...scoreForm, p2VP: e.target.value})} className="w-full bg-black/80 border border-rose-500/50 rounded p-2 text-xl font-orbitron font-black text-rose-400 text-center outline-none focus:border-rose-400 shadow-inner" />
                         </div>
                         <div>
                           <label className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">Supply Destroyed</label>
-                          <input type="number" min="0" required value={scoreForm.p2Supply} onChange={e => setScoreForm({...scoreForm, p2Supply: e.target.value})} className="w-full bg-black/80 border border-white/20 rounded p-2 text-lg font-mono text-slate-200 text-center outline-none focus:border-sky-500" />
+                          <input type="number" min="0" required value={scoreForm.p2Supply} onChange={e => setScoreForm({...scoreForm, p2Supply: e.target.value})} className="w-full bg-black/80 border border-white/20 rounded p-2 text-lg font-mono text-slate-200 text-center outline-none focus:border-sky-500 shadow-inner" />
                         </div>
                       </div>
                     </div>
@@ -3531,30 +3573,30 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                 <div className="flex justify-between items-start border-b border-white/10 pb-3 mb-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border ${getFactionBadge(inspectingReg.faction)}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border shadow-sm ${getFactionBadge(inspectingReg.faction)}`}>
                         {inspectingReg.faction} ({inspectingReg.subFaction || "Generic"})
                       </span>
-                      <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded border border-white/5">
                         Commander: <strong className="text-white">{inspectingReg.playerName}</strong>
                       </span>
                     </div>
-                    <h3 className="text-xl font-orbitron font-black uppercase text-sky-400">{inspectingReg.rosterName || "Submitted Roster"}</h3>
+                    <h3 className="text-xl font-orbitron font-black uppercase text-sky-400 drop-shadow-md">{inspectingReg.rosterName || "Submitted Roster"}</h3>
                   </div>
                   <button onClick={() => setInspectingReg(null)} className="text-slate-400 hover:text-white font-bold text-lg">✖</button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-center bg-black/50 p-3 rounded-lg border border-white/10 mb-4 shrink-0">
+                <div className="grid grid-cols-3 gap-2 text-center bg-black/60 p-3 rounded-lg border border-white/10 mb-4 shrink-0 shadow-inner backdrop-blur-sm">
                   <div>
                     <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">Minerals</span>
-                    <span className="font-orbitron font-black text-lg text-sky-400">{inspectingReg.minerals}</span>
+                    <span className="font-orbitron font-black text-lg text-sky-400 drop-shadow-sm">{inspectingReg.minerals}</span>
                   </div>
                   <div className="border-x border-white/10">
                     <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">Vespene Gas</span>
-                    <span className="font-orbitron font-black text-lg text-emerald-400">{inspectingReg.vespene}</span>
+                    <span className="font-orbitron font-black text-lg text-emerald-400 drop-shadow-sm">{inspectingReg.vespene}</span>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-bold">Total Supply</span>
-                    <span className="font-orbitron font-black text-lg text-amber-300">{inspectingReg.supply}</span>
+                    <span className="font-orbitron font-black text-lg text-amber-300 drop-shadow-sm">{inspectingReg.supply}</span>
                   </div>
                 </div>
 
@@ -3565,17 +3607,17 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </h4>
                     <div className="space-y-2">
                       {(inspectingReg.rosterUnits || []).map((u, i) => (
-                        <div key={i} className="bg-black/40 border border-white/10 p-3 rounded-lg flex justify-between items-start gap-2">
+                        <div key={i} className="bg-black/40 border border-white/10 p-3 rounded-lg flex justify-between items-start gap-2 shadow-sm">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-orbitron font-bold text-sm text-white uppercase">{u.name}</span>
-                              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-white/10 text-slate-300">{u.slot}</span>
+                              <span className="font-orbitron font-bold text-sm text-white uppercase drop-shadow-sm">{u.name}</span>
+                              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-inner bg-black/60 text-slate-300 border border-white/5">{u.slot}</span>
                             </div>
-                            <span className="text-xs text-slate-400 block mt-0.5">
+                            <span className="text-[11px] text-slate-400 block mt-1">
                               {u.models} Models • Supply: {u.supply}
                             </span>
                             {u.appliedUpgrades && u.appliedUpgrades.length > 0 && (
-                              <span className="text-xs text-sky-300 block mt-1">
+                              <span className="text-[11px] text-sky-300 font-bold block mt-1">
                                 + {u.appliedUpgrades.join(", ")}
                               </span>
                             )}
@@ -3592,9 +3634,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {(inspectingReg.rosterCards || []).map((c, i) => (
-                        <div key={i} className="bg-black/40 border border-white/10 p-2.5 rounded-lg flex justify-between items-center">
+                        <div key={i} className="bg-black/40 border border-white/10 p-2.5 rounded-lg flex justify-between items-center shadow-sm">
                           <div>
-                            <span className="font-orbitron font-bold text-xs text-white uppercase block">{c.name}</span>
+                            <span className="font-orbitron font-bold text-xs text-white uppercase block drop-shadow-sm">{c.name}</span>
                             <span className="text-[10px] text-slate-400">{c.provides || c.type}</span>
                           </div>
                           <span className="font-mono font-bold text-xs text-emerald-400 shrink-0">
@@ -3607,10 +3649,10 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                 </div>
 
                 <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/10 shrink-0">
-                  <button onClick={() => copyInspectedListText(inspectingReg)} className="px-4 py-2 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider">
+                  <button onClick={() => copyInspectedListText(inspectingReg)} className="px-4 py-2 rounded bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider shadow-md">
                     📋 Copy Text
                   </button>
-                  <button onClick={() => setInspectingReg(null)} className={`px-6 py-2 rounded font-orbitron font-bold text-xs uppercase tracking-widest ${theme.accent}`}>
+                  <button onClick={() => setInspectingReg(null)} className={`px-6 py-2 rounded font-orbitron font-bold text-xs uppercase tracking-widest shadow-lg ${theme.accent}`}>
                     Close
                   </button>
                 </div>
@@ -3653,6 +3695,20 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Venue / Location</label>
                       <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="e.g., Good Games Town Hall / Online" className="w-full bg-black/70 border border-white/20 rounded p-2.5 text-sm text-white outline-none focus:border-sky-500" />
+                    </div>
+                  </div>
+                  
+                  {/* PHASE A: MEDIA UPLOADS */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/40 border border-white/10 p-4 rounded-lg">
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Event Thumbnail (Image)</label>
+                      <input type="file" accept="image/*" onChange={e => setThumbnailFile(e.target.files[0])} className="w-full bg-black/70 border border-white/20 rounded p-2 text-sm text-slate-300 outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-sky-900 file:text-sky-300 cursor-pointer hover:file:bg-sky-800" />
+                      {formData.thumbnailUrl && !thumbnailFile && <span className="text-[10px] text-emerald-400 mt-1 block">✓ Image active</span>}
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Player Pack (PDF)</label>
+                      <input type="file" accept=".pdf" onChange={e => setPlayerPackFile(e.target.files[0])} className="w-full bg-black/70 border border-white/20 rounded p-2 text-sm text-slate-300 outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-emerald-900 file:text-emerald-300 cursor-pointer hover:file:bg-emerald-800" />
+                      {formData.playerPackUrl && !playerPackFile && <span className="text-[10px] text-emerald-400 mt-1 block">✓ PDF active</span>}
                     </div>
                   </div>
 
@@ -3699,7 +3755,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     <h4 className="font-orbitron font-bold text-xs uppercase text-amber-400 tracking-wider">Round Missions & Deployment Maps</h4>
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       {formData.roundConfigs.map((rc) => (
-                        <div key={rc.round} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-black/60 p-2 rounded border border-white/5">
+                        <div key={rc.round} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-black/60 p-2 rounded border border-white/5 shadow-inner">
                           <span className="sm:col-span-2 font-orbitron font-bold text-xs text-slate-300 uppercase pl-2">Round {rc.round}</span>
                           <div className="sm:col-span-5">
                             <select value={rc.mission} onChange={e => updateRoundConfig(rc.round, 'mission', e.target.value)} className="w-full bg-black/80 border border-white/20 rounded p-1.5 text-xs text-white outline-none focus:border-sky-500">
@@ -3725,8 +3781,8 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-white/10 shrink-0">
                     <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 rounded bg-white/10 hover:bg-white/20 text-xs font-bold uppercase tracking-wider">Cancel</button>
-                    <button type="submit" className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg ${theme.accent}`}>
-                      {editingEventId ? "Save Changes" : "Create Event"}
+                    <button type="submit" disabled={isUploadingMedia} className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg transition-colors ${isUploadingMedia ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : theme.accent}`}>
+                      {isUploadingMedia ? "Uploading Media..." : editingEventId ? "Save Changes" : "Create Event"}
                     </button>
                   </div>
                 </form>
@@ -3735,7 +3791,8 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           )}
         </div>
       );
-    };   const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, handleLogout }) => {
+    };   
+const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, handleLogout }) => {
       const [profileData, setProfileData] = useState({
         displayName: '', bio: '', mainFaction: 'Protoss',
         wins: 0, losses: 0, draws: 0, pinnedRoster: '', avatarUrl: ''
