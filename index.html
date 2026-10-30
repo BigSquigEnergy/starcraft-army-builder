@@ -2437,12 +2437,18 @@ const exportRosterText = () => {
               {/* Hyperion Cantina (Moved to Top) */}
               <div className="bg-black/40 border border-blue-900/30 rounded-xl p-5 md:p-6 shadow-lg">
                 <h2 className="text-xl md:text-2xl font-orbitron font-black uppercase text-blue-400 border-b border-blue-900/50 pb-2 mb-4 flex items-center gap-3"><span className="text-2xl md:text-3xl">🍻</span> Hyperion Cantina</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                   <button onClick={() => setActiveTab('unn')} className="group relative bg-black/60 border border-blue-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-blue-500">
                     <div className="absolute inset-0 bg-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">📡</span>
                     <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-blue-300 transition-colors">UNN Broadcast</h3>
                     <p className="text-xs md:text-sm text-slate-400 relative z-10">Catch up on the latest patches, intel reports, and community news.</p>
+                  </button>
+                  <button onClick={() => setActiveTab('events')} className="group relative bg-black/60 border border-blue-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-blue-500">
+                    <div className="absolute inset-0 bg-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span className="text-3xl block mb-2 relative z-10 drop-shadow-md">🏆</span>
+                    <h3 className="font-orbitron font-black text-lg md:text-xl uppercase tracking-widest mb-1 relative z-10 text-slate-200 group-hover:text-blue-300 transition-colors">Organized Play</h3>
+                    <p className="text-xs md:text-sm text-slate-400 relative z-10">Host tournaments, register army lists, and track live round scores.</p>
                   </button>
                   <button onClick={() => setActiveTab('profile')} className="group relative bg-black/60 border border-blue-500/30 p-5 rounded-xl transition-all shadow-md hover:-translate-y-1 overflow-hidden text-left hover:border-blue-500">
                     <div className="absolute inset-0 bg-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -2499,6 +2505,537 @@ const exportRosterText = () => {
 
             </div>
           </div>
+        </div>
+      );
+    };
+const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => {
+      const [events, setEvents] = useState([]);
+      const [selectedEventId, setSelectedEventId] = useState(null);
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingEventId, setEditingEventId] = useState(null);
+      const [statusFilter, setStatusFilter] = useState("All");
+      const [adminUid, setAdminUid] = useState(null);
+      const [userProfile, setUserProfile] = useState({ displayName: "" });
+
+      const uniqueMissions = useMemo(() => [...new Set(MISSION_CARDS.map(m => m.name))], []);
+
+      const defaultForm = {
+        name: "",
+        date: "",
+        location: "",
+        description: "",
+        status: "Registration Open",
+        scale: "Standard",
+        customMinerals: 2000,
+        customVespene: 200,
+        maxPlayers: 16,
+        benchSize: 4,
+        roundsCount: 3,
+        roundConfigs: [
+          { round: 1, mission: "Frontlines", map: "TBD" },
+          { round: 2, mission: "Hold Position", map: "TBD" },
+          { round: 3, mission: "Divide and Conquer", map: "TBD" }
+        ]
+      };
+
+      const [formData, setFormData] = useState(defaultForm);
+
+      useEffect(() => {
+        if (!cloudUser || !window.fbDb) return;
+
+        // Fetch User Profile for Host Name
+        const profRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+        window.fbHelpers.getDoc(profRef).then(snap => {
+          if (snap.exists()) setUserProfile(snap.data());
+        });
+
+        // Fetch Admin UID
+        const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
+        const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (snap) => {
+          if (snap.exists()) setAdminUid(snap.data().uid || null);
+        });
+
+        // Listen to Organized Play Events
+        const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
+        const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
+          const fetched = [];
+          if (snap.forEach) {
+            snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
+            fetched.sort((a, b) => (a.date || "").localeCompare(b.date || "") || b.createdAt - a.createdAt);
+            setEvents(fetched);
+          }
+        }, (err) => console.error("Events sync error:", err));
+
+        return () => { unsubAdmin(); unsubEvents(); };
+      }, [cloudUser]);
+
+      const handleScaleChange = (newScale) => {
+        let min = formData.customMinerals;
+        let vesp = formData.customVespene;
+        if (newScale === "Skirmish") { min = 1000; vesp = 100; }
+        else if (newScale === "Standard") { min = 2000; vesp = 200; }
+        setFormData(prev => ({ ...prev, scale: newScale, customMinerals: min, customVespene: vesp }));
+      };
+
+      const handleRoundsCountChange = (count) => {
+        const num = Math.max(1, Math.min(12, parseInt(count, 10) || 1));
+        setFormData(prev => {
+          const currentConfigs = [...prev.roundConfigs];
+          const newConfigs = [];
+          for (let i = 1; i <= num; i++) {
+            const existing = currentConfigs.find(rc => rc.round === i);
+            newConfigs.push(existing || { round: i, mission: "TBD", map: "TBD" });
+          }
+          return { ...prev, roundsCount: num, roundConfigs: newConfigs };
+        });
+      };
+
+      const updateRoundConfig = (roundNum, key, val) => {
+        setFormData(prev => ({
+          ...prev,
+          roundConfigs: prev.roundConfigs.map(rc => rc.round === roundNum ? { ...rc, [key]: val } : rc)
+        }));
+      };
+
+      const openCreateModal = () => {
+        setEditingEventId(null);
+        setFormData(defaultForm);
+        setIsModalOpen(true);
+      };
+
+      const openEditModal = (ev) => {
+        setEditingEventId(ev.id);
+        let parsedConfigs = [];
+        try {
+          parsedConfigs = typeof ev.roundConfigs === 'string' ? JSON.parse(ev.roundConfigs) : (ev.roundConfigs || []);
+        } catch (e) { parsedConfigs = []; }
+
+        setFormData({
+          name: ev.name || "",
+          date: ev.date || "",
+          location: ev.location || "",
+          description: ev.description || "",
+          status: ev.status || "Registration Open",
+          scale: ev.scale || "Standard",
+          customMinerals: ev.customMinerals !== undefined ? ev.customMinerals : 2000,
+          customVespene: ev.customVespene !== undefined ? ev.customVespene : 200,
+          maxPlayers: ev.maxPlayers !== undefined ? ev.maxPlayers : 16,
+          benchSize: ev.benchSize !== undefined ? ev.benchSize : 4,
+          roundsCount: ev.roundsCount !== undefined ? ev.roundsCount : 3,
+          roundConfigs: parsedConfigs.length > 0 ? parsedConfigs : defaultForm.roundConfigs
+        });
+        setIsModalOpen(true);
+      };
+
+      const handleSaveEvent = async (e) => {
+        e.preventDefault();
+        if (!cloudUser || !window.fbDb || isGuest) return;
+        if (!formData.name.trim() || !formData.date) {
+          alert("Please provide at least an Event Name and Date.");
+          return;
+        }
+
+        const payload = {
+          name: formData.name.trim(),
+          date: formData.date,
+          location: formData.location.trim() || "TBA",
+          description: formData.description.trim(),
+          status: formData.status,
+          scale: formData.scale,
+          customMinerals: Number(formData.customMinerals) || 0,
+          customVespene: Number(formData.customVespene) || 0,
+          maxPlayers: Math.max(2, Number(formData.maxPlayers) || 2),
+          benchSize: Math.max(0, Number(formData.benchSize) || 0),
+          roundsCount: Math.max(1, Number(formData.roundsCount) || 1),
+          roundConfigs: JSON.stringify(formData.roundConfigs),
+          updatedAt: Date.now()
+        };
+
+        try {
+          if (editingEventId) {
+            const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', editingEventId);
+            await window.fbHelpers.updateDoc(docRef, payload);
+          } else {
+            payload.hostUid = cloudUser.uid;
+            payload.hostName = userProfile.displayName || cloudUser.displayName || "Commander";
+            payload.createdAt = Date.now();
+            payload.registrations = JSON.stringify([]);
+            payload.roundsData = JSON.stringify([]);
+            const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
+            const docAdded = await window.fbHelpers.addDoc(colRef, payload);
+            if (docAdded && docAdded.id) setSelectedEventId(docAdded.id);
+          }
+          setIsModalOpen(false);
+        } catch (err) {
+          console.error("Failed to save event:", err);
+          alert("Failed to save event. Check console for details.");
+        }
+      };
+
+      const handleQuickStatusChange = async (ev, newStatus) => {
+        if (!cloudUser || !window.fbDb) return;
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+        await window.fbHelpers.updateDoc(docRef, { status: newStatus, updatedAt: Date.now() });
+      };
+
+      const handleDeleteEvent = async (evId) => {
+        if (!cloudUser || !window.fbDb) return;
+        if (!window.confirm("Are you sure you want to permanently delete this event?")) return;
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', evId);
+        await window.fbHelpers.deleteDoc(docRef);
+        if (selectedEventId === evId) setSelectedEventId(null);
+      };
+
+      const getStatusBadge = (status) => {
+        if (status === "Registration Open") return "bg-emerald-950/80 text-emerald-300 border-emerald-500/50";
+        if (status === "Registration Closed") return "bg-amber-950/80 text-amber-300 border-amber-500/50";
+        return "bg-slate-800 text-slate-400 border-slate-600/50";
+      };
+
+      const selectedEvent = events.find(e => e.id === selectedEventId);
+      const filteredEvents = events.filter(e => statusFilter === "All" || e.status === statusFilter);
+
+      return (
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
+          {/* TOP HEADER BAR */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-20 p-4 rounded-lg shadow-md">
+            <div className="flex items-center gap-3">
+              {selectedEvent && (
+                <button onClick={() => setSelectedEventId(null)} className="px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 text-xs font-bold uppercase tracking-wider text-slate-200 mr-2 flex items-center gap-1">
+                  ◁ Back
+                </button>
+              )}
+              <h2 className={`text-2xl md:text-3xl font-black uppercase font-orbitron flex items-center gap-3 ${theme.textPrimary}`}>
+                <span className="text-3xl md:text-4xl">🏆</span> Organized Play
+              </h2>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+              {!selectedEvent && (
+                <div className="flex bg-black/60 border border-white/20 rounded-lg overflow-hidden p-1">
+                  {["All", "Registration Open", "Registration Closed", "Event Finished"].map(st => (
+                    <button key={st} onClick={() => setStatusFilter(st)} className={`px-3 py-1.5 text-[10px] md:text-xs font-bold uppercase transition-colors rounded ${statusFilter === st ? theme.accent : 'text-slate-400 hover:text-white'}`}>
+                      {st === "All" ? "All" : st.replace("Registration ", "Reg. ").replace("Event ", "")}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!isGuest ? (
+                <button onClick={openCreateModal} className={`px-4 py-2 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg flex items-center gap-2 ${theme.accent}`}>
+                  <span>+</span> Host Event
+                </button>
+              ) : (
+                <button onClick={handleGoogleLogin} className="px-4 py-2 rounded bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase tracking-widest shadow">
+                  Sign In to Host
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* VIEW 1: EVENT BROWSER LIST */}
+          {!selectedEvent ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredEvents.length === 0 && (
+                <div className="col-span-full p-12 text-center border-2 border-dashed border-white/10 rounded-xl text-slate-500 font-orbitron uppercase tracking-widest">
+                  No Tactical Events Found.<br/>
+                  <span className="text-xs text-slate-600 normal-case font-sans mt-2 block">Click "+ Host Event" to schedule a tournament or game day.</span>
+                </div>
+              )}
+
+              {filteredEvents.map(ev => {
+                let regs = [];
+                try { regs = typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []); } catch(e) {}
+                const activeCount = Math.min(regs.length, ev.maxPlayers || 16);
+                const benchCount = Math.max(0, regs.length - (ev.maxPlayers || 16));
+                const isOwner = cloudUser && (ev.hostUid === cloudUser.uid || adminUid === cloudUser.uid);
+
+                return (
+                  <div key={ev.id} onClick={() => setSelectedEventId(ev.id)} className="bg-black/50 border border-white/10 hover:border-sky-500/50 rounded-xl overflow-hidden shadow-lg flex flex-col cursor-pointer transition-all hover:-translate-y-1 group">
+                    <div className="bg-gradient-to-r from-slate-900 to-black p-4 border-b border-white/10 flex justify-between items-start gap-2">
+                      <div>
+                        <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border mb-2 ${getStatusBadge(ev.status)}`}>
+                          {ev.status}
+                        </span>
+                        <h3 className="font-orbitron font-black text-lg text-white uppercase tracking-wide group-hover:text-sky-400 transition-colors leading-snug">{ev.name}</h3>
+                      </div>
+                      {isOwner && (
+                        <button onClick={(e) => { e.stopPropagation(); openEditModal(ev); }} className="px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-[10px] font-bold uppercase tracking-wider text-sky-300 shrink-0 border border-white/10">
+                          ✏️ Edit
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="p-4 flex-1 flex flex-col gap-3 text-xs text-slate-300">
+                      <div className="flex items-center justify-between text-slate-400 border-b border-white/5 pb-2">
+                        <span>📅 <strong className="text-white">{ev.date}</strong></span>
+                        <span>📍 <strong className="text-white">{ev.location}</strong></span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-center bg-black/40 p-2.5 rounded-lg border border-white/5">
+                        <div>
+                          <span className="block text-[9px] uppercase tracking-widest text-slate-500 font-bold">Scale</span>
+                          <span className="font-orbitron font-bold text-sky-400 text-xs">{ev.scale}</span>
+                          <span className="block text-[9px] text-slate-400 font-mono">{ev.customMinerals}M / {ev.customVespene}G</span>
+                        </div>
+                        <div className="border-x border-white/10">
+                          <span className="block text-[9px] uppercase tracking-widest text-slate-500 font-bold">Rounds</span>
+                          <span className="font-orbitron font-bold text-amber-300 text-sm">{ev.roundsCount}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[9px] uppercase tracking-widest text-slate-500 font-bold">Players</span>
+                          <span className="font-orbitron font-bold text-emerald-400 text-xs">{activeCount} / {ev.maxPlayers}</span>
+                          {ev.benchSize > 0 && (
+                            <span className="block text-[9px] text-amber-400/80 font-mono">Bench: {benchCount}/{ev.benchSize}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {ev.description && (
+                        <p className="text-xs text-slate-400 line-clamp-2 italic mt-1">{ev.description}</p>
+                      )}
+
+                      <div className="mt-auto pt-2 flex justify-between items-center text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                        <span>Host: <span className="text-slate-300">{ev.hostName}</span></span>
+                        <span className="text-sky-400 group-hover:translate-x-1 transition-transform">View Hub ➔</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* VIEW 2: SELECTED EVENT LOBBY & DETAILS */
+            (() => {
+              const isOwner = cloudUser && (selectedEvent.hostUid === cloudUser.uid || adminUid === cloudUser.uid);
+              let roundConfigs = [];
+              try { roundConfigs = typeof selectedEvent.roundConfigs === 'string' ? JSON.parse(selectedEvent.roundConfigs) : (selectedEvent.roundConfigs || []); } catch(e) {}
+              let regs = [];
+              try { regs = typeof selectedEvent.registrations === 'string' ? JSON.parse(selectedEvent.registrations) : (selectedEvent.registrations || []); } catch(e) {}
+              const activeCount = Math.min(regs.length, selectedEvent.maxPlayers || 16);
+              const benchCount = Math.max(0, regs.length - (selectedEvent.maxPlayers || 16));
+
+              return (
+                <div className="space-y-6">
+                  {/* EVENT BANNER & OWNER TOOLBAR */}
+                  <div className={`p-5 md:p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-xl`}>
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-white/10 pb-4 mb-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded border ${getStatusBadge(selectedEvent.status)}`}>
+                            {selectedEvent.status}
+                          </span>
+                          <span className="text-xs uppercase font-bold tracking-widest bg-black/50 px-3 py-1 rounded border border-white/10 text-slate-300">
+                            📅 {selectedEvent.date}
+                          </span>
+                          <span className="text-xs uppercase font-bold tracking-widest bg-black/50 px-3 py-1 rounded border border-white/10 text-slate-300">
+                            📍 {selectedEvent.location}
+                          </span>
+                        </div>
+                        <h3 className="text-2xl md:text-3xl font-orbitron font-black uppercase text-white tracking-wide">{selectedEvent.name}</h3>
+                        <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mt-1">
+                          Tournament Organizer: <span className="text-sky-400">{selectedEvent.hostName}</span>
+                        </p>
+                      </div>
+
+                      {isOwner && (
+                        <div className="flex flex-wrap items-center gap-2 bg-black/40 p-2.5 rounded-lg border border-white/10 w-full lg:w-auto">
+                          <div className="flex flex-col mr-2">
+                            <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400">Event Status</span>
+                            <select value={selectedEvent.status} onChange={(e) => handleQuickStatusChange(selectedEvent, e.target.value)} className="bg-black/80 border border-white/20 rounded px-2 py-1 text-xs font-bold text-white outline-none focus:border-sky-500 mt-0.5 cursor-pointer">
+                              <option value="Registration Open">Registration Open</option>
+                              <option value="Registration Closed">Registration Closed</option>
+                              <option value="Event Finished">Event Finished</option>
+                            </select>
+                          </div>
+                          <button onClick={() => openEditModal(selectedEvent)} className="px-3 py-2 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 border border-sky-500/40 text-xs font-bold uppercase tracking-wider">
+                            ✏️ Edit Event
+                          </button>
+                          <button onClick={() => handleDeleteEvent(selectedEvent.id)} className="px-3 py-2 rounded bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 text-xs font-bold uppercase tracking-wider">
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* KEY METRICS ROW */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Engagement Scale</span>
+                        <span className="font-orbitron font-black text-lg text-sky-400 uppercase">{selectedEvent.scale}</span>
+                        <span className="block text-xs text-slate-300 font-mono mt-0.5">{selectedEvent.customMinerals} Minerals | {selectedEvent.customVespene} Gas</span>
+                      </div>
+                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Tournament Structure</span>
+                        <span className="font-orbitron font-black text-lg text-amber-300">{selectedEvent.roundsCount} Rounds</span>
+                        <span className="block text-xs text-slate-400 mt-0.5">Swiss / Tactical Pairings</span>
+                      </div>
+                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Main Roster Cap</span>
+                        <span className="font-orbitron font-black text-lg text-emerald-400">{activeCount} / {selectedEvent.maxPlayers}</span>
+                        <span className="block text-xs text-slate-400 mt-0.5">{Math.max(0, selectedEvent.maxPlayers - activeCount)} Spots Remaining</span>
+                      </div>
+                      <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">Reserve Bench</span>
+                        <span className="font-orbitron font-black text-lg text-amber-400">{benchCount} / {selectedEvent.benchSize}</span>
+                        <span className="block text-xs text-slate-400 mt-0.5">Waitlist Capacity</span>
+                      </div>
+                    </div>
+
+                    {selectedEvent.description && (
+                      <div className="bg-black/30 border border-white/5 p-4 rounded-lg text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400 block mb-1">Commander Briefing & Rules Pack:</span>
+                        {selectedEvent.description}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ROUND SCHEDULE & MAPS */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-1 bg-black/40 border border-white/10 rounded-xl p-5 shadow-lg h-fit">
+                      <h4 className="font-orbitron font-black text-base uppercase text-sky-400 border-b border-white/10 pb-2 mb-4">Round Operations</h4>
+                      <div className="space-y-3">
+                        {roundConfigs.map((rc) => (
+                          <div key={rc.round} className="bg-black/60 border border-white/10 p-3 rounded-lg flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-orbitron font-bold uppercase tracking-widest text-amber-400 block">Round {rc.round}</span>
+                              <span className="text-sm font-bold text-white block mt-0.5">🎯 {rc.mission}</span>
+                              <span className="text-xs text-slate-400 block">🗺️ Map: {rc.map}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* PLACEHOLDER FOR PHASE 2 & 3 (REGISTRATIONS & STANDINGS) */}
+                    <div className="lg:col-span-2 bg-black/40 border border-white/10 rounded-xl p-6 shadow-lg flex flex-col items-center justify-center text-center min-h-[260px]">
+                      <span className="text-4xl mb-3">📋</span>
+                      <h4 className="font-orbitron font-black text-lg uppercase text-slate-300 mb-1">Player Roster & Reserve Bench</h4>
+                      <p className="text-xs text-slate-400 max-w-md">
+                        Ready for Phase 2: Players will register here, automatically spill over into the {selectedEvent.benchSize}-player Reserve Bench if full, and submit their Cloud Army Lists.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+
+          {/* CREATE / EDIT EVENT MODAL */}
+          {isModalOpen && (
+            <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4 pt-16 md:pt-4 pb-20 md:pb-4">
+              <div className={`max-w-3xl w-full p-5 md:p-6 rounded-xl border ${theme.border} ${theme.panelBg} shadow-2xl flex flex-col max-h-full md:max-h-[90vh]`}>
+                <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4 shrink-0">
+                  <h3 className={`text-xl font-orbitron font-black uppercase ${theme.textPrimary}`}>
+                    {editingEventId ? "Edit Event Parameters" : "Host New Tactical Event"}
+                  </h3>
+                  <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white font-bold text-lg">✖</button>
+                </div>
+
+                <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto pr-2 space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Event Title *</label>
+                      <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g., Sydney Sector Showdown" className="w-full bg-black/70 border border-white/20 rounded p-2.5 text-sm text-white outline-none focus:border-sky-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Event Status</label>
+                      <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-black/70 border border-white/20 rounded p-2.5 text-sm font-bold text-white outline-none focus:border-sky-500 cursor-pointer">
+                        <option value="Registration Open">Registration Open</option>
+                        <option value="Registration Closed">Registration Closed</option>
+                        <option value="Event Finished">Event Finished</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Event Date *</label>
+                      <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full bg-black/70 border border-white/20 rounded p-2.5 text-sm text-white outline-none focus:border-sky-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Venue / Location</label>
+                      <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="e.g., Good Games Town Hall / Online" className="w-full bg-black/70 border border-white/20 rounded p-2.5 text-sm text-white outline-none focus:border-sky-500" />
+                    </div>
+                  </div>
+
+                  {/* SCALE & LIMITS */}
+                  <div className="bg-black/40 border border-white/10 p-4 rounded-lg space-y-4">
+                    <h4 className="font-orbitron font-bold text-xs uppercase text-sky-400 tracking-wider">Engagement Scale & Roster Limits</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Scale Preset</label>
+                        <select value={formData.scale} onChange={e => handleScaleChange(e.target.value)} className="w-full bg-black/80 border border-white/20 rounded p-2.5 text-sm font-bold text-white outline-none focus:border-sky-500 cursor-pointer">
+                          <option value="Skirmish">Skirmish (1000M / 100G)</option>
+                          <option value="Standard">Standard (2000M / 200G)</option>
+                          <option value="Custom">Custom Scale</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Max Minerals</label>
+                        <input type="number" step="50" min="100" disabled={formData.scale !== "Custom"} value={formData.customMinerals} onChange={e => setFormData({...formData, customMinerals: e.target.value})} className={`w-full bg-black/80 border border-white/20 rounded p-2.5 text-sm text-sky-300 font-mono outline-none ${formData.scale !== "Custom" ? 'opacity-50 cursor-not-allowed' : 'focus:border-sky-500'}`} />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Max Vespene Gas</label>
+                        <input type="number" step="10" min="0" disabled={formData.scale !== "Custom"} value={formData.customVespene} onChange={e => setFormData({...formData, customVespene: e.target.value})} className={`w-full bg-black/80 border border-white/20 rounded p-2.5 text-sm text-emerald-300 font-mono outline-none ${formData.scale !== "Custom" ? 'opacity-50 cursor-not-allowed' : 'focus:border-sky-500'}`} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-white/5">
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Main Player Cap</label>
+                        <input type="number" min="2" max="128" value={formData.maxPlayers} onChange={e => setFormData({...formData, maxPlayers: e.target.value})} className="w-full bg-black/80 border border-white/20 rounded p-2.5 text-sm text-white font-mono outline-none focus:border-sky-500" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-amber-400 font-bold uppercase tracking-widest mb-1 block">Reserve Bench Spots</label>
+                        <input type="number" min="0" max="64" value={formData.benchSize} onChange={e => setFormData({...formData, benchSize: e.target.value})} className="w-full bg-black/80 border border-amber-500/40 rounded p-2.5 text-sm text-amber-300 font-mono outline-none focus:border-amber-400" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Number of Rounds</label>
+                        <input type="number" min="1" max="12" value={formData.roundsCount} onChange={e => handleRoundsCountChange(e.target.value)} className="w-full bg-black/80 border border-white/20 rounded p-2.5 text-sm text-white font-mono outline-none focus:border-sky-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DYNAMIC ROUND MISSIONS & MAPS */}
+                  <div className="bg-black/40 border border-white/10 p-4 rounded-lg space-y-3">
+                    <h4 className="font-orbitron font-bold text-xs uppercase text-amber-400 tracking-wider">Round Missions & Deployment Maps</h4>
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      {formData.roundConfigs.map((rc) => (
+                        <div key={rc.round} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-black/60 p-2 rounded border border-white/5">
+                          <span className="sm:col-span-2 font-orbitron font-bold text-xs text-slate-300 uppercase pl-2">Round {rc.round}</span>
+                          <div className="sm:col-span-5">
+                            <select value={rc.mission} onChange={e => updateRoundConfig(rc.round, 'mission', e.target.value)} className="w-full bg-black/80 border border-white/20 rounded p-1.5 text-xs text-white outline-none focus:border-sky-500">
+                              <option value="TBD">-- Mission TBD --</option>
+                              {uniqueMissions.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-5">
+                            <select value={rc.map} onChange={e => updateRoundConfig(rc.round, 'map', e.target.value)} className="w-full bg-black/80 border border-white/20 rounded p-1.5 text-xs text-white outline-none focus:border-sky-500">
+                              <option value="TBD">-- Deployment Map TBD --</option>
+                              {DEPLOYMENT_MAPS.map(dm => <option key={dm.name} value={dm.name}>{dm.name} ({dm.type})</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Event Briefing / Player Pack Notes</label>
+                    <textarea rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Schedule, painting requirements, prize support, or house rules..." className="w-full bg-black/70 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-y"></textarea>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-white/10 shrink-0">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 rounded bg-white/10 hover:bg-white/20 text-xs font-bold uppercase tracking-wider">Cancel</button>
+                    <button type="submit" className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg ${theme.accent}`}>
+                      {editingEventId ? "Save Changes" : "Create Event"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
@@ -2784,6 +3321,9 @@ const exportRosterText = () => {
                     <button onClick={() => handleNav("unn")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "unn" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
                       <span className="text-base shrink-0">📡</span> <span>UNN Broadcast</span>
                     </button>
+                    <button onClick={() => handleNav("events")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "events" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
+                      <span className="text-base shrink-0">🏆</span> <span>Organized Play</span>
+                    </button>
                     <button onClick={() => handleNav("profile")} className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-bold uppercase transition-all text-left ${activeTab === "profile" ? theme.accentSecondary : 'text-slate-400 hover:bg-white/5'}`}>
                       <span className="text-base shrink-0">🪪</span> <span>Cmdr. Dossier</span>
                     </button>
@@ -2853,6 +3393,7 @@ const exportRosterText = () => {
             {activeTab === "keywords" && <KeywordsView theme={theme} />}
             {activeTab === "rules" && <RulesView theme={theme} cloudUser={cloudUser} />}
             {activeTab === "unn" && <UNNView theme={theme} cloudUser={cloudUser} isGuest={isGuest} />}
+            {activeTab === "events" && <OrganizedPlayView theme={theme} cloudUser={cloudUser} isGuest={isGuest} handleGoogleLogin={handleGoogleLogin} />}
             {activeTab === "profile" && <CommanderProfileView theme={theme} cloudUser={cloudUser} isGuest={isGuest} handleGoogleLogin={handleGoogleLogin} handleLogout={handleLogout} />}
           </div>
 
