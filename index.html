@@ -2540,7 +2540,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [playerPackFile, setPlayerPackFile] = useState(null);
       const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
-      // Phase B: Google Maps Autocomplete Ref (Updated for Places API New)
       const locationInputRef = React.useRef(null);
       const placePickerRef = React.useRef(null);
 
@@ -2549,7 +2548,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         setTimeout(() => setOpToast(null), 3500);
       };
 
-      // PHASE B: Deep Link Listener
       useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const evtId = urlParams.get('event');
@@ -2632,42 +2630,28 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       }, [cloudUser, isGuest]);
 
       useEffect(() => {
-        // Initialize the new Google Web Component only once when the modal opens
         if (isModalOpen && window.google && window.google.maps && window.google.maps.places && window.google.maps.places.PlaceAutocompleteElement && locationInputRef.current && !placePickerRef.current) {
-          
-          // Clear the fallback standard input
           locationInputRef.current.innerHTML = "";
-
-          // Create the new 2025+ Place Autocomplete Element
           const picker = new window.google.maps.places.PlaceAutocompleteElement();
-          
-          // Inject CSS variables directly to theme it to our dark sci-fi UI
           picker.style.setProperty('--pac-background-color', '#0B0E14');
           picker.style.setProperty('--pac-text-color', '#e2e8f0');
           picker.style.setProperty('--pac-empty-text-color', '#94a3b8');
           picker.style.setProperty('--pac-icon-color', '#38bdf8');
           picker.style.width = '100%';
-          
-          // Set initial value if editing an existing event
           if (formData.location) picker.inputValue = formData.location;
 
-          // Listen for when a user clicks a dropdown suggestion
           picker.addEventListener('gmp-placeselect', async (e) => {
             if (!e.place) {
                setFormData(prev => ({ ...prev, location: picker.inputValue }));
                return;
             }
-            // The New API requires manually fetching the fields you need
             await e.place.fetchFields({ fields: ['displayName', 'formattedAddress'] });
-            
             const pName = e.place.displayName ? e.place.displayName.text : "";
             const addr = e.place.formattedAddress || "";
             const finalLocation = pName && !addr.includes(pName) ? `${pName}, ${addr}` : addr;
-            
             setFormData(prev => ({ ...prev, location: finalLocation }));
           });
 
-          // Capture manual typing if they click away without selecting a suggestion
           picker.addEventListener('change', () => {
              setFormData(prev => ({ ...prev, location: picker.inputValue }));
           });
@@ -2675,11 +2659,10 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           locationInputRef.current.appendChild(picker);
           placePickerRef.current = picker;
         }
-
-        // Clean up the ref when modal closes
         if (!isModalOpen) placePickerRef.current = null;
       }, [isModalOpen, formData.location]);
 
+      // PHASE C: Parsing Helpers
       const parseRegs = (ev) => {
         if (!ev || !ev.registrations) return [];
         try { return typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []); } catch (e) { return []; }
@@ -2688,6 +2671,11 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const parseRoundsData = (ev) => {
         if (!ev || !ev.roundsData) return [];
         try { return typeof ev.roundsData === 'string' ? JSON.parse(ev.roundsData) : (ev.roundsData || []); } catch (e) { return []; }
+      };
+
+      const parseCoHosts = (ev) => {
+        if (!ev || !ev.coHosts) return [];
+        try { return typeof ev.coHosts === 'string' ? JSON.parse(ev.coHosts) : (ev.coHosts || []); } catch (e) { return []; }
       };
 
       const getRosterMetrics = (cloudRoster) => {
@@ -2790,7 +2778,13 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             showOpToast("Event parameters updated!");
           } else {
             payload.hostUid = cloudUser.uid; payload.hostName = userProfile.displayName || cloudUser.displayName || "Commander";
-            payload.createdAt = Date.now(); payload.registrations = JSON.stringify([]); payload.roundsData = JSON.stringify([]);
+            payload.createdAt = Date.now(); 
+            payload.registrations = JSON.stringify([]); 
+            payload.roundsData = JSON.stringify([]);
+            // PHASE C: Generate a random 5-character alphanumeric passcode and empty staff array on creation
+            payload.passcode = Math.random().toString(36).substring(2, 7).toUpperCase();
+            payload.coHosts = JSON.stringify([]);
+
             const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
             const docAdded = await window.fbHelpers.addDoc(colRef, payload);
             if (docAdded && docAdded.id) setSelectedEventId(docAdded.id);
@@ -2814,6 +2808,34 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', evId);
         await window.fbHelpers.deleteDoc(docRef);
         if (selectedEventId === evId) setSelectedEventId(null);
+      };
+
+      // PHASE C: Staff Passcode Logic
+      const handleJoinStaff = async (ev) => {
+        if (!cloudUser || !window.fbDb || isGuest) {
+          showOpToast("You must be signed in to join event staff.", true);
+          return;
+        }
+        if (!ev.passcode) {
+          showOpToast("This event does not have a staff passcode configured.", true);
+          return;
+        }
+        const code = window.prompt("Enter the 5-character Staff Passcode provided by the Head TO:");
+        if (!code) return;
+        
+        if (code.trim().toUpperCase() === ev.passcode.toUpperCase()) {
+          const currentCoHosts = parseCoHosts(ev);
+          if (!currentCoHosts.includes(cloudUser.uid)) {
+            currentCoHosts.push(cloudUser.uid);
+            const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+            await window.fbHelpers.updateDoc(docRef, { coHosts: JSON.stringify(currentCoHosts), updatedAt: Date.now() });
+            showOpToast("Access Granted! You are now a Co-TO for this event.");
+          } else {
+            showOpToast("You are already on the staff roster for this event.");
+          }
+        } else {
+          showOpToast("Invalid Passcode. Access Denied.", true);
+        }
       };
 
       const handleRegisterPlayer = async (ev) => {
@@ -3094,18 +3116,19 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                 const regs = parseRegs(ev);
                 const activeCount = Math.min(regs.length, ev.maxPlayers || 16);
                 const benchCount = Math.max(0, regs.length - (ev.maxPlayers || 16));
-                const isOwner = cloudUser && (ev.hostUid === cloudUser.uid || adminUid === cloudUser.uid);
+                
+                // PHASE C: Include coHosts in the owner check
+                const parsedCoHosts = parseCoHosts(ev);
+                const isOwner = cloudUser && (ev.hostUid === cloudUser.uid || adminUid === cloudUser.uid || parsedCoHosts.includes(cloudUser.uid));
                 const isRegistered = cloudUser && regs.some(r => r.uid === cloudUser.uid);
 
                 return (
                   <div key={ev.id} onClick={() => setSelectedEventId(ev.id)} className="bg-black/50 border border-white/10 hover:border-sky-500/50 rounded-xl overflow-hidden shadow-lg flex flex-col cursor-pointer transition-all hover:-translate-y-1 group relative min-h-[220px]">
-                    {/* Cinematic Background Image (Phase A) */}
                     {ev.thumbnailUrl && (
                       <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-50 transition-opacity duration-500" style={{ backgroundImage: `url(${ev.thumbnailUrl})` }}></div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-[#0B0E14] pointer-events-none"></div>
 
-                    {/* Content */}
                     <div className="relative z-10 p-4 border-b border-white/10 flex justify-between items-start gap-2">
                       <div>
                         <div className="flex flex-wrap items-center gap-1.5 mb-2">
@@ -3130,7 +3153,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     <div className="relative z-10 p-4 flex-1 flex flex-col gap-3 text-xs text-slate-300">
                       <div className="flex items-center justify-between text-slate-400 border-b border-white/10 pb-3">
                         <span className="bg-black/50 px-2 py-1 rounded border border-white/10 shadow-inner">📅 <strong className="text-white">{ev.date}</strong></span>
-                        {/* PHASE B: Google Maps Link */}
                         <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="bg-black/50 hover:bg-sky-900/40 px-2 py-1 rounded border border-white/10 hover:border-sky-500/50 shadow-inner transition-colors">
                           📍 <strong className="text-sky-300 underline decoration-sky-500/50">{ev.location}</strong>
                         </a>
@@ -3163,7 +3185,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           ) : (
             /* VIEW 2: SELECTED EVENT LOBBY & DETAILS */
             (() => {
-              const isOwner = cloudUser && (selectedEvent.hostUid === cloudUser.uid || adminUid === cloudUser.uid);
+              const parsedCoHosts = parseCoHosts(selectedEvent);
+              const isOwner = cloudUser && (selectedEvent.hostUid === cloudUser.uid || adminUid === cloudUser.uid || parsedCoHosts.includes(cloudUser.uid));
+              
               let roundConfigs = [];
               try { roundConfigs = typeof selectedEvent.roundConfigs === 'string' ? JSON.parse(selectedEvent.roundConfigs) : (selectedEvent.roundConfigs || []); } catch(e) {}
               
@@ -3187,7 +3211,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                 <div className="space-y-6">
                   {/* EVENT BANNER & OWNER TOOLBAR */}
                   <div className={`relative rounded-xl border ${theme.border} ${theme.panelBg} shadow-xl overflow-hidden`}>
-                    {/* Cinematic Header Background (Phase A) */}
                     {selectedEvent.thumbnailUrl && (
                       <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url(${selectedEvent.thumbnailUrl})` }}></div>
                     )}
@@ -3203,22 +3226,34 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                             <span className="text-[10px] uppercase font-bold tracking-widest bg-black/60 px-3 py-1 rounded shadow-inner border border-white/10 text-slate-300">
                               📅 {selectedEvent.date}
                             </span>
-                            {/* PHASE B: Google Maps Link */}
                             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.location)}`} target="_blank" rel="noopener noreferrer" className="text-[10px] uppercase font-bold tracking-widest bg-black/60 hover:bg-sky-900/60 px-3 py-1 rounded shadow-inner border border-white/10 hover:border-sky-500/50 text-sky-300 transition-colors">
                               📍 {selectedEvent.location}
                             </a>
                             <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded shadow-md border ${selectedEvent.listsRevealed ? 'bg-sky-950/80 text-sky-300 border-sky-500/40' : 'bg-slate-900 text-slate-400 border-white/10'}`}>
                               {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🔒 Lists Hidden (TO Only)'}
                             </span>
+                            
+                            {/* PHASE C: Show Passcode to TOs */}
+                            {isOwner && (
+                              <span className="text-[10px] uppercase font-bold tracking-widest bg-fuchsia-950/60 px-3 py-1 rounded shadow-inner border border-fuchsia-500/30 text-fuchsia-300">
+                                🔑 Staff Code: {selectedEvent.passcode || 'N/A'}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-4 mb-2">
                             <h3 className="text-3xl md:text-4xl font-orbitron font-black uppercase text-white tracking-wide drop-shadow-lg leading-tight">{selectedEvent.name}</h3>
                           </div>
                           <div className="flex flex-wrap items-center gap-4 mt-2">
-                            <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">
-                              Tournament Organizer: <span className="text-sky-400 bg-black/40 px-2 py-0.5 rounded border border-white/5">{selectedEvent.hostName}</span>
+                            <p className="text-xs uppercase tracking-widest text-slate-400 font-bold flex items-center">
+                              Tournament Organizer: <span className="text-sky-400 bg-black/40 px-2 py-0.5 rounded border border-white/5 ml-1">{selectedEvent.hostName}</span>
+                              
+                              {/* PHASE C: Join Staff Button for non-owners */}
+                              {!isOwner && cloudUser && !isGuest && selectedEvent.passcode && (
+                                <button onClick={() => handleJoinStaff(selectedEvent)} className="text-[9px] uppercase font-bold tracking-widest bg-black/40 hover:bg-white/10 px-2 py-0.5 rounded border border-white/10 text-slate-400 hover:text-white transition-colors ml-2 shadow-sm">
+                                  🔑 Join Staff
+                                </button>
+                              )}
                             </p>
-                            {/* PHASE B: Copy Invite Link Button */}
                             <button onClick={() => handleCopyInvite(selectedEvent.id)} className="text-[10px] uppercase font-bold tracking-widest bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded shadow-md border border-slate-600 text-white transition-colors">
                               🔗 Copy Invite Link
                             </button>
@@ -3275,7 +3310,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                         </div>
                       </div>
 
-                      {/* Briefing and PDF Download (Phase A) */}
+                      {/* Briefing and PDF Download */}
                       {(selectedEvent.description || selectedEvent.playerPackUrl) && (
                         <div className="bg-black/50 border border-white/10 p-5 rounded-lg shadow-inner">
                           {selectedEvent.description && (
