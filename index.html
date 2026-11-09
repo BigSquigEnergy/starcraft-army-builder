@@ -2540,6 +2540,8 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [playerPackFile, setPlayerPackFile] = useState(null);
       const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
+      const [timeLeft, setTimeLeft] = useState("");
+
       const locationInputRef = React.useRef(null);
       const placePickerRef = React.useRef(null);
 
@@ -2556,11 +2558,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       }, []);
-
-      const handleCopyInvite = (id) => {
-        const url = `${window.location.origin}${window.location.pathname}?event=${id}`;
-        navigator.clipboard.writeText(url).then(() => showOpToast("Invite Link Copied to Clipboard!"));
-      };
 
       const uniqueMissions = useMemo(() => [...new Set(MISSION_CARDS.map(m => m.name))], []);
 
@@ -2649,6 +2646,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             const pName = e.place.displayName ? e.place.displayName.text : "";
             const addr = e.place.formattedAddress || "";
             const finalLocation = pName && !addr.includes(pName) ? `${pName}, ${addr}` : addr;
+            
+            // Force the visual input box to show the beautiful formatted address
+            picker.inputValue = finalLocation;
             setFormData(prev => ({ ...prev, location: finalLocation }));
           });
 
@@ -2662,7 +2662,29 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (!isModalOpen) placePickerRef.current = null;
       }, [isModalOpen, formData.location]);
 
-      // PHASE C: Parsing Helpers
+      const selectedEvent = events.find(e => e.id === selectedEventId);
+
+      // TO QoL: Match Timer Ticker
+      useEffect(() => {
+        if (!selectedEvent || !selectedEvent.roundEndTime) {
+           setTimeLeft("");
+           return;
+        }
+        const interval = setInterval(() => {
+           const diff = selectedEvent.roundEndTime - Date.now();
+           if (diff <= 0) {
+              setTimeLeft("00:00 (TIME UP)");
+              clearInterval(interval);
+           } else {
+              const h = Math.floor(diff / 3600000);
+              const m = Math.floor((diff % 3600000) / 60000);
+              const s = Math.floor((diff % 60000) / 1000);
+              setTimeLeft(`${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+           }
+        }, 1000);
+        return () => clearInterval(interval);
+      }, [selectedEvent?.roundEndTime]);
+
       const parseRegs = (ev) => {
         if (!ev || !ev.registrations) return [];
         try { return typeof ev.registrations === 'string' ? JSON.parse(ev.registrations) : (ev.registrations || []); } catch (e) { return []; }
@@ -2678,16 +2700,40 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         try { return typeof ev.coHosts === 'string' ? JSON.parse(ev.coHosts) : (ev.coHosts || []); } catch (e) { return []; }
       };
 
+      const parseSlots = (providesStr) => {
+        const slots = { Hero: 0, Core: 0, Elite: 0, Support: 0, Summoned: 999 };
+        if (!providesStr) return slots;
+        const matchHero = providesStr.match(/(\d+)x Hero/i); if (matchHero) slots.Hero = parseInt(matchHero[1], 10);
+        const matchCore = providesStr.match(/(\d+)x Core/i); if (matchCore) slots.Core = parseInt(matchCore[1], 10);
+        const matchElite = providesStr.match(/(\d+)x Elite/i); if (matchElite) slots.Elite = parseInt(matchElite[1], 10);
+        const matchSupport = providesStr.match(/(\d+)x Support/i); if (matchSupport) slots.Support = parseInt(matchSupport[1], 10);
+        return slots;
+      };
+
       const getRosterMetrics = (cloudRoster) => {
         let units = []; let cards = [];
         try { units = typeof cloudRoster.roster === 'string' ? JSON.parse(cloudRoster.roster) : (cloudRoster.roster || []); } catch(e) {}
         try { cards = typeof cloudRoster.tacticalCards === 'string' ? JSON.parse(cloudRoster.tacticalCards) : (cloudRoster.tacticalCards || []); } catch(e) {}
+        
         const minerals = units.reduce((s, u) => s + (u.minerals || 0), 0);
         const vespene = cards.reduce((s, c) => s + (c.vespene || 0), 0);
         const supply = units.reduce((s, u) => s + (u.supply || 0), 0);
         const factionCard = cards.find(c => c.type === "Faction Card");
         const subFaction = factionCard ? factionCard.subFaction : (cloudRoster.faction === "Protoss" ? "Daelaam" : "Generic");
-        return { units, cards, minerals, vespene, supply, subFaction };
+
+        // AUTOMATED VALIDATION: Calculate Slot Legality
+        const grantedSlots = { Hero: 0, Core: 0, Elite: 0, Support: 0, Summoned: 999 };
+        cards.forEach(c => {
+           const p = parseSlots(c.provides);
+           grantedSlots.Hero += p.Hero; grantedSlots.Core += p.Core;
+           grantedSlots.Elite += p.Elite; grantedSlots.Support += p.Support;
+        });
+        const usedSlots = { Hero: 0, Core: 0, Elite: 0, Support: 0, Summoned: 0 };
+        units.forEach(u => { if (usedSlots[u.slot] !== undefined) usedSlots[u.slot] += (u.supply || 0); });
+        
+        const hasSlotError = !factionCard || ['Hero', 'Core', 'Elite', 'Support'].some(s => usedSlots[s] > grantedSlots[s]);
+
+        return { units, cards, minerals, vespene, supply, subFaction, hasSlotError };
       };
 
       const handleScaleChange = (newScale) => {
@@ -2763,8 +2809,11 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             finalPackUrl = await packSnap.ref.getDownloadURL();
           }
 
+          // Grab the live text straight from the Google component right before saving
+          const finalLocationText = placePickerRef.current ? placePickerRef.current.inputValue : formData.location;
+
           const payload = {
-            name: formData.name.trim(), date: formData.date, location: formData.location.trim() || "TBA", description: formData.description.trim(),
+            name: formData.name.trim(), date: formData.date, location: finalLocationText.trim() || "TBA", description: formData.description.trim(),
             status: formData.status, scale: formData.scale, customMinerals: Number(formData.customMinerals) || 0, customVespene: Number(formData.customVespene) || 0,
             maxPlayers: Math.max(2, Number(formData.maxPlayers) || 2), benchSize: Math.max(0, Number(formData.benchSize) || 0), roundsCount: Math.max(1, Number(formData.roundsCount) || 1),
             listsRevealed: Boolean(formData.listsRevealed), listsLocked: Boolean(formData.listsLocked), roundConfigs: JSON.stringify(formData.roundConfigs), 
@@ -2781,7 +2830,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
             payload.createdAt = Date.now(); 
             payload.registrations = JSON.stringify([]); 
             payload.roundsData = JSON.stringify([]);
-            // PHASE C: Generate a random 5-character alphanumeric passcode and empty staff array on creation
             payload.passcode = Math.random().toString(36).substring(2, 7).toUpperCase();
             payload.coHosts = JSON.stringify([]);
 
@@ -2802,6 +2850,18 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (toastMsg) showOpToast(toastMsg);
       };
 
+      const handleSetTimer = async (ev) => {
+        const mins = window.prompt("Enter round time in minutes (or type 0 to clear timer):", "90");
+        if (mins === null) return;
+        const minutes = parseInt(mins, 10);
+        let newEndTime = null;
+        if (minutes > 0) newEndTime = Date.now() + (minutes * 60000);
+        
+        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
+        await window.fbHelpers.updateDoc(docRef, { roundEndTime: newEndTime, updatedAt: Date.now() });
+        showOpToast(minutes > 0 ? `Global Timer started for ${minutes} minutes!` : "Global Timer cleared.");
+      };
+
       const handleDeleteEvent = async (evId) => {
         if (!cloudUser || !window.fbDb) return;
         if (!window.confirm("Are you sure you want to permanently delete this event?")) return;
@@ -2810,7 +2870,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         if (selectedEventId === evId) setSelectedEventId(null);
       };
 
-      // PHASE C: Staff Passcode Logic
       const handleJoinStaff = async (ev) => {
         if (!cloudUser || !window.fbDb || isGuest) {
           showOpToast("You must be signed in to join event staff.", true);
@@ -2894,10 +2953,17 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         const metrics = getRosterMetrics(chosenRoster);
         const overMin = metrics.minerals > (ev.customMinerals || 2000);
         const overVesp = metrics.vespene > (ev.customVespene || 200);
+        const invalidSlots = metrics.hasSlotError;
 
-        if (overMin || overVesp) {
-          const confirmOver = window.confirm(`⚠️ Warning: "${chosenRoster.name}" (${metrics.minerals}M / ${metrics.vespene}G) exceeds this event's limits (${ev.customMinerals}M / ${ev.customVespene}G).\n\nSubmit it anyway?`);
-          if (!confirmOver) return;
+        // AUTOMATED VALIDATION BLOCK
+        if (overMin || overVesp || invalidSlots) {
+          let errs = [];
+          if (overMin) errs.push(`Over Minerals Limit (${metrics.minerals} / ${ev.customMinerals || 2000})`);
+          if (overVesp) errs.push(`Over Vespene Limit (${metrics.vespene} / ${ev.customVespene || 200})`);
+          if (invalidSlots) errs.push(`Invalid Faction Slots or Missing Faction Card`);
+          
+          alert(`⚠️ LIST REJECTED ⚠️\n\n"${chosenRoster.name}" is an illegal tournament roster. It failed the following structural checks:\n\n- ${errs.join("\n- ")}\n\nPlease correct this list in the Army Builder before submitting.`);
+          return;
         }
 
         const regs = parseRegs(ev);
@@ -2911,7 +2977,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         });
         const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events', ev.id);
         await window.fbHelpers.updateDoc(docRef, { registrations: JSON.stringify(updatedRegs), updatedAt: Date.now() });
-        showOpToast(`Army List "${chosenRoster.name}" locked in!`);
+        showOpToast(`Army List "${chosenRoster.name}" legally locked in!`);
       };
 
       const copyInspectedListText = (reg) => {
@@ -3014,6 +3080,38 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         showOpToast(`Round ${roundNum} Pairings Generated!`);
       };
 
+      const handlePrintPairings = (roundObj) => {
+        const printWindow = window.open('', '_blank');
+        let html = `
+          <html><head><title>Round ${roundObj.round} Pairings</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #000; }
+            h1 { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; text-transform: uppercase; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+            th, td { border: 1px solid #000; padding: 12px; text-align: center; }
+            th { background-color: #f0f0f0; text-transform: uppercase; }
+            .vs { font-weight: bold; color: #666; font-size: 12px; }
+            .score-box { display: inline-block; width: 40px; border-bottom: 1px solid #000; color: transparent; }
+          </style>
+          </head><body>
+          <h1>Tactical Event - Round ${roundObj.round} Pairings</h1>
+          <table><tr><th>Table #</th><th>Player 1 (Score)</th><th>VS</th><th>Player 2 (Score)</th></tr>
+        `;
+        roundObj.matches.forEach((m, idx) => {
+          html += `<tr>
+            <td style="font-weight:bold; font-size:18px;">${idx + 1}</td>
+            <td><strong>${m.p1Name}</strong><br/>(${m.p1Faction})<br/><br/>VP: <span class="score-box">__</span></td>
+            <td class="vs">VS</td>
+            <td><strong>${m.p2Name}</strong><br/>(${m.p2Faction})<br/><br/>VP: <span class="score-box">__</span></td>
+          </tr>`;
+        });
+        html += `</table></body></html>`;
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => { printWindow.print(); }, 250);
+      };
+
       const openScoreModal = (roundNum, matchIndex, matchData) => {
         setScoreModalMatch({ roundNum, matchIndex });
         setScoreForm({
@@ -3055,7 +3153,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
         return "bg-slate-800 text-slate-300 border-slate-600";
       };
 
-      const selectedEvent = events.find(e => e.id === selectedEventId);
       const filteredEvents = events.filter(e => statusFilter === "All" || e.status === statusFilter);
 
       return (
@@ -3117,7 +3214,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                 const activeCount = Math.min(regs.length, ev.maxPlayers || 16);
                 const benchCount = Math.max(0, regs.length - (ev.maxPlayers || 16));
                 
-                // PHASE C: Include coHosts in the owner check
                 const parsedCoHosts = parseCoHosts(ev);
                 const isOwner = cloudUser && (ev.hostUid === cloudUser.uid || adminUid === cloudUser.uid || parsedCoHosts.includes(cloudUser.uid));
                 const isRegistered = cloudUser && regs.some(r => r.uid === cloudUser.uid);
@@ -3233,11 +3329,18 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                               {selectedEvent.listsRevealed ? '👁️ Lists Public' : '🔒 Lists Hidden (TO Only)'}
                             </span>
                             
-                            {/* PHASE C: Show Passcode to TOs */}
                             {isOwner && (
                               <span className="text-[10px] uppercase font-bold tracking-widest bg-fuchsia-950/60 px-3 py-1 rounded shadow-inner border border-fuchsia-500/30 text-fuchsia-300">
                                 🔑 Staff Code: {selectedEvent.passcode || 'N/A'}
                               </span>
+                            )}
+
+                            {/* TO QoL: Global Clock Display */}
+                            {selectedEvent.roundEndTime && (
+                              <div className={`mt-3 lg:mt-0 lg:ml-2 inline-flex items-center gap-2 px-3 py-1 rounded border shadow-lg ${timeLeft.includes('TIME UP') ? 'bg-rose-950/80 border-rose-500 text-rose-400 animate-pulse' : 'bg-black/80 border-sky-500/50 text-sky-400'}`}>
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Timer:</span>
+                                <span className="font-orbitron font-black text-sm tracking-widest">{timeLeft}</span>
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center gap-4 mb-2">
@@ -3247,7 +3350,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                             <p className="text-xs uppercase tracking-widest text-slate-400 font-bold flex items-center">
                               Tournament Organizer: <span className="text-sky-400 bg-black/40 px-2 py-0.5 rounded border border-white/5 ml-1">{selectedEvent.hostName}</span>
                               
-                              {/* PHASE C: Join Staff Button for non-owners */}
                               {!isOwner && cloudUser && !isGuest && selectedEvent.passcode && (
                                 <button onClick={() => handleJoinStaff(selectedEvent)} className="text-[9px] uppercase font-bold tracking-widest bg-black/40 hover:bg-white/10 px-2 py-0.5 rounded border border-white/10 text-slate-400 hover:text-white transition-colors ml-2 shadow-sm">
                                   🔑 Join Staff
@@ -3276,6 +3378,12 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                             <button onClick={() => handleQuickFieldUpdate(selectedEvent, { listsLocked: !selectedEvent.listsLocked }, !selectedEvent.listsLocked ? "List submissions LOCKED." : "List submissions UNLOCKED.")} className={`px-3 py-2 rounded border text-[10px] font-bold uppercase tracking-wider transition-colors ${selectedEvent.listsLocked ? 'bg-amber-950/70 text-amber-300 border-amber-500/40 hover:bg-amber-900' : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-slate-700'}`}>
                               {selectedEvent.listsLocked ? '🔒 Lists Locked' : '🔓 Lock Lists'}
                             </button>
+                            
+                            {/* TO QoL: Global Match Timer Trigger */}
+                            <button onClick={() => handleSetTimer(selectedEvent)} className="px-3 py-2 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider shadow-md">
+                              ⏱️ Timer
+                            </button>
+
                             <button onClick={() => openEditModal(selectedEvent)} className="px-3 py-2 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 border border-sky-500/40 text-[10px] font-bold uppercase tracking-wider shadow-md">
                               ✏️ Edit
                             </button>
@@ -3369,9 +3477,9 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                                   <option value="">-- Select Saved Cloud Roster --</option>
                                   {myCloudRosters.map(r => {
                                     const m = getRosterMetrics(r);
-                                    const valid = m.minerals <= (selectedEvent.customMinerals || 2000) && m.vespene <= (selectedEvent.customVespene || 200);
+                                    const valid = m.minerals <= (selectedEvent.customMinerals || 2000) && m.vespene <= (selectedEvent.customVespene || 200) && !m.hasSlotError;
                                     return (
-                                      <option key={r.id} value={r.id}>{r.name} ({r.faction} - {m.minerals}M / {m.vespene}G) {valid ? '✓' : '⚠️ Over Limit'}</option>
+                                      <option key={r.id} value={r.id}>{r.name} ({r.faction} - {m.minerals}M / {m.vespene}G) {valid ? '✓' : '⚠️ Illegal'}</option>
                                     );
                                   })}
                                 </select>
@@ -3518,11 +3626,19 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                                   <h4 className="font-orbitron font-black text-lg uppercase text-amber-400 flex items-center gap-2">Round {rc.round} Pairings</h4>
                                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1 block bg-black/40 px-2 py-0.5 rounded border border-white/5 w-fit">Mission: {rc.mission} | Map: {rc.map}</span>
                                 </div>
-                                {isOwner && (
-                                  <button onClick={() => handleGeneratePairings(selectedEvent, rc.round)} className="px-4 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white font-orbitron font-bold text-[10px] uppercase tracking-widest shadow-lg whitespace-nowrap">
-                                    {hasPairings ? "Regenerate Pairings" : "Generate Pairings"}
-                                  </button>
-                                )}
+                                <div className="flex gap-2">
+                                  {/* TO QoL: Print Pairings Trigger */}
+                                  {hasPairings && (
+                                    <button onClick={() => handlePrintPairings(roundObj)} className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-white font-orbitron font-bold text-[10px] uppercase tracking-widest shadow-lg border border-slate-600">
+                                      🖨️ Print
+                                    </button>
+                                  )}
+                                  {isOwner && (
+                                    <button onClick={() => handleGeneratePairings(selectedEvent, rc.round)} className="px-4 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white font-orbitron font-bold text-[10px] uppercase tracking-widest shadow-lg whitespace-nowrap">
+                                      {hasPairings ? "Regenerate Pairings" : "Generate Pairings"}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               
                               {!hasPairings ? (
@@ -3814,7 +3930,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </div>
                   </div>
                   
-                  {/* PHASE A: MEDIA UPLOADS */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/40 border border-white/10 p-4 rounded-lg">
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Event Thumbnail (Image)</label>
@@ -3828,7 +3943,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </div>
                   </div>
 
-                  {/* SCALE & LIMITS */}
                   <div className="bg-black/40 border border-white/10 p-4 rounded-lg space-y-4">
                     <h4 className="font-orbitron font-bold text-xs uppercase text-sky-400 tracking-wider">Engagement Scale & Roster Limits</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3866,7 +3980,6 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </div>
                   </div>
 
-                  {/* DYNAMIC ROUND MISSIONS & MAPS */}
                   <div className="bg-black/40 border border-white/10 p-4 rounded-lg space-y-3">
                     <h4 className="font-orbitron font-bold text-xs uppercase text-amber-400 tracking-wider">Round Missions & Deployment Maps</h4>
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
