@@ -1414,21 +1414,38 @@ const MissionsView = ({ theme }) => {
         await window.fbHelpers.deleteDoc(docRef);
       };
 
+      const handleInlineUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !window.fbStorage) return;
+        
+        setIsInlineUploading(true);
+        try {
+            const storageRef = window.fbStorage.ref().child(`op_media/inline/${Date.now()}_${file.name}`);
+            const snapshot = await storageRef.put(file);
+            const url = await snapshot.ref.getDownloadURL();
+            setFormData(prev => ({ ...prev, description: (prev.description || "") + `\n[IMG]${url}[/IMG]\n` }));
+        } catch (err) {
+            console.error(err);
+            alert("Upload failed! Make sure Storage is enabled.");
+        }
+        setIsInlineUploading(false);
+        e.target.value = ""; 
+      };
+
       const renderContent = (text) => {
         if (!text) return null;
         
         let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         
         safeText = safeText
-          .replace(/\[IMG\](.*?)\[\/IMG\]/gi, '<img src="$1" alt="UNN Attached Media" class="w-full max-h-[500px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />')
-          .replace(/\[YOUTUBE\](.*?)\[\/YOUTUBE\]/gi, '<div class="my-4 aspect-video w-full rounded overflow-hidden border border-white/20 shadow-lg bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$1" frameborder="0" allowfullscreen></iframe></div>')
+          .replace(/\[IMG\]\s*(.*?)\s*\[\/IMG\]/gi, '<img src="$1" alt="UNN Attached Media" class="w-full max-h-[600px] object-contain rounded border border-white/20 my-4 shadow-lg bg-black/50" />')
+          .replace(/\[YOUTUBE\]\s*(.*?)\s*\[\/YOUTUBE\]/gi, '<div class="my-4 aspect-video w-full rounded overflow-hidden border border-white/20 shadow-lg bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$1" frameborder="0" allowfullscreen></iframe></div>')
           .replace(/\[QUOTE\]([\s\S]*?)\[\/QUOTE\]/gi, '<blockquote class="border-l-4 border-sky-500 pl-4 italic text-slate-300 my-4 bg-sky-900/20 py-3 pr-3 rounded-r leading-relaxed shadow-sm">$1</blockquote>')
           .replace(/\[B\]([\s\S]*?)\[\/B\]/gi, '<strong class="font-bold text-white">$1</strong>')
           .replace(/\[I\]([\s\S]*?)\[\/I\]/gi, '<em class="italic">$1</em>')
           .replace(/\[COLOR=(.*?)\]([\s\S]*?)\[\/COLOR\]/gi, '<span style="color: $1">$2</span>')
           .replace(/\[SIZE=(.*?)\]([\s\S]*?)\[\/SIZE\]/gi, '<span style="font-size: $1">$2</span>')
           .replace(/\n/g, '<br/>');
-
         return <div dangerouslySetInnerHTML={{ __html: safeText }} />;
       };
 
@@ -2571,6 +2588,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [thumbnailFile, setThumbnailFile] = useState(null);
       const [playerPackFile, setPlayerPackFile] = useState(null);
       const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+      const [isInlineUploading, setIsInlineUploading] = useState(false);
 
       const [timeLeft, setTimeLeft] = useState("");
 
@@ -4099,6 +4117,12 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                     </div>
 
                     <textarea ref={descriptionRef} rows="5" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Schedule, painting requirements, prize support, or house rules..." className="w-full bg-black/80 border border-white/20 rounded p-4 text-sm text-white outline-none focus:border-sky-500 resize-y leading-relaxed font-mono"></textarea>
+                    
+                    <div className="flex items-center justify-between border-t border-white/10 pt-3 mt-1">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden min-[350px]:inline">Attach Image to Body:</span>
+                        <input type="file" accept="image/*" onChange={handleInlineUpload} disabled={isInlineUploading} className="text-[10px] text-slate-300 outline-none file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-sky-900/50 file:text-sky-300 hover:file:bg-sky-800 cursor-pointer disabled:opacity-50 w-full sm:w-[220px]" />
+                        {isInlineUploading && <span className="text-sky-400 animate-pulse text-[10px] shrink-0 ml-2">Uploading...</span>}
+                    </div>
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-white/10 shrink-0">
