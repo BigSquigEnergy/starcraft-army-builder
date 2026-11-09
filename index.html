@@ -1536,7 +1536,7 @@ const MissionsView = ({ theme }) => {
                       <button type="button" onClick={() => insertTag('[B]', '[/B]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs font-bold border border-white/10 transition-colors text-white">B</button>
                       <button type="button" onClick={() => insertTag('[I]', '[/I]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs italic font-serif border border-white/10 transition-colors text-white">I</button>
                       <button type="button" onClick={() => insertTag('[QUOTE]', '[/QUOTE]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-slate-300">Quote</button>
-                      <button type="button" onClick={() => insertTag('[COLOR=sky]', '[/COLOR]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-sky-400 font-bold">Color</button>
+                      <button type="button" onClick={() => insertTag('[COLOR=#38bdf8]', '[/COLOR]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-sky-400 font-bold">Color</button>
                       <button type="button" onClick={() => insertTag('[SIZE=20px]', '[/SIZE]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-slate-300">Size</button>
                       <div className="w-px bg-white/20 mx-1"></div>
                       <button type="button" onClick={() => insertTag('[IMG]', '[/IMG]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-emerald-400 flex items-center gap-1"><span>🖼️</span> Img</button>
@@ -2570,6 +2570,39 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
 
       const locationInputRef = React.useRef(null);
       const placePickerRef = React.useRef(null);
+      const descriptionRef = React.useRef(null);
+
+      const insertDescTag = (openTag, closeTag) => {
+        const textarea = descriptionRef.current;
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = formData.description || "";
+        const selectedText = text.substring(start, end);
+        const newText = text.substring(0, start) + openTag + selectedText + closeTag + text.substring(end);
+        
+        setFormData(prev => ({ ...prev, description: newText }));
+        
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + openTag.length + selectedText.length, start + openTag.length + selectedText.length);
+        }, 0);
+      };
+
+      const renderContent = (text) => {
+        if (!text) return null;
+        let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        safeText = safeText
+          .replace(/\[IMG\](.*?)\[\/IMG\]/gi, '<img src="$1" alt="Attached Media" class="w-full max-h-[500px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />')
+          .replace(/\[YOUTUBE\](.*?)\[\/YOUTUBE\]/gi, '<div class="my-4 aspect-video w-full rounded overflow-hidden border border-white/20 shadow-lg bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$1" frameborder="0" allowfullscreen></iframe></div>')
+          .replace(/\[QUOTE\]([\s\S]*?)\[\/QUOTE\]/gi, '<blockquote class="border-l-4 border-sky-500 pl-4 italic text-slate-300 my-4 bg-sky-900/20 py-3 pr-3 rounded-r leading-relaxed shadow-sm">$1</blockquote>')
+          .replace(/\[B\]([\s\S]*?)\[\/B\]/gi, '<strong class="font-bold text-white">$1</strong>')
+          .replace(/\[I\]([\s\S]*?)\[\/I\]/gi, '<em class="italic">$1</em>')
+          .replace(/\[COLOR=(.*?)\]([\s\S]*?)\[\/COLOR\]/gi, '<span style="color: $1">$2</span>')
+          .replace(/\[SIZE=(.*?)\]([\s\S]*?)\[\/SIZE\]/gi, '<span style="font-size: $1">$2</span>')
+          .replace(/\n/g, '<br/>');
+        return <div dangerouslySetInnerHTML={{ __html: safeText }} />;
+      };
 
       const showOpToast = (msg, isError = false) => {
         setOpToast({ msg, isError });
@@ -3473,7 +3506,7 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                           {selectedEvent.description && (
                             <div className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
                               <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400 block mb-2">Commander Briefing & Rules Notes:</span>
-                              {selectedEvent.description}
+                              {renderContent(selectedEvent.description)}
                             </div>
                           )}
                           {selectedEvent.playerPackUrl && (
@@ -4048,8 +4081,23 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Event Briefing / Player Pack Notes</label>
-                    <textarea rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Schedule, painting requirements, prize support, or house rules..." className="w-full bg-black/70 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-y"></textarea>
+                    <div className="bg-black/40 border border-white/10 p-3 rounded-lg">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex justify-between items-center">
+                        <span>Event Briefing / Player Pack Notes <span className="text-sky-500 normal-case font-normal text-[10px] ml-2">(Highlight text and click to format)</span></span>
+                    </label>
+                    
+                    <div className="flex flex-wrap gap-2 mb-2 bg-black/80 p-2 rounded border border-white/20 shadow-inner">
+                      <button type="button" onClick={() => insertDescTag('[B]', '[/B]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs font-bold border border-white/10 transition-colors text-white">B</button>
+                      <button type="button" onClick={() => insertDescTag('[I]', '[/I]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs italic font-serif border border-white/10 transition-colors text-white">I</button>
+                      <button type="button" onClick={() => insertDescTag('[QUOTE]', '[/QUOTE]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-slate-300">Quote</button>
+                      <button type="button" onClick={() => insertDescTag('[COLOR=#38bdf8]', '[/COLOR]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-sky-400 font-bold">Color</button>
+                      <button type="button" onClick={() => insertDescTag('[SIZE=20px]', '[/SIZE]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-slate-300">Size</button>
+                      <div className="w-px bg-white/20 mx-1"></div>
+                      <button type="button" onClick={() => insertDescTag('[IMG]', '[/IMG]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-emerald-400 flex items-center gap-1"><span>🖼️</span> Img</button>
+                      <button type="button" onClick={() => insertDescTag('[YOUTUBE]', '[/YOUTUBE]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs border border-white/10 transition-colors text-rose-400 flex items-center gap-1"><span>▶️</span> YT</button>
+                    </div>
+
+                    <textarea ref={descriptionRef} rows="5" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Schedule, painting requirements, prize support, or house rules..." className="w-full bg-black/80 border border-white/20 rounded p-4 text-sm text-white outline-none focus:border-sky-500 resize-y leading-relaxed font-mono"></textarea>
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-white/10 shrink-0">
