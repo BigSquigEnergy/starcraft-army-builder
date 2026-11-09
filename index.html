@@ -1435,14 +1435,18 @@ const MissionsView = ({ theme }) => {
       const isAdmin = cloudUser && adminUid === cloudUser.uid;
       const canClaim = !isCheckingAdmin && !adminUid && cloudUser && !isGuest;
 
+      // REUSABLE CARD COMPONENT FOR BOTH FEED AND LIVE PREVIEW
       const PostCard = ({ post, isPreview = false }) => (
         <div className={`bg-black/40 border ${isPreview ? 'border-sky-500/50 shadow-[0_0_15px_rgba(14,165,233,0.2)]' : 'border-white/10'} rounded-xl overflow-hidden shadow-lg relative group flex flex-col`}>
           {isPreview && <div className="absolute top-0 right-0 bg-sky-600 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 rounded-bl-lg">Live Preview</div>}
+          
           {post.headerImage && (
-            <div className="w-full h-48 md:h-64 overflow-hidden border-b border-white/10 bg-black shrink-0">
-              <img src={post.headerImage} alt="Header" className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" />
+            // FIX: Removed rigid height (h-48 md:h-64) and added aspect-video (16:9) to prevent cropping
+            <div className="w-full aspect-video border-b border-white/10 bg-black shrink-0 relative flex items-center justify-center overflow-hidden">
+              <img src={post.headerImage} alt="Header" className="w-full h-full object-contain opacity-90 hover:opacity-100 transition-opacity" />
             </div>
           )}
+          
           <div className="bg-gradient-to-r from-slate-900 to-black p-4 md:p-5 border-b border-white/10 shrink-0">
             <div className="flex justify-between items-start gap-4 flex-wrap mb-2">
               <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide">{post.title || "UNTITLED TRANSMISSION"}</h3>
@@ -1454,13 +1458,15 @@ const MissionsView = ({ theme }) => {
               <span>By: <span className="text-slate-300">{post.author}</span></span>
             </div>
           </div>
+          
           <div className="p-4 md:p-5">
             <div className="text-sm md:text-base text-slate-300 leading-relaxed min-h-[100px]">
                 {post.content ? renderContent(post.content) : <span className="italic text-slate-600">Awaiting content input...</span>}
             </div>
           </div>
+          
           {isAdmin && !isPreview && (
-            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
               <button onClick={() => openEditPost(post)} className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3 py-1 rounded text-xs uppercase shadow-md border border-sky-400">
                 Edit
               </button>
