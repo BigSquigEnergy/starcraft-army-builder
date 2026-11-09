@@ -1250,13 +1250,16 @@ const MissionsView = ({ theme }) => {
       const [adminUid, setAdminUid] = useState(null);
       const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
       const [isComposing, setIsComposing] = useState(false);
+      const [editingPostId, setEditingPostId] = useState(null);
       
       const [newTitle, setNewTitle] = useState("");
       const [newCategory, setNewCategory] = useState("Game News");
       const [newContent, setNewContent] = useState("");
       
       const [headerFile, setHeaderFile] = useState(null);
+      const [existingHeaderUrl, setExistingHeaderUrl] = useState("");
       const [headerPreviewUrl, setHeaderPreviewUrl] = useState(null);
+      
       const [isUploading, setIsUploading] = useState(false);
       const [isInlineUploading, setIsInlineUploading] = useState(false);
 
@@ -1275,7 +1278,6 @@ const MissionsView = ({ theme }) => {
         
         setNewContent(newText);
         
-        // Keep the text box focused and put the cursor in the right spot
         setTimeout(() => {
           textarea.focus();
           textarea.setSelectionRange(start + openTag.length + selectedText.length, start + openTag.length + selectedText.length);
@@ -1304,16 +1306,15 @@ const MissionsView = ({ theme }) => {
         return () => { unsubAdmin(); unsubPosts(); };
       }, [cloudUser]);
 
-      // Cleanup preview URL to avoid memory leaks
       useEffect(() => {
         if (headerFile) {
             const url = URL.createObjectURL(headerFile);
             setHeaderPreviewUrl(url);
             return () => URL.revokeObjectURL(url);
         } else {
-            setHeaderPreviewUrl(null);
+            setHeaderPreviewUrl(existingHeaderUrl || null);
         }
-      }, [headerFile]);
+      }, [headerFile, existingHeaderUrl]);
 
       const claimAdmin = async () => {
         if (!cloudUser || !window.fbDb || isGuest) return;
@@ -1339,36 +1340,65 @@ const MissionsView = ({ theme }) => {
         e.target.value = ""; 
       };
 
-      const handleAddPost = async (e) => {
+      const openCreatePost = () => {
+        setEditingPostId(null);
+        setNewTitle("");
+        setNewCategory("Game News");
+        setNewContent("");
+        setHeaderFile(null);
+        setExistingHeaderUrl("");
+        setIsComposing(true);
+      };
+
+      const openEditPost = (post) => {
+        setEditingPostId(post.id);
+        setNewTitle(post.title || "");
+        setNewCategory(post.category || "Game News");
+        setNewContent(post.content || "");
+        setHeaderFile(null);
+        setExistingHeaderUrl(post.headerImage || "");
+        setIsComposing(true);
+      };
+
+      const handleSavePost = async (e) => {
         e.preventDefault();
         if (!newTitle.trim() || !newContent.trim() || !cloudUser || !window.fbDb || isGuest) return;
         
         setIsUploading(true);
-        let uploadedImgUrl = "";
+        let finalHeaderUrl = existingHeaderUrl;
 
         try {
             if (headerFile && window.fbStorage) {
                 const storageRef = window.fbStorage.ref().child(`unn_headers/${Date.now()}_${headerFile.name}`);
                 const snapshot = await storageRef.put(headerFile);
-                uploadedImgUrl = await snapshot.ref.getDownloadURL();
+                finalHeaderUrl = await snapshot.ref.getDownloadURL();
             }
 
-            const newPost = {
+            const payload = {
               title: newTitle.trim(),
               category: newCategory,
-              headerImage: uploadedImgUrl,
-              author: "UNN Command",
+              headerImage: finalHeaderUrl,
               content: newContent.trim(),
-              date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-              createdAt: Date.now()
+              updatedAt: Date.now()
             };
-            const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts');
-            await window.fbHelpers.addDoc(colRef, newPost);
+
+            if (editingPostId) {
+              const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts', editingPostId);
+              await window.fbHelpers.updateDoc(docRef, payload);
+            } else {
+              payload.author = "UNN Command";
+              payload.date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+              payload.createdAt = Date.now();
+              const colRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts');
+              await window.fbHelpers.addDoc(colRef, payload);
+            }
             
             // Reset and close composer
             setNewTitle("");
             setHeaderFile(null);
+            setExistingHeaderUrl("");
             setNewContent("");
+            setEditingPostId(null);
             setIsComposing(false);
         } catch (error) {
             console.error(error);
@@ -1387,23 +1417,16 @@ const MissionsView = ({ theme }) => {
       const renderContent = (text) => {
         if (!text) return null;
         
-        // 1. Escape basic HTML for safety
         let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         
-        // 2. Parse all custom tags into styled HTML
         safeText = safeText
-          // Media Blocks
           .replace(/\[IMG\](.*?)\[\/IMG\]/gi, '<img src="$1" alt="UNN Attached Media" class="w-full max-h-[500px] object-cover rounded border border-white/20 my-4 shadow-lg bg-black/50" />')
           .replace(/\[YOUTUBE\](.*?)\[\/YOUTUBE\]/gi, '<div class="my-4 aspect-video w-full rounded overflow-hidden border border-white/20 shadow-lg bg-black"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$1" frameborder="0" allowfullscreen></iframe></div>')
-          
-          // Formatting Blocks
           .replace(/\[QUOTE\]([\s\S]*?)\[\/QUOTE\]/gi, '<blockquote class="border-l-4 border-sky-500 pl-4 italic text-slate-300 my-4 bg-sky-900/20 py-3 pr-3 rounded-r leading-relaxed shadow-sm">$1</blockquote>')
           .replace(/\[B\]([\s\S]*?)\[\/B\]/gi, '<strong class="font-bold text-white">$1</strong>')
           .replace(/\[I\]([\s\S]*?)\[\/I\]/gi, '<em class="italic">$1</em>')
           .replace(/\[COLOR=(.*?)\]([\s\S]*?)\[\/COLOR\]/gi, '<span style="color: $1">$2</span>')
           .replace(/\[SIZE=(.*?)\]([\s\S]*?)\[\/SIZE\]/gi, '<span style="font-size: $1">$2</span>')
-          
-          // Line breaks
           .replace(/\n/g, '<br/>');
 
         return <div dangerouslySetInnerHTML={{ __html: safeText }} />;
@@ -1412,7 +1435,6 @@ const MissionsView = ({ theme }) => {
       const isAdmin = cloudUser && adminUid === cloudUser.uid;
       const canClaim = !isCheckingAdmin && !adminUid && cloudUser && !isGuest;
 
-      // REUSABLE CARD COMPONENT FOR BOTH FEED AND LIVE PREVIEW
       const PostCard = ({ post, isPreview = false }) => (
         <div className={`bg-black/40 border ${isPreview ? 'border-sky-500/50 shadow-[0_0_15px_rgba(14,165,233,0.2)]' : 'border-white/10'} rounded-xl overflow-hidden shadow-lg relative group flex flex-col`}>
           {isPreview && <div className="absolute top-0 right-0 bg-sky-600 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 rounded-bl-lg">Live Preview</div>}
@@ -1438,9 +1460,14 @@ const MissionsView = ({ theme }) => {
             </div>
           </div>
           {isAdmin && !isPreview && (
-            <button onClick={() => handleDeletePost(post.id)} className="absolute top-4 right-4 bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-              Delete
-            </button>
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => openEditPost(post)} className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3 py-1 rounded text-xs uppercase shadow-md border border-sky-400">
+                Edit
+              </button>
+              <button onClick={() => handleDeletePost(post.id)} className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded text-xs uppercase shadow-md border border-rose-400">
+                Delete
+              </button>
+            </div>
           )}
         </div>
       );
@@ -1458,12 +1485,12 @@ const MissionsView = ({ theme }) => {
                   </button>
                 )}
                 {isAdmin && !isComposing && (
-                  <button onClick={() => setIsComposing(true)} className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg flex items-center gap-2">
+                  <button onClick={openCreatePost} className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg flex items-center gap-2">
                     <span>+</span> New Transmission
                   </button>
                 )}
                 {isAdmin && isComposing && (
-                  <button onClick={() => setIsComposing(false)} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg">
+                  <button onClick={() => { setIsComposing(false); setEditingPostId(null); }} className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded text-sm uppercase tracking-widest shadow-lg">
                     Cancel & Return
                   </button>
                 )}
@@ -1471,10 +1498,11 @@ const MissionsView = ({ theme }) => {
           </div>
 
           {isComposing ? (
-            /* COMPOSER & PREVIEW LAYOUT */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                <form onSubmit={handleAddPost} className="bg-black/60 border border-white/10 p-5 rounded-xl shadow-xl space-y-5 sticky top-28">
-                  <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Transmission Console</h3>
+                <form onSubmit={handleSavePost} className="bg-black/60 border border-white/10 p-5 rounded-xl shadow-xl space-y-5 sticky top-28">
+                  <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">
+                    {editingPostId ? "Edit Transmission" : "Transmission Console"}
+                  </h3>
                   
                   <div>
                     <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Headline</label>
@@ -1494,6 +1522,7 @@ const MissionsView = ({ theme }) => {
                       <div>
                         <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Header Banner (Optional)</label>
                         <input id="headerFileInput" type="file" accept="image/*" onChange={e => setHeaderFile(e.target.files[0])} className="w-full bg-black/80 border border-white/20 rounded p-2 text-sm text-slate-300 outline-none focus:border-sky-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-700 file:text-white hover:file:bg-slate-600 cursor-pointer" />
+                        {existingHeaderUrl && !headerFile && <span className="text-[10px] text-emerald-400 mt-1 block">✓ Existing image active</span>}
                       </div>
                   </div>
                   
@@ -1503,7 +1532,6 @@ const MissionsView = ({ theme }) => {
                         {isInlineUploading && <span className="text-sky-400 animate-pulse text-[10px] shrink-0 ml-2">Uploading Media...</span>}
                     </label>
                     
-                    {/* FORMATTING TOOLBAR */}
                     <div className="flex flex-wrap gap-2 mb-2 bg-black/80 p-2 rounded border border-white/20 shadow-inner">
                       <button type="button" onClick={() => insertTag('[B]', '[/B]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs font-bold border border-white/10 transition-colors text-white">B</button>
                       <button type="button" onClick={() => insertTag('[I]', '[/I]')} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs italic font-serif border border-white/10 transition-colors text-white">I</button>
@@ -1524,11 +1552,10 @@ const MissionsView = ({ theme }) => {
                   </div>
 
                   <button type="submit" disabled={isUploading} className={`w-full py-4 rounded font-black font-orbitron text-sm md:text-base uppercase tracking-widest transition-all shadow-lg ${isUploading ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : theme.accent}`}>
-                    {isUploading ? 'Transmitting to Network...' : 'PUBLISH BROADCAST'}
+                    {isUploading ? 'Transmitting to Network...' : editingPostId ? 'SAVE CHANGES' : 'PUBLISH BROADCAST'}
                   </button>
                 </form>
                 
-                {/* LIVE PREVIEW COLUMN */}
                 <div className="space-y-4">
                    <h3 className="font-orbitron font-bold text-lg text-slate-400 uppercase border-b border-white/5 pb-2 pl-2">Display Output</h3>
                    <PostCard 
@@ -1545,7 +1572,6 @@ const MissionsView = ({ theme }) => {
                 </div>
             </div>
           ) : (
-            /* STANDARD FEED LAYOUT */
             <div className="max-w-4xl mx-auto space-y-8">
               {posts.length === 0 && (
                 <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
