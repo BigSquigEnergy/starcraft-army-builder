@@ -1194,6 +1194,17 @@ const MissionsView = ({ theme }) => {
           </div>
           
           <div className="space-y-6">
+            <div className="bg-black/40 border border-white/10 p-5 rounded-xl shadow-lg flex justify-between items-center flex-wrap gap-4">
+               <div>
+                  <h3 className="font-orbitron font-bold text-lg text-white uppercase tracking-widest">Official Rules Document</h3>
+                  <p className="text-xs text-slate-400 mt-1">Download the full StarCraft Tabletop Miniatures Game rulebook (PDF).</p>
+               </div>
+               {/* Replace '#' with your actual Google Drive sharing link once you upload the PDF */}
+               <a href="#" target="_blank" rel="noopener noreferrer" className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg transition-colors ${theme.accent}`}>
+                 📥 Download PDF
+               </a>
+            </div>
+
             {filteredRules.length === 0 ? (
               <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
                 No rules matched your search.
@@ -1292,24 +1303,6 @@ const MissionsView = ({ theme }) => {
         if (!cloudUser || !window.fbDb || isGuest) return;
         const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
         await window.fbHelpers.setDoc(adminRef, { uid: cloudUser.uid });
-      };
-
-      const handleInlineUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !window.fbStorage) return;
-        
-        setIsInlineUploading(true);
-        try {
-            const storageRef = window.fbStorage.ref().child(`unn_media/${Date.now()}_${file.name}`);
-            const snapshot = await storageRef.put(file);
-            const url = await snapshot.ref.getDownloadURL();
-            setNewContent(prev => prev + `\n[IMG]${url}[/IMG]\n`);
-        } catch (err) {
-            console.error(err);
-            alert("Upload failed! Make sure Storage is enabled.");
-        }
-        setIsInlineUploading(false);
-        e.target.value = ""; 
       };
 
       const openCreatePost = () => {
