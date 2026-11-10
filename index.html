@@ -1159,87 +1159,59 @@ const MissionsView = ({ theme }) => {
       );
     };
 
-    const RulesView = ({ theme, cloudUser }) => {
+    const RulesView = ({ theme }) => {
       const [searchQuery, setSearchQuery] = useState("");
-      const [customRules, setCustomRules] = useState([]);
-      const [newRuleTitle, setNewRuleTitle] = useState("");
-      const [newRuleDesc, setNewRuleDesc] = useState("");
 
-      useEffect(() => {
-        if (!cloudUser || !window.fbDb) return;
-        const loadRules = async () => {
-          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
-          try {
-            const snap = await window.fbHelpers.getDoc(docRef);
-            if (snap.exists() && snap.data().rulesArray) setCustomRules(JSON.parse(snap.data().rulesArray));
-          } catch(e) { console.warn("Rules load skipped"); }
-        };
-        loadRules();
-      }, [cloudUser]);
+      // Convert the RULES_DICTIONARY object into an array we can map over and sort it alphabetically
+      const rulebookData = useMemo(() => {
+        return Object.entries(RULES_DICTIONARY)
+          .map(([key, desc]) => ({ key, desc }))
+          .sort((a, b) => a.key.localeCompare(b.key));
+      }, []);
 
-      const saveCustomRules = async (rulesToSave) => {
-        if (!cloudUser || !window.fbDb) return;
-        const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'customRules');
-        try { await window.fbHelpers.setDoc(docRef, { rulesArray: JSON.stringify(rulesToSave) }); } catch(e) {}
-      };
-
-      const handleAddRule = (e) => {
-        e.preventDefault();
-        if (!newRuleTitle.trim() || !newRuleDesc.trim()) return;
-        const updatedRules = [...customRules, { title: newRuleTitle.trim(), desc: newRuleDesc.trim() }];
-        setCustomRules(updatedRules);
-        saveCustomRules(updatedRules);
-        setNewRuleTitle("");
-        setNewRuleDesc("");
-      };
-
-      const handleDeleteRule = (idx) => {
-        const updatedRules = customRules.filter((_, i) => i !== idx);
-        setCustomRules(updatedRules);
-        saveCustomRules(updatedRules);
-      };
-
-      const matchSearch = (text) => text.toLowerCase().includes(searchQuery.toLowerCase());
-      const filteredCustom = customRules.filter(r => matchSearch(r.title) || matchSearch(r.desc));
+      // Filter based on search input (checks both the rule name and the description)
+      const filteredRules = rulebookData.filter(r => 
+        r.key.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        r.desc.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
       return (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg">
-            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 ${theme.textPrimary}`}>Game Rules</h2>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg shadow-md">
+            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 flex items-center gap-3 ${theme.textPrimary}`}>
+              <span className="text-4xl">📖</span> Core Rulebook
+            </h2>
             <div className="flex-1 w-full max-w-md relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search rules..." className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner" />
+              <input 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                placeholder="Search rulebook..." 
+                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner" 
+              />
             </div>
           </div>
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className="xl:col-span-2 space-y-6">
-              <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">Core Rulebook Data Not Yet Assimilated.<br/><span className="text-xs text-slate-600">Awaiting transmission...</span></div>
-              {filteredCustom.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-black uppercase font-orbitron mb-4 border-b border-white/10 pb-2 text-sky-300">Custom Rules & Notes</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredCustom.map((r, idx) => (
-                      <div key={idx} className="bg-sky-950/20 border border-sky-900/50 p-4 rounded-lg shadow-md relative group">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-orbitron font-bold text-sm text-sky-300 uppercase">{r.title}</h3>
-                          <button onClick={() => handleDeleteRule(idx)} className="text-rose-500 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded bg-black/40 border border-rose-900/50 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
-                        </div>
-                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{r.desc}</p>
-                      </div>
-                    ))}
+          
+          <div className="space-y-6">
+            {filteredRules.length === 0 ? (
+              <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
+                No rules matched your search.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredRules.map((rule, idx) => (
+                  <div key={idx} className="bg-black/40 border border-white/10 p-5 rounded-xl shadow-lg hover:border-white/30 transition-colors flex flex-col group">
+                    <h3 className={`font-orbitron font-black text-lg uppercase mb-3 border-b border-white/10 pb-2 drop-shadow-md ${theme.textPrimary}`}>
+                      {rule.key}
+                    </h3>
+                    <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {rule.desc}
+                    </p>
                   </div>
-                </div>
-              )}
-            </div>
-            <div className="xl:col-span-1">
-              <form onSubmit={handleAddRule} className="bg-black/40 border border-white/10 p-5 rounded-lg shadow-md space-y-4 sticky top-24">
-                <h3 className="font-orbitron font-bold text-lg text-slate-300 uppercase border-b border-white/10 pb-2">Add Custom Rule</h3>
-                {!cloudUser && <p className="text-xs text-rose-400 mb-2">Cloud Sync is offline. Your rules will not be saved permanently.</p>}
-                <div><input type="text" value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)} placeholder="Rule Title (e.g., Cover Mechanics)" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500" /></div>
-                <div><textarea value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)} placeholder="Rule details..." rows="5" className="w-full bg-black/60 border border-white/20 rounded p-3 text-sm text-white outline-none focus:border-sky-500 resize-none"></textarea></div>
-                <button type="submit" disabled={!cloudUser} className={`w-full py-3 rounded font-bold font-orbitron text-sm uppercase tracking-widest ${cloudUser ? theme.accent : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Save Rule</button>
-              </form>
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );
