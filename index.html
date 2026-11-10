@@ -1159,27 +1159,74 @@ const MissionsView = ({ theme }) => {
       );
     };
 
+    // ==========================================
+    // OFFICIAL RULEBOOK DATA STRUCTURE
+    // Paste your game rules into these sections!
+    // ==========================================
+    const OFFICIAL_RULEBOOK = [
+      {
+        chapter: "1. Core Mechanics",
+        icon: "⚙️",
+        sections: [
+          { title: "1.1 Dice & Measuring", content: "The StarCraft Tabletop Miniatures Game uses standard six-sided dice (D6). All measurements are in inches (\"). You may pre-measure at any time during the game." },
+          { title: "1.2 Line of Sight (LoS)", content: "Line of Sight is determined by drawing a straight, unblocked cylinder from the attacking model's base to the target model's base. If terrain blocks this cylinder, the target is obscured." }
+        ]
+      },
+      {
+        chapter: "2. Turn Sequence",
+        icon: "⏱️",
+        sections: [
+          { title: "2.1 The Initiative Phase", content: "Players roll off to determine the First Player for the Round. Ties are re-rolled." },
+          { title: "2.2 The Movement Phase", content: "Players alternate activating Units to perform Move, Run, or Deploy actions." },
+          { title: "2.3 The Assault Phase", content: "Players alternate activating Units to perform Ranged Attacks or Special Abilities." },
+          { title: "2.4 The Combat Phase", content: "All Units engaged in close combat resolve their melee attacks simultaneously." }
+        ]
+      },
+      {
+        chapter: "3. Terrain & Environments",
+        icon: "🗺️",
+        sections: [
+          { title: "3.1 Cover Systems", content: "Units completely within Area Terrain gain the Cover status, adding +1 to their Armour Rolls against Ranged Attacks." },
+          { title: "3.2 Impassable Terrain", content: "Units may not move through or end their movement on Impassable Terrain unless they possess the Flying trait." }
+        ]
+      },
+      {
+        chapter: "4. Keyword Glossary",
+        icon: "📖",
+        // This automatically pulls all your existing Keywords into the final chapter!
+        sections: Object.entries(RULES_DICTIONARY).map(([key, desc]) => ({ title: key, content: desc }))
+      }
+    ];
+
+    // ==========================================
+    // RULEBOOK INTERFACE
+    // ==========================================
     const RulesView = ({ theme }) => {
+      const [activeChapter, setActiveChapter] = useState(OFFICIAL_RULEBOOK[0].chapter);
       const [searchQuery, setSearchQuery] = useState("");
 
-      // Convert the RULES_DICTIONARY object into an array we can map over and sort it alphabetically
-      const rulebookData = useMemo(() => {
-        return Object.entries(RULES_DICTIONARY)
-          .map(([key, desc]) => ({ key, desc }))
-          .sort((a, b) => a.key.localeCompare(b.key));
-      }, []);
+      const isSearching = searchQuery.trim().length > 0;
 
-      // Filter based on search input (checks both the rule name and the description)
-      const filteredRules = rulebookData.filter(r => 
-        r.key.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        r.desc.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      // Instantly scan the entire rulebook for matching text
+      const filteredResults = useMemo(() => {
+        if (!isSearching) return [];
+        const results = [];
+        OFFICIAL_RULEBOOK.forEach(chap => {
+          chap.sections.forEach(sec => {
+            if (sec.title.toLowerCase().includes(searchQuery.toLowerCase()) || sec.content.toLowerCase().includes(searchQuery.toLowerCase())) {
+              results.push({ chapter: chap.chapter, ...sec });
+            }
+          });
+        });
+        return results;
+      }, [searchQuery, isSearching]);
 
       return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b border-white/10 pb-4 sticky top-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg shadow-md">
-            <h2 className={`text-3xl font-black uppercase font-orbitron shrink-0 flex items-center gap-3 ${theme.textPrimary}`}>
-              <span className="text-4xl">📖</span> Core Rulebook
+        <div className="flex-1 overflow-hidden flex flex-col p-4 md:p-6 max-w-[1600px] mx-auto w-full pb-24 md:pb-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 border-b border-white/10 pb-4 shrink-0 bg-[#0B0E14]/90 backdrop-blur-md z-10 p-4 rounded-lg shadow-md">
+            <h2 className={`text-2xl md:text-3xl font-black uppercase font-orbitron shrink-0 flex items-center gap-3 ${theme.textPrimary}`}>
+              <span className="text-3xl md:text-4xl">📖</span> Official Rulebook
             </h2>
             <div className="flex-1 w-full max-w-md relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
@@ -1187,42 +1234,73 @@ const MissionsView = ({ theme }) => {
                 type="text" 
                 value={searchQuery} 
                 onChange={(e) => setSearchQuery(e.target.value)} 
-                placeholder="Search rulebook..." 
-                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner" 
+                placeholder="Search all rules, phases, and keywords..." 
+                className="w-full bg-black/60 border border-white/20 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-500 transition-colors shadow-inner" 
               />
             </div>
           </div>
           
-          <div className="space-y-6">
-            <div className="bg-black/40 border border-white/10 p-5 rounded-xl shadow-lg flex justify-between items-center flex-wrap gap-4">
-               <div>
-                  <h3 className="font-orbitron font-bold text-lg text-white uppercase tracking-widest">Official Rules Document</h3>
-                  <p className="text-xs text-slate-400 mt-1">Download the full StarCraft Tabletop Miniatures Game rulebook (PDF).</p>
-               </div>
-               {/* Replace '#' with your actual Google Drive sharing link once you upload the PDF */}
-               <a href="#" target="_blank" rel="noopener noreferrer" className={`px-6 py-2.5 rounded font-orbitron font-black text-xs uppercase tracking-widest shadow-lg transition-colors ${theme.accent}`}>
-                 📥 Download PDF
-               </a>
-            </div>
-
-            {filteredRules.length === 0 ? (
-              <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-lg text-slate-500 text-lg font-bold uppercase tracking-widest font-orbitron">
-                No rules matched your search.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRules.map((rule, idx) => (
-                  <div key={idx} className="bg-black/40 border border-white/10 p-5 rounded-xl shadow-lg hover:border-white/30 transition-colors flex flex-col group">
-                    <h3 className={`font-orbitron font-black text-lg uppercase mb-3 border-b border-white/10 pb-2 drop-shadow-md ${theme.textPrimary}`}>
-                      {rule.key}
-                    </h3>
-                    <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      {rule.desc}
-                    </p>
-                  </div>
+          <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
+            {/* Table of Contents Sidebar (Hidden when searching) */}
+            {!isSearching && (
+              <div className="w-full md:w-72 shrink-0 flex flex-col gap-2 overflow-y-auto pr-2 pb-4">
+                <h3 className="font-orbitron font-bold text-xs uppercase tracking-widest text-slate-500 mb-2 px-2">Table of Contents</h3>
+                {OFFICIAL_RULEBOOK.map((chap, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => setActiveChapter(chap.chapter)}
+                    className={`text-left px-4 py-4 rounded-xl border transition-all flex items-center gap-4 shadow-sm ${activeChapter === chap.chapter ? theme.accentSecondary + ' font-bold scale-[1.02]' : 'bg-black/40 border-white/10 text-slate-400 hover:text-white hover:border-white/30 hover:bg-white/5'}`}
+                  >
+                    <span className="text-2xl shrink-0">{chap.icon}</span>
+                    <span className="text-sm font-orbitron uppercase tracking-wide leading-tight">{chap.chapter.split('. ')[1] || chap.chapter}</span>
+                  </button>
                 ))}
               </div>
             )}
+
+            {/* Main Reading Area */}
+            <div className="flex-1 bg-black/40 border border-white/10 rounded-2xl shadow-xl overflow-y-auto p-6 md:p-10 relative">
+              {isSearching ? (
+                <div>
+                  <h3 className="font-orbitron font-black text-xl text-sky-400 uppercase mb-6 border-b border-white/10 pb-3 flex items-center gap-3">
+                    <span className="text-2xl">🔍</span> Search Results ({filteredResults.length})
+                  </h3>
+                  {filteredResults.length === 0 ? (
+                    <div className="text-center p-12 text-slate-500 font-orbitron uppercase tracking-widest">No rules matched your query.</div>
+                  ) : (
+                    <div className="space-y-6">
+                      {filteredResults.map((res, i) => (
+                        <div key={i} className="bg-black/60 border border-sky-900/50 p-5 rounded-xl shadow-inner hover:border-sky-500/50 transition-colors">
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-sky-500/80 mb-2">{res.chapter}</div>
+                          <h4 className="font-orbitron font-bold text-lg text-white uppercase mb-3 drop-shadow-sm">{res.title}</h4>
+                          <p className="text-sm md:text-base text-slate-300 leading-relaxed whitespace-pre-wrap">{res.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  {OFFICIAL_RULEBOOK.filter(c => c.chapter === activeChapter).map((chap, i) => (
+                    <div key={i}>
+                      <h3 className={`font-orbitron font-black text-3xl md:text-4xl uppercase mb-10 border-b border-white/10 pb-5 drop-shadow-md flex items-center gap-4 ${theme.textPrimary}`}>
+                        <span className="text-4xl md:text-5xl opacity-80">{chap.icon}</span> {chap.chapter}
+                      </h3>
+                      <div className="space-y-8">
+                        {chap.sections.map((sec, sIdx) => (
+                          <div key={sIdx} className="scroll-mt-6">
+                            <h4 className="font-orbitron font-bold text-xl md:text-2xl text-white uppercase mb-4 drop-shadow-sm">{sec.title}</h4>
+                            <div className="text-sm md:text-base text-slate-300 leading-relaxed whitespace-pre-wrap bg-black/60 p-5 md:p-6 rounded-xl border border-white/5 shadow-inner">
+                              {sec.content}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );
