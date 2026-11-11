@@ -1163,38 +1163,678 @@ const MissionsView = ({ theme }) => {
     // OFFICIAL RULEBOOK DATA STRUCTURE
     // Paste your game rules into these sections!
     // ==========================================
+   // ==========================================
+    // OFFICIAL RULEBOOK DATA STRUCTURE
+    // ==========================================
     const OFFICIAL_RULEBOOK = [
       {
-        chapter: "1. Core Mechanics",
-        icon: "⚙️",
+        chapter: "Part 1: Learn to Play",
+        icon: "🎓",
         sections: [
-          { title: "1.1 Dice & Measuring", content: "The StarCraft Tabletop Miniatures Game uses standard six-sided dice (D6). All measurements are in inches (\"). You may pre-measure at any time during the game." },
-          { title: "1.2 Line of Sight (LoS)", content: "Line of Sight is determined by drawing a straight, unblocked cylinder from the attacking model's base to the target model's base. If terrain blocks this cylinder, the target is obscured." }
+          { title: "Worked Example: Starting Rounds", content: `(Paste text here...)` },
+          { title: "Round 1: Movement Phase", content: `(Paste text here...)` },
+          { title: "Round 1: Assault Phase", content: `(Paste text here...)` },
+          { title: "Round 1: Combat Phase", content: `(Paste text here...)` },
+          { title: "Round 1: Scoring Phase", content: `(Paste text here...)` },
+          { title: "Round 2: Movement Phase", content: `(Paste text here...)` },
+          { title: "Round 2: Assault Phase", content: `(Paste text here...)` },
+          { title: "Round 2: Combat Phase", content: `(Paste text here...)` },
+          { title: "Round 2: Scoring Phase", content: `(Paste text here...)` }
         ]
       },
       {
-        chapter: "2. Turn Sequence",
-        icon: "⏱️",
+        chapter: "Part 2: Core Concepts",
+        icon: "🧠",
         sections: [
-          { title: "2.1 The Initiative Phase", content: "Players roll off to determine the First Player for the Round. Ties are re-rolled." },
-          { title: "2.2 The Movement Phase", content: "Players alternate activating Units to perform Move, Run, or Deploy actions." },
-          { title: "2.3 The Assault Phase", content: "Players alternate activating Units to perform Ranged Attacks or Special Abilities." },
-          { title: "2.4 The Combat Phase", content: "All Units engaged in close combat resolve their melee attacks simultaneously." }
+          { 
+            title: "2.1 Models", 
+            content: `Every Archon Studio miniature in a player's army is a model - a single entity (Marine, Zergling, Ultralisk) mounted on its own independent base. All rules apply to the model through its base. The physical miniature above the base is purely for aesthetic purposes.` 
+          },
+          { 
+            title: "2.2 Units", 
+            content: `An army is made up of Units. A Unit is one or more models acting together as a single formation.
+
+Composition: Each Unit Card specifies the number of models it contains. An infantry squad may have many soldiers; a vehicle may operate alone.
+
+Cohesion: Models within a Unit fight and move as a single entity. They are bound by the rules of Coherency (Part 4.4), representing the discipline and communication required to operate on a battlefield.
+
+Friendly & Enemy: A player's own Units are Friendly. The opponent's Units are Enemies. In team games, all teammates are Friendly to one another.` 
+          },
+          { 
+            title: "2.3 Bases", 
+            content: `Every model stands on a base, and that base is the single most important physical object in the game. It does not matter how a miniature is posed, whether a Zealot is mid-leap or a Hydralisk is rearing back to strike; the rules see only the base. Every measurement, every Line of Sight check, and every question about whether two models are touching or overlapping is resolved by looking at their bases, nothing else.
+
+Every model must be mounted on the correct base size as specified on its Unit Card. Using the wrong base size changes a model's physical footprint and directly affects gameplay, so consistency matters.
+
+No Overlap: Bases may never overlap. If a model cannot be set without its base overlapping another base or impassable terrain, it simply cannot go there.
+
+Scenic Freedom: Players are free to add scenic basing, custom conversions, player dramatic poses, and flight stands. The game encourages creativity - just know that, for rules purposes, the base and the Size Characteristic on the Unit Card are the only things that count. A Marine standing on a pile of rubble is no taller than one standing on a bare base. A Mutalisk on a towering flight stand has the same Size as one on a short peg.
+
+Flight Stands: If a model uses a flight stand, the bottom of the stand counts as the model's base for all measurements and positioning.
+
+Wobbly Model Syndrome: When a model cannot sit flat on the terrain, both players should agree on where the model would stand if the surface allowed it. Set the model as close to that spot as possible, or use a marker to indicate its actual position. The model is treated as occupying the agreed position for all purposes.` 
+          },
+          { 
+            title: "2.4 Tags", 
+            content: `Tags are keywords printed at the bottom of each Unit Card. They allow rules to target specific types of Units without repeating lengthy definitions.
+
+2.4.1 FACTION TAGS
+Faction Tags identify a Unit's allegiance.
+Race Tags: Terran, Zerg, Protoss.
+Sub-Faction Tags: Specific broods or organisations, e.g., Kerrigan's Swarm, Raynor's Raiders.
+Function: During Army Building, a player may include only Units and Tactical Cards that share Faction Tags with the chosen Faction Card.
+
+2.4.2 COMBAT TAGS
+Combat Tags identify a Unit's physical nature and tactical class.
+Type Tags: Armoured, Biological, Light, Mechanical, Psionic, Flying, and Ground.
+Targeting: Some weapons can fire only at specific tags (e.g., "Target: Flying").
+Surge: A weapon's Surge efficiency triggers only when the target has the Combat Tag listed in the weapon's Surge Type (Part 8.7.4).
+Bonuses: Abilities such as ANTI-EVADE (X) or PIERCE (X) often apply only against specific tags.
+Note: The Ground Combat Tag and the GROUND LEVEL elevation (Part 8.5.3) are distinct concepts.` 
+          },
+          { 
+            title: "2.5 Player Roles", 
+            content: `At any given moment, each player occupies one or more of the following roles. These terms appear throughout the rules and determine who makes decisions, who rolls dice, and who is affected by an ability.
+
+Active Player: The player whose turn it is to act. Some rules, particularly Reactions, refer to this to determine priority when both sides respond to the same event.
+
+Controlling Player: The player who commands a specific Unit, model, or Token. They make all decisions and roll all dice. Certain abilities (e.g., Neural Parasite) can transfer control; the new controller then acts in every respect as though the Unit were their own.
+
+Friendly and Enemy: Anything belonging to the controlling player or their teammates is Friendly. Anything belonging to an opponent is an enemy. In team games, all teammates are Friendly to one another.` 
+          },
+          { 
+            title: "2.6 Keywords and Rule Priority", 
+            content: `2.6.1 KEYWORDS
+Keywords are written in BOLD CAPS (e.g. SIDEARM, PIERCE, HIDDEN). A keyword always means the same thing, regardless of the Unit in which it appears. Full definitions are in Part 11: Keyword Glossary and Definitions.
+Keywords do not stack. Gaining the same keyword twice provides no extra benefit. If a keyword has a numeric value (e.g., PRECISION (1) and PRECISION (2)), use only the highest value.
+
+2.6.2 THE PRIORITY
+Specific Rules take precedence over General Rules. If text on a Unit Card, Mission Card, or Special Ability contradicts the Core Rules, the card or ability takes precedence.` 
+          },
+          { 
+            title: "2.7 Ability Types", 
+            content: `Every Special Ability falls into one of three categories. Understanding the difference is essential, as it determines when the ability can be used, whether it requires a conscious decision, and what happens if both players want to act at the same time. 
+
+2.7.1 ACTIVE ABILITIES
+Active Abilities are deliberate choices, a stim injection, a mode switch, a called shot. They require the Unit to be Activated, and must be triggered immediately before declaring an action or immediately after one fully resolves. A player cannot interrupt an action mid-flow to use one.
+A Unit in Reserves cannot use Active Abilities unless the ability explicitly states otherwise. Each named Active Ability may be used only once per Round by a specific Unit, unless it has the REPEATABLE keyword. Effects granted by Active Abilities expire at the End of the Current Round unless otherwise stated.
+
+2.7.2 PASSIVE ABILITIES
+Passive Abilities are always active. They represent innate traits, permanent equipment, or biological adaptations that require no decision to activate; they simply function as long as the Unit is on the battlefield. Like Active Abilities, Passive Abilities are inactive while the Unit is in Reserves, unless otherwise stated.
+
+2.7.3 REACTION ABILITIES
+Reaction Abilities are the battlefield's reflexes. They fire in response to a specific trigger, such as an incoming attack, an Enemy Charge, or a model being Destroyed, and allow a player to act outside the normal activation sequence. The catch is timing: a Reaction must be declared at the exact moment its trigger occurs. If the moment passes, the opportunity is gone.
+Each player may resolve only one Reaction per Activation. Each named Reaction Ability may be used only once per Round by a specific Unit. This limit applies across the entire Round (all Phases and all Activations). A single Unit cannot use the same-named Reaction more than once per Round, even on different triggers. Different Units may each use the same named Reaction once per Round.
+If both players want to react to the same trigger, the Active Player resolves their Reaction first.` 
+          }
         ]
       },
       {
-        chapter: "3. Terrain & Environments",
+        chapter: "Part 3: Dice and Rolling",
+        icon: "🎲",
+        sections: [
+          { 
+            title: "3.1 Dice", 
+            content: `The game uses standard six-sided dice (D6).
+D6: Roll one die. The result is the number shown.
+D3: Roll one D6 and halve the result, rounding up: 1-2=1, 3-4=2, 5-6=3
+Multiple Dice (2D6, 3D6): Roll the stated number of dice and add the results together.` 
+          },
+          { 
+            title: "3.2 Roll-Offs", 
+            content: `When a rule calls for a Roll-Off, both players roll 2D6. The higher total wins. Ties are re-rolled until a winner is determined.` 
+          },
+          { 
+            title: "3.3 Re-Rolls", 
+            content: `Some abilities grant the chance to re-roll, allowing a second attempt when the first result is unfavourable. Pick up the die and roll it again. The new result replaces the original, even if it is worse. Unless stated otherwise, a re-roll applies to a single die. If an ability specifies re-rolling multiple dice, follow its instructions.` 
+          },
+          { 
+            title: "3.4 Modifiers", 
+            content: `Modifiers adjust the Target Number of a roll. Apply all modifiers before rolling.
++X Modifier: Makes the roll easier, reducing the Target Number by X.
+-X Modifier: Makes the roll harder, increasing the Target Number by X.
+Modifiers from different named sources are cumulative unless otherwise stated.
+Ability text: "+1 to Armour" means the Armour Roll improves (Target Number decreases). "-1 to Hit" means hitting becomes harder (Target Number increases).
+A Target Number can never be modified below 2+ or above 6+.
+A Null Value (-) indicates that the capability does not exist. No modifier can grant a roll where a Null Value applies.` 
+          },
+          { 
+            title: "3.5 Fixed Additions", 
+            content: `If a rule says "D3+1" roll the die and add 1 to the result. This is not a modifier to a Target Number - it generates a value (e.g. 4 Damage instead of 3).` 
+          },
+          { 
+            title: "3.6 Automatic Results", 
+            content: `No amount of preparation guarantees a perfect outcome, and no situation is ever truly hopeless. The dice always leave room for the unexpected.
+Regardless of the final Target Number, a natural roll of 6 always succeeds, and a natural roll of 1 always fails. No modifier or ability can override these boundaries.` 
+          },
+          { 
+            title: "3.7 Tests", 
+            content: `Whenever the rules ask a player to roll against a number, an Armour Roll, a Hit Roll, or an Evade Check, that roll is a Test. Every Test follows the same logic: there is a Target Number, the player rolls, and the result either meets the threshold or it does not.
+Tests come in two flavours:
+Characteristic Tests use a value from the Unit's own profile, its Armour, its Evade, and its native resilience. When a squad of Marines takes fire and rolls their Armour Rolls, that is a Characteristic Test.
+Attribute Tests use a value from a Weapon Profile or Special Rule, such as a weapon's Hit characteristic. When those same Marines fire their C-14 Rifles and roll to hit, that is an Attribute Test.
+Not everything involving dice is a Test. Value Generation - a Charge Roll, a D3 Damage result - simply produces a number. The player adds the die result to the base value as instructed. There is no Target Number to beat.
+To resolve any Test: identify the base Target Number, apply all Modifiers to determine the final Target Number, and roll the die. If the result is equal to or exceeds the Target Number, the Test succeeds. If it falls short, the Test fails.` 
+          },
+          { 
+            title: "3.8 Cocked Dice", 
+            content: `If a die does not land flat on the playing surface, lodged against terrain, tilted on a base, or off the table entirely, the roll is invalid. Pick it up and roll it again. Players should agree before the game on what constitutes a cocked die. The simplest test: if the result isn't obvious at a glance, re-roll it.` 
+          }
+        ]
+      },
+      {
+        chapter: "Part 4: Measuring and Movement",
+        icon: "📏",
+        sections: [
+          { 
+            title: "4.1 Measuring Distances", 
+            content: `All distances are measured in inches (") using a tape measure or ruler.
+Players may measure any distance at any time, including before declaring an action, during an opponent's activation, and between Phases. There are no restrictions on pre-measuring. 
+Between Models: Measure from the nearest point of one model's base to the nearest point of the other model's base. For models on flight stands, the bottom of the stand is treated as the model's base.
+Ignore Overhang: Weapons, wings, limbs, and scenic elements extending beyond the base rim are ignored.
+Base-to-Base Contact: If two bases are physically touching, the distance between them is 0".
+Elevation: When calculating distances between models at different elevations, always measure horizontally from a top-down perspective. The vertical height difference should not be included in your measurements. This applies to Range, Engagement Range, and the ranges of abilities.` 
+          },
+          { 
+            title: "4.2 Within vs. Wholly Within", 
+            content: `WITHIN
+A model is Within a distance if any part of its base touches or crosses into that range. A Unit is Within a distance if at least one model's base touches or crosses into that range.
+
+WHOLLY WITHIN
+A model is Wholly Within a distance only if its entire base sits inside that range - no part of the base may extend beyond the edge. A Unit is Wholly Within only if every model's base in the Unit satisfies this condition.` 
+          },
+          { 
+            title: "4.3 The Leading Model", 
+            content: `The Leading Model is a temporary reference point used to execute a Unit's movement. Whenever a Unit resolves a Move, Deploy, Run, Charge, Disengage, or Close Ranks action, or any other action or ability that instructs the Unit to nominate a Leading Model.
+Move the Leading Model first, measuring its exact path. Then set the remaining models in valid Coherency around the Leading Model's new position. The Leading Model nomination ends once the action resolves.` 
+          },
+          { 
+            title: "4.4 Unit Coherency", 
+            content: `Coherency is checked at the end of any action that repositions models, including Move, Deploy, Charge, Disengage, Close Ranks, Run, PLACE, and SUMMON. At the end of such an action, all models in the Unit must be Wholly Within 3" of the Leading Model and able to trace a valid Coherency Link to it. If this condition is met, the Unit is In Coherency.
+
+A Coherency Link is a chain of imaginary lines drawn model-to-model through models of the same Unit. Links cannot pass through models from other Units, terrain, or gaps that the Leading Model itself could not move through. A link may pass through Enemy models that the Unit is currently Engaged with and ACCESS POINTS.
+
+If a model cannot reach a legal position Wholly Within 3" of the Leading Model while maintaining a valid Coherency Link, set the affected model as close as possible to the Leading Model. A Unit with one or more models set beyond 3" is Out of Coherency. Any model that cannot find a legal position maintaining the Coherency Link is immediately removed as a casualty.
+
+A Unit is Out of Coherency only if this condition was not met at the end of its last repositioning action. Casualties from any source never trigger a Coherency check and never cause a Unit to become Out of Coherency. Out of Coherency Units cannot control or contest Mission Markers.` 
+          },
+          { 
+            title: "4.5 Directly Towards & Directly Away", 
+            content: `Some abilities force a Unit to move DIRECTLY TOWARDS or DIRECTLY AWAY from another Unit.
+Draw an imaginary straight line from the centre of the acting model's base through the centre of the target model's base. The affected model follows this line. If terrain or another model blocks the path, the affected model bypasses it via the shortest possible route, then continues in the original direction.
+
+Multi-model Units: The Leading Model must be the one with the shortest route to the target. Move it first. Set the remaining models as close to the target (or as far, if moving away) as possible while maintaining Coherency.` 
+          },
+          { 
+            title: "4.6 Gap Clearance and Model Size", 
+            content: `A gap is any physical space between terrain pieces or models, through which a model's path of movement passes. The Leading Model can pass through gaps depending on the Unit's Size:
+Size 2 or lower: May pass through gaps at least 1" wide.
+Size 3 or larger: Requires a gap at least 3" wide.
+
+Regardless of clearance, a model cannot be set where its base doesn't physically fit. Clearance governs movement through a space, not stopping inside one. Openings in terrain pieces (archways, doorways) are treated as gaps for Gap Clearance, even if the surrounding terrain piece is Size 2 or larger.
+
+Flying Units ignore Gap Clearance during movement.` 
+          }
+        ]
+      },
+      {
+        chapter: "Part 5: Cards and Characteristics",
+        icon: "📇",
+        sections: [
+          { 
+            title: "5.1 Unit Cards", 
+            content: `Every Unit has a Unit Card that provides all the information needed to use it in a game. It includes:
+Speed: Split Values (e.g. 4"/7") - Use the second value only when the Unit is reduced to a single remaining model, or when the Unit started with a single model.
+Armour & Evade: Target Numbers to cancel hits.
+Hit Points (HP) & Shield: Damage a single model must sustain before removal.
+Size: Vertical height category.
+Supply Profile: Links remaining models to Current Supply Value.
+Weapon Profiles: Assigned to either the Assault Phase or Combat Phase.` 
+          },
+          { 
+            title: "5.2 Special Rules and Upgrades", 
+            content: `The reverse of each Unit Card lists optional Upgrades available during Army Building. 
+An entry showing "FOR [Weapon Name]" means the new weapon replaces the original entirely.
+A purchased upgrade applies to every model in the Unit unless it has the SPECIALIST keyword. Only one model in the Unit may carry each SPECIALIST upgrade.` 
+          },
+          { 
+            title: "5.3 Tactical Cards", 
+            content: `Tactical Cards are purchased with Vespene Gas during Army Building. They unlock additional Army Slots (Core, Elite, Support, Air, Hero) beyond those provided by the Faction Card. They also generate resources (CP, BM, or PE) when Exhausted to pay for abilities. If marked as Unique, only one copy may be included.` 
+          },
+          { 
+            title: "5.4 Faction Cards", 
+            content: `The Faction Card is the foundation of every army. It defines who you are, what doctrine you follow, and what forces you are permitted to bring to the battlefield. Every army must include exactly one Faction Card, selected during Army Building.` 
+          },
+          { 
+            title: "5.5 Mission Cards", 
+            content: `Mission Cards decide what the conflict is about, how long the battle will last, and what must be achieved to win. Chosen during the Draft, they list Mission Parameters, Scoring Conditions, Starting Supply, and Supply Escalation.` 
+          },
+          { 
+            title: "5.6 Deployment Cards", 
+            content: `Deployment Cards determine the war's geometry, entry points, restricted zones, and the ground that must be taken. They set the Battlefield Dimensions, Entry Edges, Zone of Influence (a restricted area extending 6" inward from Entry Edges), and Marker Coordinates.` 
+          }
+        ]
+      },
+        {
+        chapter: "Part 6: The Supply System",
+        icon: "📦",
+        sections: [
+          { 
+            title: "6.1 The Supply Profile", 
+            content: `Every Unit Card includes a Supply Profile in the top-right corner, linking the number of remaining models to a Current Supply Value. As casualties reduce the model count into a lower bracket, update the Current Supply Value immediately.
+
+EXAMPLE: A squad of 9 Marines has a Supply of 2. A squad of 6 Marines has a Supply of 1. When reduced to 3 models, their Supply drops to 0.` 
+          },
+          { 
+            title: "6.2 How Supply is Used", 
+            content: `DEPLOYMENT
+The Supply Pool starts at the value listed on the Mission Card and increases by the Supply Escalation value each Round. A player can only set a Unit in play from Reserves if the Unit's Current Supply Value is less than or equal to the Available Supply, which is the current Supply Pool value minus the total Supply of all Friendly Units already in play. At no point can the Total Current Supply of a player's Units on the battlefield exceed the Supply Pool. In the final Round, the Supply Pool is unlimited.
+
+MISSION MARKER CONTROL
+To determine control of a Mission Marker, each player calculates the Current Supply Value of all their eligible Units contesting that Marker, not the number of models. The player with the highest total controls the Marker. A Unit with Supply 0 can control a Marker if no Enemy Units are contesting it. Out of Coherency and Flying Units cannot Control Mission Markers.
+
+TACTICAL MASS
+A Unit that Disengages cannot perform Ranged Attack or Charge actions in the following Assault Phase. However, if the Disengaging Unit's Current Supply Value exceeds the Combined Supply of all Enemy Units it is Engaged with, this penalty is ignored.
+
+UNIT STARTING SUPPLY
+Some Mission Cards award Victory Points equal to the Enemy Supply destroyed in a Round. The Supply Value destroyed in that Round is added to the score during the Scoring Phase.` 
+          }
+        ]
+      },
+      {
+        chapter: "Part 7: The Battlefield",
         icon: "🗺️",
         sections: [
-          { title: "3.1 Cover Systems", content: "Units completely within Area Terrain gain the Cover status, adding +1 to their Armour Rolls against Ranged Attacks." },
-          { title: "3.2 Impassable Terrain", content: "Units may not move through or end their movement on Impassable Terrain unless they possess the Flying trait." }
+          { 
+            title: "7.1 Line of Sight", 
+            content: `All Line of Sight (LoS) checks are resolved from a 2D top-down perspective, looking directly down at the battlefield from above. Trace an imaginary straight line from any part of the acting model's base to any part of the target model's base.
+If the line does not pass through any Blocking Terrain (terrain with an Effective Size of 1 or greater), the target is Visible.
+If the line passes through Blocking Terrain, check the Cover rules (Part 7.1.1).
+
+7.1.1 COVER
+Full Cover: A terrain piece blocks LoS if its Effective Size is equal to or greater than the Effective Size of BOTH the attacker and the target.
+Direct Cover: If the LoS trace passes through a terrain piece, and either the attacker or the target is Within 1" of that terrain, LoS is blocked, provided the terrain piece's Effective Size is equal to or greater than the Effective Size of the model that is Within 1".
+Elevation Dead Zone: A model on HIGH GROUND (Size 3+) cannot see a model at GROUND LEVEL that is Within 1" of the base of the same terrain piece. Neither model can see the other.
+Close Quarters: If both models are Within 1" of the same terrain piece and Within 3" of each other, Direct Cover, Elevation and Dead Zone do not apply. Resolve Line of Sight normally.
+
+7.1.2 VERTICALITY AND EFFECTIVE SIZE
+When a model stands on top of a terrain piece (such as HIGH GROUND), its Effective Size is equal to the model Size plus the terrain Size. (e.g. A Size 2 Marine on Size 4 HIGH GROUND has an Effective Size of 6).
+
+7.1.3 HIGH GROUND COVER
+If all models of a Unit are standing on HIGH GROUND with any part of their bases, the Unit is eligible to make an Evade Roll against all Ranged Attacks originating from a lower elevation. Flying Units never benefit from HIGH GROUND Cover.
+
+7.1.4 FLYING UNITS AND COVER
+When checking Line of Sight to or from a Flying model, ignore the Full Cover rule. Direct Cover and the Elevation Dead Zone rules still apply. For Cover purposes, treat a Flying model's Effective Size as higher than the Effective Size of any terrain piece on the table.` 
+          },
+          { 
+            title: "7.2 Engagement and Engagement Range", 
+            content: `The Engagement Range extends 1" horizontally from any model's base. When two Enemy models are Within 1" of each other, they are Engaged - locked in close combat. Unless stated otherwise, a Unit cannot end any movement or be PLACED within the Engagement Range of any enemy model.
+
+7.2.1 ENGAGEMENT RESTRICTIONS
+Models are Engaged only when all of the following conditions are met:
+Combat Tags match: Ground models Engage only Ground models. Flying models cannot be Engaged by any model.
+Terrain does not block: Size 0-1 terrain allows Engagement. Size 2+ terrain prevents Engagement through it. Models on HIGH GROUND cannot Engage models at GROUND LEVEL. Models on MID GROUND can Engage models on HIGH GROUND or GROUND LEVEL only if both models are adjacent to the same ACCESS POINT connecting their respective elevations.` 
+          },
+          { 
+            title: "7.3 Markers and Tokens", 
+            content: `7.3.1 TOKENS
+Tokens represent tangible battlefield assets (Creep Tumors, Shades). Treat them as Terrain (Size 0) with their own base. Models may move through Tokens, but cannot end movement overlapping them unless specified.
+
+7.3.2 MARKERS
+Markers track status or game states and have no physical presence. They do not block LoS or Movement.
+Mission Markers: Numbered Markers (1-5) used for scoring.
+Activation Markers: Double-sided markers showing a Unit has completed its turn in Phase 1 (Movement) or Phase 2 (Assault).
+Faction Indicators: Show which player controls a Mission Marker.
+First Player Marker: Tracks which player has initiative.` 
+          },
+          { 
+            title: "7.4 Destroyed Units", 
+            content: `When the last model falls, the Unit is Destroyed. Every effect, ability, and condition currently on the Destroyed Unit immediately ends. Tokens created by the destroyed Unit are removed (unless they are STAY IN PLAY). Effects that the Destroyed Unit applied to other Units remain on those Units. A Destroyed Unit cannot return to play unless a specific rule states otherwise.` 
+          }
         ]
       },
       {
-        chapter: "4. Keyword Glossary",
+        chapter: "Part 8: The Game Sequence",
+        icon: "⏱️",
+        sections: [
+          { 
+            title: "8.1 Rounds and Phases", 
+            content: `A game lasts up to 5 Rounds. Each Round has four Phases resolved in strict order:
+1. The Movement Phase: Deploy, Move, Disengage, Hold
+2. The Assault Phase: Ranged Attack, Charge, Run, Hold
+3. The Combat Phase: Close Ranks, Close Combat Attack
+4. The Scoring & Cleanup Phase: Control Markers, Score VP, Cleanup` 
+          },
+          { 
+            title: "8.2 The Activation System", 
+            content: `During Phases 1, 2 and 3, players use Alternating Activation. The holder of the First Player Marker decides which player activates first each Phase. Players then alternate, each activating one Unit per turn. Each Activated Unit performs exactly one action from the list available in that Phase.
+
+8.2.1 PASSING AND INITIATIVE
+At any point during a turn, the Active Player may Pass instead of activating a Unit. A player must Pass if they have no eligible Units left. The first player to Pass in a Phase takes the First Player Marker for the next Phase. Once a player Passes, they cannot activate any further Units this Phase.
+
+8.2.2 DETERMINING THE FIRST PLAYER
+Players Roll-Off (Part 3.2). The winner assigns the First Player Marker to either player for Round 1.` 
+          },
+          { 
+            title: "8.3 Deployment and Reserves", 
+            content: `No Units begin on the battlefield. All Units included in the Army List start in Reserves. Bring them onto the battlefield during the Movement Phase as Supply allows.
+
+8.3.1 THE SUPPLY POOL
+Round 1: Supply Pool equals the Mission Card's starting Supply.
+Later Rounds: Supply Pool increases by the Supply Escalation value each Round.
+Final Round: In the last Round of every game, the Supply Pool becomes unlimited. All remaining Units in Reserves may be deployed without Supply restrictions.
+Hard Cap: Total Current Supply of on-table Units may never exceed the Supply Pool.
+
+8.3.2 AVAILABLE SUPPLY
+Available Supply equals the Current Supply Pool minus the Total Supply of Friendly Units on the Battlefield. A Unit can only be fielded if its Current Supply Value is less than or equal to the Available Supply.
+
+8.3.3 DEPLOYMENT RESTRICTIONS
+When a Unit arrives from Reserves, that Unit cannot end its arrival during that Activation inside the opponent's Zone of Influence. Additionally, a Unit can never end a Deploy action Out of Coherency.` 
+          },
+          { 
+            title: "8.4 Phase 1: The Movement Phase", 
+            content: `At the start of the Movement Phase:
+Resolve all "Start of the Round" abilities. The first player resolves their first if both players have effects.
+Verify Available Supply for all players.
+
+8.4.1 ACTIVATIONS
+On the Active Player's turn, choose one:
+Activate a Unit on the battlefield without an Activation Marker - perform a Move, Hold or Disengage action.
+Activate a Unit in Reserves without an Activation Marker - perform a Deploy action to enter the battlefield.
+After the action, set an Activation Marker (Movement side) next to the Unit.
+
+8.4.2 PASSING
+The first player to Pass takes the First Player Marker for Phase 2. Set Activation Markers (Movement side) next to any Friendly on-table Units that did not activate.` 
+          },
+          { 
+            title: "8.5 Movement Phase Actions", 
+            content: `8.5.1 HOLD
+The Unit performs no action. Set an Activation Marker beside it.
+
+8.5.2 MOVE
+An Unengaged Unit changes its position on the battlefield.
+
+8.5.3 RESOLVING A MOVE
+STEP 1 - THE LEADING MODEL: Choose a Leading Model and move it up to the Unit's Speed. It may pass through Friendly models in its own Unit, but not Enemy models. Ground models may pass through a Flying model's base as if it were not there. It cannot move through terrain of Size 2 or larger, and must follow Gap Clearance rules (Part 4.6). It cannot change elevation unless it passes through an ACCESS POINT. It may not end overlapping terrain or another model's base, and its entire base must end on the battlefield. It cannot end Within 1" (Engagement Range) of an Enemy Ground Unit.
+STEP 2 - OTHER MODELS: Pick up all remaining models and set them In Coherency (Part 4.4) around the Leading Model. These models are set, not moved - they may ignore intervening obstacles, but must end in a legal position.
+
+8.5.4 DISENGAGE
+An Engaged Unit withdraws from melee. Move it following the standard Move rules. Any individual model that cannot end its movement strictly outside the Engagement Range of all Enemy Units is immediately removed and considered Destroyed. If the Leading Model itself cannot end outside the Engagement Range, the Disengage fails. A Unit that Disengages cannot perform Ranged Attack or Charge in the following Assault Phase - unless its Current Supply Value is greater than the Combined Supply of all enemies it was Engaged with.
+
+8.5.5 DEPLOY
+A Unit from Reserves enters the battlefield. Confirm the Unit's Current Supply Value fits within the Available Supply. Set the Leading Model in contact with the player's Entry Edge outside of the battlefield, then move it up to the Unit's Speed. The Unit cannot finish its activation within the enemy's Zone of Influence.` 
+          },
+          { 
+            title: "8.6 Phase 2: The Assault Phase", 
+            content: `8.6.1 ACTIVATIONS
+On the Active Player's turn, activate a Unit with an Activation Marker (Movement side) and select one action: Run, Hold, Charge, or Ranged Attack. After completing the action, set an Activation Marker (Assault side) next to it. Units still in Reserves cannot act during this Phase.
+
+8.6.2 PASSING
+The first player to Pass takes the First Player Marker for Phase 3. Set Activation Markers (Assault side) next to any Units that did not activate.` 
+          },
+          { 
+            title: "8.7 Assault Phase Actions", 
+            content: `8.7.1 RUN
+An Unengaged Unit moves across the battlefield following the standard Move rules (Part 8.5.3). The procedure is identical to a Movement Phase Move.
+
+8.7.2 HOLD
+The Unit does not take any action. Set an Activation Marker (Assault side).
+
+8.7.3 RANGED ATTACK
+A Ranged Attack is resolved in two stages. First, the attacking player selects a valid target and assigns weapons to it. Second, the attack is resolved through the three-pool system. 
+
+1. TARGET ELIGIBILITY
+At least one Visible model from the target Unit is Within the weapon's maximum Range. Only models Within Range to at least one Visible model from the target Unit contribute dice to the Attack Roll. The target's Combat Tag must match the weapon's target characteristic.
+Engagement Status: An Unengaged attacking Unit cannot select an Engaged Unit as a target. An Engaged attacking Unit may only target the Unit(s) it is currently Engaged with.
+
+2. WEAPON SELECTION AND BATCHING
+Each model fires one of its available Assault Phase weapons. All models using the same Weapon Profile must fire at the same target - the player cannot split a single profile's fire. A Batch consists of all models firing the same weapon at the same target. If a Unit has multiple Weapon Profiles, it may fire at different targets - resolved in separate Batches. Declare the target of one Batch, resolve it fully, and then declare the next Batch.
+
+8.7.4 RANGED ATTACK RESOLUTION
+1. ROLL TO HIT: Add dice equal to the weapon's RoA to the Attack Pool. Roll all Attack Dice. Results equal to or higher than the weapon's Hit value are successes and move to the Armour Pool. Add one Surge Die if the weapon has an S Dice characteristic.
+2. RESOLVE SURGE: If the target Unit's Combat Tag matches the weapon's Surge Type, move a number of dice equal to the Surge Die result from the Armour Pool directly to the Damage Pool (bypassing Armour).
+3. ARMOUR ROLLS: The defender rolls all dice in the Armour Pool. Results equal to or higher than the Unit's Armour characteristic are successes (discard). Failures move to the Damage Pool.
+4. EVADE ROLLS: Perform this step only if the target Unit qualifies (e.g. granted by a Special Ability or if the target is Engaged). Results equal to or higher than the Unit's Evade characteristic are successes (discard). Remaining dice are confirmed Damage.
+5. RESOLVE DAMAGE AND CASUALTIES: Multiply the remaining dice by the weapon's Damage characteristic. Remove casualties model by model. The attack cannot remove more models than the number of Visible models in the target Unit.
+
+8.7.5 REMOVING MODELS FROM ENGAGED UNITS
+When the target Unit is Engaged, ignore standard Visibility rules. The defending player must remove casualties in this strict priority order:
+Priority 1: Models not Within the Engagement Range of any Enemy Unit.
+Priority 2: Models Within the Engagement Range but not in Base-to-Base contact.
+Priority 3: Models in Base-to-Base contact with an Enemy model.
+When selecting a model to remove at Priority 2 or 3, the defending player cannot choose a model if removing it would cause the Unit to stop being Engaged with a specific Enemy Unit - provided there is another valid casualty in any priority tier.
+
+8.7.6 TEMPLATE WEAPONS
+Blast Template (BT): The template must cover as much of the target model's base as possible. 
+Flamer Template (FT): The narrow end must be flush with the attacking model's base edge and aimed at the target. 
+Select one Enemy Unit as the Primary target - all models in that Unit covered by the template are the Main target. Every other model covered by the template is resolved under Spillover. For Spillover attacks, generate Attack Dice equal to the number of Affected models in that Unit only, do not apply RoA modifiers, and do not apply Surge.
+
+8.7.7 CHARGE
+An Unengaged Ground Unit moves into the Engagement Range of Enemy Units.
+1. DECLARE TARGETS: All targets must possess the Ground Combat Tag. Flying Units cannot Charge or be Charged. A Charge does not require Line of Sight.
+2. DETERMINE CHARGE DISTANCE: Roll 1D6 and add it to the Unit's Speed.
+3. SUCCESSFUL AND FAILED CHARGES: The Charge succeeds only if the Leading Model can be legally set in a position that is Wholly Within the Charge Roll Distance, Within the Engagement Range (1") of every declared Charge target, and not Within the Engagement Range of any Enemy Unit that was not declared as a target.
+4. EXECUTE THE MOVE: Move the Leading Model into the valid position. Set it in Base-to-Base contact with the Charge target(s) if possible - otherwise as close as possible Within the Engagement Range. Set remaining models In Coherency. Placement priority: A) Base-to-Base contact, B) Within the Engagement Range, C) As close as possible to the Leading Model.` 
+          },
+          { 
+            title: "8.8 Phase 3: The Combat Phase", 
+            content: `Only Engaged Units may be Activated during this Phase. Unengaged Units cannot act. Flying Units are never Engaged and therefore never participate in the Combat Phase. Players take turns activating one Engaged Unit at a time. Every Unit currently in the Engagement Range of an Enemy must act in this Phase. A player Passes only when they have no remaining Engaged Units to activate.
+
+8.8.1 THE CLOSE COMBAT ATTACK
+1. CLOSE RANKS (OPTIONAL): Before rolling the dice, the Unit may press into the fight. Move the Leading Model up to 3" - it must end closer to the Unit(s) it is Engaged with than it started, and cannot bring the Unit into Engagement with new Enemy Units. Reposition the rest of the Unit into Coherency, setting models in Base-to-Base contact with Enemy models wherever possible.
+2. DECLARE ATTACKERS: Determine which models may strike.
+Fighting Rank: Within the Engagement Range (1") of an Enemy model.
+Supporting Rank: In Base-to-Base contact with a Friendly model from the same Unit that is in the Fighting Rank.
+Line of Sight is not required.
+3. ROLL ATTACKS: Resolve attacks using the same sequence as Ranged Attacks (Part 8.7.4), but use only Combat Phase weapons listed on the Unit Card. Evade Rolls are only available in the Combat Phase if the Unit has a Special Ability or keyword that explicitly grants an Evade Roll against Close Combat attacks.
+4. FIGHTING MULTIPLE UNITS: If Engaged with more than one Enemy Unit simultaneously, a model is eligible to attack an Enemy Unit only if it is in Fighting Rank with a model from that Enemy Unit, or if it is in the Supporting Rank with a friendly model that is in Fighting Rank contact with that Enemy Unit.
+5. CASUALTY REMOVAL: Follow the Engaged Unit rules (Part 8.7.5).
+6. POST-COMBAT STATUS: After casualties are removed, if none of the Unit's remaining models is Within 1" of an enemy, the Unit is immediately Unengaged. A Unit freed from combat that has not yet Activated this Phase is no longer bound by mandatory Combat activation.` 
+          },
+          { 
+            title: "8.9 Phase 4: The Scoring & Cleanup Phase", 
+            content: `8.9.1 DETERMINE MISSION MARKER CONTROL
+A Unit may Contest a Mission Marker only if it is on the battlefield, the Unit is In Coherency, and at least one model is Within 3", has LoS to the Marker, and is on the same elevation. Flying Units cannot Contest or Control Mission Markers.
+For each Marker, each player sums the Current Supply Value of all their contesting Units. The player with the higher total Controls the Marker. A tie means the Marker is Contested - control does not change.
+Sticky Control: Once a Marker is controlled, it remains under that player's control - even if they move Units away - until the opponent actively reclaims it by ending a Scoring Phase with a higher contesting Supply total.
+
+8.9.2 SCORE VICTORY POINTS
+Both players simultaneously tally VPs based on the Mission Card's scoring conditions.
+
+8.9.3 END OF GAME CHECK
+The game ends immediately if a Special Winning Condition is fulfilled, or if a player has no models on the battlefield and no Units in Reserves.
+
+8.9.4 RESOLVE END OF THE ROUND EFFECTS
+Resolve all "End of the Round" abilities. The holder of the First Player Marker resolves their first.
+
+8.9.5 CLEANUP & REFRESH
+Remove all Tokens and Markers except those with STAY IN PLAY, Damage Markers, Mission Markers, and Faction Indicators. Flip all Exhausted Tactical and Faction Cards back to their active (face-up) side.
+
+8.9.6 DETERMINE INITIATIVE
+Award the First Player Marker to the player with fewer Victory Points. If tied, conduct a Roll-Off.` 
+          },
+          { 
+            title: "8.10 The Final Score", 
+            content: `If the game ends by the Round Limit:
+Final Round - All Units Destroyed: At the start of the final Scoring Phase, all Units remaining in Reserves are considered Destroyed. Each player is awarded Victory Points for these Units as normal.
+Determine Winner: The player with the highest final VP total wins. If tied, apply the Mission Card's tiebreaker.` 
+          }
+        ]
+      },
+      {
+        chapter: "Part 9: Preparing for Battle",
+        icon: "⚔️",
+        sections: [
+          { 
+            title: "9.1 Army Building", 
+            content: `9.1.1 ENGAGEMENT SCALE
+Skirmish: Up to 1000 Minerals, 10% Vespene limit, 36" x 36" Battlefield.
+Standard: Up to 2000 Minerals, 10% Vespene limit, 36" x 54" Battlefield.
+Grand Offensive: 2001+ Minerals, 10% Vespene limit, 36" x 72" Battlefield.
+
+9.1.2 SELECTING RACE AND FACTION
+The player chooses one of the three races (Terran, Zerg, or Protoss) and selects a single Faction Card. During Army Building, a player may include only Units and Tactical Cards whose Faction Tags all appear on the chosen Faction Card.
+
+9.1.3 MINERALS & 9.1.4 VESPENE GAS
+Spend Minerals to recruit Units and purchase Upgrades. Spend Vespene Gas exclusively on Tactical Cards. Unspent resources are lost.
+
+9.1.5 TACTICAL CARDS AND ARMY SLOTS
+Tactical Cards unlock additional Army Slots (Core, Elite, Support, Air, Hero) beyond those provided by the Faction Card. If a Tactical Card is marked as Unique, only one copy may be included in the army.
+
+9.1.6 MUSTERING UNITS
+Fill available Army Slots with eligible Units. The player must select one Composition Option per Unit, which determines the number of models in the Unit and its starting Supply Value. Each Unit occupies a number of Army Slots equal to its starting Supply Value. 
+
+9.1.7 PURCHASING UPGRADES
+A purchased upgrade applies to every model in the Unit unless it has the SPECIALIST keyword. Only one model in the Unit may carry each SPECIALIST upgrade. The player nominates which model receives it during Army Building; all other models keep their original equipment. A Unit may not purchase the same SPECIALIST upgrade more than once.
+
+9.1.9 SUMMONED UNITS
+Some Units, such as the Roachling, Point Defence Drone, and Pylon, have no Mineral Cost. They are not included in the Army List during army building and do not occupy any Army Slots. They are deployed only when a Special Ability specifically puts them on the battlefield.
+
+9.1.10 ARMY ROSTER VISIBILITY
+By default, both players share their entire army rosters - including all Unit selections, upgrades, and weapon swaps - with each other before the game starts (Open Lists).` 
+          },
+          { 
+            title: "9.2 Mission Selection and the Draft", 
+            content: `Each player brings 2 Mission Cards and 2 Deployment Cards to the table. Both players Roll-Off. The winner makes two choices, in order: Choice 1 - Colour (Red Player or Blue Player). Choice 2 - Draft Control (Mission Draft or Deployment Draft).
+The player without Mission Draft control removes any 2 Mission Cards from the table. The player with Mission Draft control selects 1 of the 2 remaining cards to be the Mission for the game. Repeat this process for the Deployment Cards. Once both cards are chosen, assign Mission Markers' affinity (Markers 1 & 3 are Red, Markers 2 & 4 are Blue, Marker 5 is Neutral).` 
+          },
+          { 
+            title: "9.3 Battlefield Setup", 
+            content: `Once the draft is complete and both cards have been chosen, the battlefield is set up in the following order:
+First, confirm the table dimensions.
+Second, assign Entry Edges to each player.
+Third, set Zone of Influence Markers at the corners of each player's Entry Edge.
+Fourth, set terrain by either selecting a pre-made map or alternating placing one terrain piece at a time.
+Finally, place Mission Markers at the coordinates listed on the selected Deployment Card.` 
+          }
+        ]
+      },
+      {
+        chapter: "Part 10: Advanced Rules",
+        icon: "🔬",
+        sections: [
+          { 
+            title: "10.1 Special Abilities", 
+            content: `Each ability on a Unit Card or Tactical Card is presented using a consistent format:
+A Name identifying the ability.
+A Phase Limitation restricting when it can be used.
+A Type declaring whether it is Passive, Active, or Reaction.
+A Cost specifying the resource payment required in CP, BM, or PE.
+An ability may be used only when all its requirements are met (timing, Phase restrictions, Range, Line of Sight). If an ability does not specify a target, LoS is not required. All Costs must be paid in full before the ability resolves.` 
+          },
+          { 
+            title: "10.2 Active Abilities (Full Rules)", 
+            content: `Active Abilities require the Unit to be Activated, and must be triggered immediately before declaring an action or immediately after one fully resolves. It cannot be used during an action.
+Active Abilities cannot be used while the Unit is in Reserves unless explicitly stated otherwise.
+Unless stated otherwise, modifiers and effects granted by an Active Ability expire at the End of the Current Round.
+Once Per Round: A specific Unit may use a named Active Ability only once per Game Round, unless the ability has the REPEATABLE keyword.` 
+          },
+          { 
+            title: "10.3 Passive Abilities (Full Rules)", 
+            content: `Passive Abilities represent innate traits, permanent equipment or constant biological adaptations. They are always active as long as the Unit is on the battlefield and do not require the Unit to be Activated. They are not in effect while the Unit is in Reserves.
+Priority: If multiple Passive Abilities trigger simultaneously, the controlling player chooses the order in which they resolve. If both players have Passive Abilities triggering at the same time, the Active Player resolves theirs first.` 
+          },
+          { 
+            title: "10.4 Reaction Abilities (Full Rules)", 
+            content: `Reaction Abilities allow a player to act outside the usual activation sequence, responding to specific events as they occur. A Reaction is used in direct response to a defined trigger. It must be declared at the exact moment the trigger occurs.
+Cannot be used while the Unit is in Reserves.
+Unless stated otherwise, modifiers and effects expire at the End of the Current Round.
+Frequency Limit: A specific Unit may use a named Reaction Ability only once per Game Round.
+Reaction Limit: Each player may resolve only one Reaction per each Activation. If both players wish to use a Reaction in response to the same trigger, the Active Player resolves their Reaction first.` 
+          },
+          { 
+            title: "10.5 Tactical Cards & Faction Cards", 
+            content: `10.5.1 RESOURCES AND COSTS
+Each faction has a separate resource type to spend on abilities: Terran uses CP, Zerg uses BM, and Protoss uses PE. These are provided by Exhausting cards.
+Exhausting a Card: To pay for an ability's cost, the player must Exhaust a Ready card that matches the resource type. Exhausting a card means flipping it face down.
+
+10.5.2 MANAGING CARD STATES
+Every Tactical Card and Faction Card is in one of two states: Ready (face-up) or Exhausted (face-down). A Ready card may be Exhausted to use an ability printed on it, or to generate its Resource to pay for an ability elsewhere. Once Exhausted, it provides no resources and its abilities cannot be used until it is Refreshed (flipped face-up) during Phase 4 Cleanup.` 
+          }
+        ]
+      },
+      {
+        chapter: "Part 11: Keyword Glossary",
         icon: "📖",
-        // This automatically pulls all your existing Keywords into the final chapter!
-        sections: Object.entries(RULES_DICTIONARY).map(([key, desc]) => ({ title: key, content: desc }))
+        // Automatically populated and alphabetically sorted from your existing RULES_DICTIONARY
+        sections: Object.entries(RULES_DICTIONARY)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([key, desc]) => ({ title: key, content: desc }))
+      },
+      {
+        chapter: "Part 12: Quick Reference",
+        icon: "⚡",
+        sections: [
+          { 
+            title: "12.1 Pre-Game Protocol", 
+            content: `Select a Mission Card and a Deployment Card. Set Mission Markers at the coordinates on the Deployment Card.
+Set Terrain pieces (balanced across four quarters, at least 3" between major structures).
+Roll-Off - winner assigns the First Player Marker for Round 1.` 
+          },
+          { 
+            title: "12.2 Round Sequence", 
+            content: `START OF THE ROUND EFFECTS
+PHASE 1: MOVEMENT (Deploy / Move / Disengage / Hold)
+PHASE 2: ASSAULT (Ranged Attack / Charge / Run / Hold)
+PHASE 3: COMBAT (Close Combat Attack)
+PHASE 4: SCORING & CLEANUP (Control Markers -> Score VP -> End of Game Check -> End of the Round Effects -> Cleanup -> Initiative)` 
+          },
+          { 
+            title: "12.3 Phase 1: Movement", 
+            content: `Actions (choose one per Unit):
+Move: Move across the Battlefield.
+Deploy: Move from Reserves via Entry Edge to the Battlefield.
+Disengage: If Engaged, move out of combat.
+Hold: Do nothing.
+First to Pass takes First Player Marker for Phase 2.
+Available Supply = Supply Pool - Total Supply of Friendly Units on the Battlefield.` 
+          },
+          { 
+            title: "12.4 Phase 2: Assault", 
+            content: `Actions (choose one per Unit):
+Ranged Attack: Use ranged weapons to attack Enemies.
+Charge: Move to Engage Enemies.
+Run: Move across the battlefield.
+Hold: Do nothing.
+First to Pass takes First Player Marker for Phase 3.` 
+          },
+          { 
+            title: "12.5 Phase 3: Combat", 
+            content: `All Engaged Units must activate. Players alternate.
+Actions: Close Combat Attack (Use a Close Combat weapon to attack Enemies).
+Pass only when no Engaged Units remain.` 
+          },
+          { 
+            title: "12.6 Phase 4: Scoring & Cleanup", 
+            content: `1. Control: Sum Supply Within 3" of each Marker. Higher total controls. Ties = Contested.
+2. Score VP: Per Mission Card conditions.
+3. End of Game: Check winning conditions.
+4. End of the Round Effects: Resolve triggered abilities.
+5. Cleanup: Remove Tokens/Markers (keep STAY IN PLAY, Damage Markers, Mission Markers, Faction Indicators). Refresh all Exhausted cards.
+6. Initiative: Fewer VP = First Player Marker. Tie = Roll-Off.` 
+          },
+          { 
+            title: "12.7 Casualty Removal", 
+            content: `Unengaged target: Cannot remove more models than are Visible to the attacker. Excess Damage beyond Visible kills is discarded.
+
+Engaged target (strict priority order):
+1. Models not Within the Engagement Range of any Enemy Unit.
+2. Models Within the Engagement Range but not in Base-to-Base contact.
+3. Models in Base-to-Base contact with an Enemy model.
+Cannot remove a model if doing so breaks Engagement with an enemy, provided another valid casualty exists.` 
+          },
+          { 
+            title: "12.8 Template Weapons", 
+            content: `BLAST (BT): As much of a template over the target model's base. LoS check from the target model's base to each model. No Surge Die is rolled. Surge Result equals affected models in the Main target Unit only.
+FLAMER (FT): Narrow end flush with the attacker base. LoS check from the attacker base through the template to each model. No Surge Die is rolled. Surge Result equals affected models in the Main target Unit only.
+Spillover: Resolve each affected Unit as a separate Batch. Do not apply Rate of Attack modifiers or Surge to Spillover attacks.` 
+          },
+          { 
+            title: "12.9 Dispute Resolution", 
+            content: `If a rules dispute cannot be resolved swiftly:
+Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule applies in this specific instance. Continue playing. Verify the ruling after the match.` 
+          }
+        ]
       }
     ];
 
@@ -1202,7 +1842,7 @@ const MissionsView = ({ theme }) => {
     // RULEBOOK INTERFACE
     // ==========================================
     const RulesView = ({ theme }) => {
-      const [activeChapter, setActiveChapter] = useState(OFFICIAL_RULEBOOK[0].chapter);
+      const [activeChapter, setActiveChapter] = useState(OFFICIAL_RULEBOOK[1].chapter);
       const [searchQuery, setSearchQuery] = useState("");
 
       const isSearching = searchQuery.trim().length > 0;
