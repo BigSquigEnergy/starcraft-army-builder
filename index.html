@@ -1963,6 +1963,26 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
       
       const [isUploading, setIsUploading] = useState(false);
       const [isInlineUploading, setIsInlineUploading] = useState(false);
+      const [copiedPostId, setCopiedPostId] = useState(null);
+      const [sharedPostId, setSharedPostId] = useState(() => new URLSearchParams(window.location.search).get("unn"));
+
+      useEffect(() => {
+        if (sharedPostId && posts.length > 0) {
+          const el = document.getElementById(`unn-post-${sharedPostId}`);
+          if (el) {
+            setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
+      }, [sharedPostId, posts]);
+
+      const handleSharePost = (postId) => {
+        const url = `${window.location.origin}${window.location.pathname}?unn=${postId}`;
+        navigator.clipboard.writeText(url).then(() => {
+          setCopiedPostId(postId);
+          setTimeout(() => setCopiedPostId(null), 2500);
+        });
+      };
 
       const textareaRef = React.useRef(null);
 
@@ -2137,11 +2157,13 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
 
       // REUSABLE CARD COMPONENT FOR BOTH FEED AND LIVE PREVIEW
       const PostCard = ({ post, isPreview = false }) => (
-        <div className={`bg-black/40 border ${isPreview ? 'border-sky-500/50 shadow-[0_0_15px_rgba(14,165,233,0.2)]' : 'border-white/10'} rounded-xl overflow-hidden shadow-lg relative group flex flex-col`}>
+        <div
+          id={!isPreview ? `unn-post-${post.id}` : undefined}
+          className={`bg-black/40 border scroll-mt-28 ${isPreview || sharedPostId === post.id ? 'border-sky-500/60 shadow-[0_0_20px_rgba(14,165,233,0.25)]' : 'border-white/10'} rounded-xl overflow-hidden shadow-lg relative group flex flex-col`}
+        >
           {isPreview && <div className="absolute top-0 right-0 bg-sky-600 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 rounded-bl-lg">Live Preview</div>}
           
           {post.headerImage && (
-            // FIX: Removed rigid height (h-48 md:h-64) and added aspect-video (16:9) to prevent cropping
             <div className="w-full aspect-video border-b border-white/10 bg-black shrink-0 relative flex items-center justify-center overflow-hidden">
               <img src={post.headerImage} alt="Header" className="w-full h-full object-contain opacity-90 hover:opacity-100 transition-opacity" />
             </div>
@@ -2152,10 +2174,20 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
               <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide">{post.title || "UNTITLED TRANSMISSION"}</h3>
               <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest shrink-0">{post.category}</span>
             </div>
-            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-500">
-              <span>{post.date}</span>
-              <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
-              <span>By: <span className="text-slate-300">{post.author}</span></span>
+            <div className="flex items-center justify-between gap-4 flex-wrap text-xs font-bold uppercase tracking-widest text-slate-500">
+              <div className="flex items-center gap-4">
+                <span>{post.date}</span>
+                <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
+                <span>By: <span className="text-slate-300">{post.author}</span></span>
+              </div>
+              {!isPreview && (
+                <button
+                  onClick={() => handleSharePost(post.id)}
+                  className={`px-3 py-1 rounded border text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-1.5 ${copiedPostId === post.id ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50' : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-sky-500/40'}`}
+                >
+                  {copiedPostId === post.id ? '✓ Link Copied!' : '🔗 Share'}
+                </button>
+              )}
             </div>
           </div>
           
@@ -5002,7 +5034,10 @@ const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, ha
     const App = () => {
       const [faction, setFaction] = useState("Protoss");
       const [activeTab, setActiveTab] = useState(() => {
-        return new URLSearchParams(window.location.search).get("event") ? "events" : "home";
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("event")) return "events";
+        if (params.get("unn")) return "unn";
+        return "home";
       });
       const [isPlayMode, setIsPlayMode] = useState(false);
       const [cloudUser, setCloudUser] = useState(null);
