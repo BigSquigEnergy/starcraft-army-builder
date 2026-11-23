@@ -2004,7 +2004,88 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
           textarea.setSelectionRange(start + openTag.length + selectedText.length, start + openTag.length + selectedText.length);
         }, 0);
       };
+const [commanderName, setCommanderName] = useState("");
+      const [commentInputs, setCommentInputs] = useState({});
+      const [openComments, setOpenComments] = useState({});
 
+      useEffect(() => {
+        if (!cloudUser || !window.fbDb || isGuest) return;
+        const profRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
+        window.fbHelpers.getDoc(profRef).then(snap => {
+          if (snap.exists() && snap.data().displayName) {
+            setCommanderName(snap.data().displayName);
+          }
+        });
+      }, [cloudUser, isGuest]);
+
+      const handleVote = async (post, type) => {
+        if (!cloudUser || isGuest || !window.fbDb) return;
+        const uid = cloudUser.uid;
+        let likes = Array.isArray(post.likes) ? [...post.likes] : [];
+        let dislikes = Array.isArray(post.dislikes) ? [...post.dislikes] : [];
+
+        if (type === 'like') {
+          if (likes.includes(uid)) {
+            likes = likes.filter(id => id !== uid);
+          } else {
+            likes.push(uid);
+            dislikes = dislikes.filter(id => id !== uid);
+          }
+        } else {
+          if (dislikes.includes(uid)) {
+            dislikes = dislikes.filter(id => id !== uid);
+          } else {
+            dislikes.push(uid);
+            likes = likes.filter(id => id !== uid);
+          }
+        }
+
+        try {
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts', post.id);
+          await window.fbHelpers.updateDoc(docRef, { likes, dislikes });
+        } catch (err) {
+          console.error("Vote failed:", err);
+          alert("Could not save vote. Check Firestore permissions.");
+        }
+      };
+
+      const handleAddComment = async (e, post) => {
+        e.preventDefault();
+        if (!cloudUser || isGuest || !window.fbDb) return;
+        const text = (commentInputs[post.id] || "").trim();
+        if (!text) return;
+
+        const existingComments = Array.isArray(post.comments) ? [...post.comments] : [];
+        const newComment = {
+          id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          uid: cloudUser.uid,
+          author: commanderName || cloudUser.displayName || "Commander",
+          text,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          createdAt: Date.now()
+        };
+
+        try {
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts', post.id);
+          await window.fbHelpers.updateDoc(docRef, { comments: [...existingComments, newComment] });
+          setCommentInputs(prev => ({ ...prev, [post.id]: "" }));
+        } catch (err) {
+          console.error("Comment failed:", err);
+          alert("Could not post comment. Check Firestore permissions.");
+        }
+      };
+
+      const handleDeleteComment = async (post, commentId) => {
+        if (!cloudUser || isGuest || !window.fbDb) return;
+        if (!window.confirm("Delete this comment?")) return;
+        const updatedComments = (post.comments || []).filter(c => c.id !== commentId);
+        try {
+          const docRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'unn_posts', post.id);
+          await window.fbHelpers.updateDoc(docRef, { comments: updatedComments });
+        } catch (err) {
+          console.error("Delete comment failed:", err);
+        }
+      };
       useEffect(() => {
         if (!cloudUser || !window.fbDb) return;
         const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
@@ -2156,59 +2237,154 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
       const canClaim = !isCheckingAdmin && !adminUid && cloudUser && !isGuest;
 
       // REUSABLE CARD COMPONENT FOR BOTH FEED AND LIVE PREVIEW
-      const PostCard = ({ post, isPreview = false }) => (
-        <div
-          id={!isPreview ? `unn-post-${post.id}` : undefined}
-          className={`bg-black/40 border scroll-mt-28 ${isPreview || sharedPostId === post.id ? 'border-sky-500/60 shadow-[0_0_20px_rgba(14,165,233,0.25)]' : 'border-white/10'} rounded-xl overflow-hidden shadow-lg relative group flex flex-col`}
-        >
-          {isPreview && <div className="absolute top-0 right-0 bg-sky-600 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 rounded-bl-lg">Live Preview</div>}
-          
-          {post.headerImage && (
-            <div className="w-full aspect-video border-b border-white/10 bg-black shrink-0 relative flex items-center justify-center overflow-hidden">
-              <img src={post.headerImage} alt="Header" className="w-full h-full object-contain opacity-90 hover:opacity-100 transition-opacity" />
-            </div>
-          )}
-          
-          <div className="bg-gradient-to-r from-slate-900 to-black p-4 md:p-5 border-b border-white/10 shrink-0">
-            <div className="flex justify-between items-start gap-4 flex-wrap mb-2">
-              <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide">{post.title || "UNTITLED TRANSMISSION"}</h3>
-              <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest shrink-0">{post.category}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4 flex-wrap text-xs font-bold uppercase tracking-widest text-slate-500">
-              <div className="flex items-center gap-4">
-                <span>{post.date}</span>
-                <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
-                <span>By: <span className="text-slate-300">{post.author}</span></span>
+      const renderPostCard = (post, isPreview = false) => {
+        const likes = Array.isArray(post.likes) ? post.likes : [];
+        const dislikes = Array.isArray(post.dislikes) ? post.dislikes : [];
+        const comments = Array.isArray(post.comments) ? post.comments : [];
+        const userLiked = cloudUser && !isGuest && likes.includes(cloudUser.uid);
+        const userDisliked = cloudUser && !isGuest && dislikes.includes(cloudUser.uid);
+        const isCommentsOpen = Boolean(openComments[post.id]);
+
+        return (
+          <div
+            key={post.id || 'preview'}
+            id={!isPreview ? `unn-post-${post.id}` : undefined}
+            className={`bg-black/40 border scroll-mt-28 ${isPreview || sharedPostId === post.id ? 'border-sky-500/60 shadow-[0_0_20px_rgba(14,165,233,0.25)]' : 'border-white/10'} rounded-xl overflow-hidden shadow-lg relative group flex flex-col`}
+          >
+            {isPreview && <div className="absolute top-0 right-0 bg-sky-600 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 rounded-bl-lg">Live Preview</div>}
+            
+            {post.headerImage && (
+              <div className="w-full aspect-video border-b border-white/10 bg-black shrink-0 relative flex items-center justify-center overflow-hidden">
+                <img src={post.headerImage} alt="Header" className="w-full h-full object-contain opacity-90 hover:opacity-100 transition-opacity" />
               </div>
-              {!isPreview && (
-                <button
-                  onClick={() => handleSharePost(post.id)}
-                  className={`px-3 py-1 rounded border text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-1.5 ${copiedPostId === post.id ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50' : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-sky-500/40'}`}
-                >
-                  {copiedPostId === post.id ? '✓ Link Copied!' : '🔗 Share'}
-                </button>
-              )}
+            )}
+            
+            <div className="bg-gradient-to-r from-slate-900 to-black p-4 md:p-5 border-b border-white/10 shrink-0">
+              <div className="flex justify-between items-start gap-4 flex-wrap mb-2">
+                <h3 className="font-orbitron font-black text-xl text-white uppercase tracking-wide">{post.title || "UNTITLED TRANSMISSION"}</h3>
+                <span className="bg-sky-900/50 text-sky-300 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest shrink-0">{post.category}</span>
+              </div>
+              <div className="flex items-center justify-between gap-4 flex-wrap text-xs font-bold uppercase tracking-widest text-slate-500">
+                <div className="flex items-center gap-4">
+                  <span>{post.date}</span>
+                  <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
+                  <span>By: <span className="text-slate-300">{post.author}</span></span>
+                </div>
+                {!isPreview && (
+                  <button
+                    onClick={() => handleSharePost(post.id)}
+                    className={`px-3 py-1 rounded border text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-1.5 ${copiedPostId === post.id ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50' : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 hover:border-sky-500/40'}`}
+                  >
+                    {copiedPostId === post.id ? '✓ Link Copied!' : '🔗 Share'}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-          
-          <div className="p-4 md:p-5">
-            <div className="text-sm md:text-base text-slate-300 leading-relaxed min-h-[100px]">
+            
+            <div className="p-4 md:p-5">
+              <div className="text-sm md:text-base text-slate-300 leading-relaxed min-h-[100px]">
                 {post.content ? renderContent(post.content) : <span className="italic text-slate-600">Awaiting content input...</span>}
+              </div>
             </div>
+
+            {!isPreview && (
+              <div className="border-t border-white/10 bg-black/50 px-4 md:px-5 py-3">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleVote(post, 'like')}
+                      disabled={!cloudUser || isGuest}
+                      title={isGuest ? "Sign in to like" : "Like"}
+                      className={`px-3 py-1.5 rounded border text-xs font-bold flex items-center gap-1.5 transition-colors ${userLiked ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50' : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'} disabled:opacity-40 disabled:cursor-not-allowed`}
+                    >
+                      <span>👍</span> <span>{likes.length}</span>
+                    </button>
+                    <button
+                      onClick={() => handleVote(post, 'dislike')}
+                      disabled={!cloudUser || isGuest}
+                      title={isGuest ? "Sign in to dislike" : "Dislike"}
+                      className={`px-3 py-1.5 rounded border text-xs font-bold flex items-center gap-1.5 transition-colors ${userDisliked ? 'bg-rose-950/80 text-rose-300 border-rose-500/50' : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'} disabled:opacity-40 disabled:cursor-not-allowed`}
+                    >
+                      <span>👎</span> <span>{dislikes.length}</span>
+                    </button>
+                    <button
+                      onClick={() => setOpenComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                      className={`px-3 py-1.5 rounded border text-xs font-bold flex items-center gap-1.5 transition-colors ${isCommentsOpen ? 'bg-sky-950/80 text-sky-300 border-sky-500/50' : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'}`}
+                    >
+                      <span>💬</span> <span>{comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}</span>
+                    </button>
+                  </div>
+                  {isGuest && (
+                    <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Sign in to react or comment</span>
+                  )}
+                </div>
+
+                {isCommentsOpen && (
+                  <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+                    {comments.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic">No transmissions logged yet. Be the first to comment.</p>
+                    ) : (
+                      <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        {comments.map(c => (
+                          <div key={c.id} className="bg-black/60 border border-white/10 rounded-lg p-3 flex justify-between items-start gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-bold">
+                                <span className="text-sky-400 font-orbitron">{c.author}</span>
+                                <span className="text-slate-600">•</span>
+                                <span className="text-slate-500">{c.date}</span>
+                              </div>
+                              <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">{c.text}</p>
+                            </div>
+                            {cloudUser && !isGuest && (c.uid === cloudUser.uid || isAdmin) && (
+                              <button
+                                onClick={() => handleDeleteComment(post, c.id)}
+                                className="text-slate-500 hover:text-rose-400 text-xs font-bold px-1.5 py-0.5 rounded transition-colors shrink-0"
+                                title="Delete comment"
+                              >
+                                ✖
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {cloudUser && !isGuest && (
+                      <form onSubmit={(e) => handleAddComment(e, post)} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={commentInputs[post.id] || ""}
+                          onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                          placeholder="Write a comment..."
+                          maxLength={500}
+                          className="flex-1 bg-black/80 border border-white/20 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-sky-500"
+                        />
+                        <button
+                          type="submit"
+                          className={`px-4 py-2 rounded-lg font-orbitron font-bold text-xs uppercase tracking-widest shrink-0 ${theme.accent}`}
+                        >
+                          Post
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {isAdmin && !isPreview && (
+              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                <button onClick={() => openEditPost(post)} className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3 py-1 rounded text-xs uppercase shadow-md border border-sky-400">
+                  Edit
+                </button>
+                <button onClick={() => handleDeletePost(post.id)} className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded text-xs uppercase shadow-md border border-rose-400">
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
-          
-          {isAdmin && !isPreview && (
-            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-              <button onClick={() => openEditPost(post)} className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3 py-1 rounded text-xs uppercase shadow-md border border-sky-400">
-                Edit
-              </button>
-              <button onClick={() => handleDeletePost(post.id)} className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded text-xs uppercase shadow-md border border-rose-400">
-                Delete
-              </button>
-            </div>
-          )}
-        </div>
-      );
+        );
+      };
 
       return (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full pb-24 md:pb-6">
@@ -2296,17 +2472,14 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
                 
                 <div className="space-y-4">
                    <h3 className="font-orbitron font-bold text-lg text-slate-400 uppercase border-b border-white/5 pb-2 pl-2">Display Output</h3>
-                   <PostCard 
-                     isPreview={true}
-                     post={{
-                       title: newTitle,
-                       category: newCategory,
-                       headerImage: headerPreviewUrl,
-                       author: "UNN Command",
-                       date: "Right Now",
-                       content: newContent
-                     }} 
-                   />
+                   {renderPostCard({
+                     title: newTitle,
+                     category: newCategory,
+                     headerImage: headerPreviewUrl,
+                     author: "UNN Command",
+                     date: "Right Now",
+                     content: newContent
+                   }, true)}
                 </div>
             </div>
           ) : (
@@ -2316,7 +2489,7 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
                   UNN Broadcast System Online.<br/><span className="text-xs text-slate-600">Awaiting transmissions...</span>
                 </div>
               )}
-              {posts.map(post => <PostCard key={post.id} post={post} />)}
+              {posts.map(post => renderPostCard(post))}
             </div>
           )}
         </div>
