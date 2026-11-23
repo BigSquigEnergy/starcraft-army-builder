@@ -2087,7 +2087,7 @@ const [commanderName, setCommanderName] = useState("");
         }
       };
       useEffect(() => {
-        if (!cloudUser || !window.fbDb) return;
+        if (!window.fbDb) return;
         const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
         const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (docSnap) => {
           if (docSnap.exists()) setAdminUid(docSnap.data().uid || null);
@@ -3554,52 +3554,43 @@ const OrganizedPlayView = ({ theme, cloudUser, isGuest, handleGoogleLogin }) => 
       const [formData, setFormData] = useState(defaultForm);
 
       useEffect(() => {
-        if (!cloudUser || !window.fbDb) return;
+        if (!window.fbDb) return;
+
+        const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
+        const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
+          const fetched = [];
+          if (snap.forEach) {
+            snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
+            fetched.sort((a, b) => (a.date || "").localeCompare(b.date || "") || b.createdAt - a.createdAt);
+            setEvents(fetched);
+          }
+        }, (err) => console.error("Events sync error:", err));
+
+        if (!cloudUser || isGuest) {
+          return () => unsubEvents();
+        }
 
         const profRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'settings', 'profile');
         window.fbHelpers.getDoc(profRef).then(snap => {
           if (snap.exists()) setUserProfile(prev => ({ ...prev, ...snap.data() }));
         });
 
-        if (!isGuest) {
-          const rostersRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'rosters');
-          const unsubRosters = window.fbHelpers.onSnapshot(rostersRef, (snap) => {
-            const list = [];
-            if (snap.forEach) {
-              snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-              list.sort((a, b) => b.createdAt - a.createdAt);
-              setMyCloudRosters(list);
-            }
-          });
+        const rostersRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'users', cloudUser.uid, 'rosters');
+        const unsubRosters = window.fbHelpers.onSnapshot(rostersRef, (snap) => {
+          const list = [];
+          if (snap.forEach) {
+            snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+            list.sort((a, b) => b.createdAt - a.createdAt);
+            setMyCloudRosters(list);
+          }
+        });
 
-          const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
-          const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (snap) => {
-            if (snap.exists()) setAdminUid(snap.data().uid || null);
-          });
+        const adminRef = window.fbHelpers.doc(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'config', 'admin');
+        const unsubAdmin = window.fbHelpers.onSnapshot(adminRef, (snap) => {
+          if (snap.exists()) setAdminUid(snap.data().uid || null);
+        });
 
-          const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
-          const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
-            const fetched = [];
-            if (snap.forEach) {
-              snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
-              fetched.sort((a, b) => (a.date || "").localeCompare(b.date || "") || b.createdAt - a.createdAt);
-              setEvents(fetched);
-            }
-          }, (err) => console.error("Events sync error:", err));
-
-          return () => { unsubRosters(); unsubAdmin(); unsubEvents(); };
-        } else {
-          const eventsRef = window.fbHelpers.collection(window.fbDb, 'artifacts', window.fbAppId, 'public', 'data', 'op_events');
-          const unsubEvents = window.fbHelpers.onSnapshot(eventsRef, (snap) => {
-            const fetched = [];
-            if (snap.forEach) {
-              snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
-              fetched.sort((a, b) => (a.date || "").localeCompare(b.date || "") || b.createdAt - a.createdAt);
-              setEvents(fetched);
-            }
-          });
-          return () => unsubEvents();
-        }
+        return () => { unsubEvents(); unsubRosters(); unsubAdmin(); };
       }, [cloudUser, isGuest]);
 
       useEffect(() => {
