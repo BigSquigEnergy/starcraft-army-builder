@@ -5048,6 +5048,7 @@ const CommanderProfileView = ({ theme, cloudUser, isGuest, handleGoogleLogin, ha
         if (!window.fbHelpers || !window.fbAuth) return;
         const { GoogleAuthProvider } = window.fbHelpers;
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         try {
           const result = await window.fbAuth.signInWithPopup(provider);
           setCloudUser(result.user);
