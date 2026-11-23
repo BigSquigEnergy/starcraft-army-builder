@@ -2103,10 +2103,10 @@ Both players Roll-Off (2D6). Higher total wins. The winner decides how the rule 
         
         setIsInlineUploading(true);
         try {
-            const storageRef = window.fbStorage.ref().child(`op_media/inline/${Date.now()}_${file.name}`);
+            const storageRef = window.fbStorage.ref().child(`unn_media/${Date.now()}_${file.name}`);
             const snapshot = await storageRef.put(file);
             const url = await snapshot.ref.getDownloadURL();
-            setFormData(prev => ({ ...prev, description: (prev.description || "") + `\n[IMG]${url}[/IMG]\n` }));
+            setNewContent(prev => prev + `\n[IMG]${url}[/IMG]\n`);
         } catch (err) {
             console.error(err);
             alert("Upload failed! Make sure Storage is enabled.");
